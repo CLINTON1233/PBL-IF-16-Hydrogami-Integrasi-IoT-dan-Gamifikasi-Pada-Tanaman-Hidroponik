@@ -1,4 +1,4 @@
-import 'package:hydrogami2/main_page.dart';
+import 'package:hydrogami2/page_awal_1.dart';
 import 'package:flutter/material.dart';
 
 void main() {
@@ -15,7 +15,7 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-      home: const MainPage(),
+      home: const PageAwal1(),
     );
   }
 }

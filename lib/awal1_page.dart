@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:hydrogami2/page_awal_2.dart';
+import 'package:hydrogami2/awal2_page.dart';
 
-class PageAwal1 extends StatelessWidget {
-  const PageAwal1({super.key});
+class Awal1Page extends StatelessWidget {
+  const Awal1Page({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -16,8 +16,8 @@ class PageAwal1 extends StatelessWidget {
             const Spacer(),
             Image.asset(
               'assets/hydrogami_logo.png',
-              width: 300,
-              height: 150,
+              width: 320,
+              height: 170,
             ),
             Text(
               'Solusi cerdas hidroponik di era modern.',
@@ -25,7 +25,7 @@ class PageAwal1 extends StatelessWidget {
               style: GoogleFonts.kurale(
                 fontSize: 15,
                 fontWeight: FontWeight.normal,
-                color: Colors.green,
+                color: const Color(0xFF29CC74),
               ),
             ),
             const Spacer(),
@@ -35,21 +35,23 @@ class PageAwal1 extends StatelessWidget {
                 // Navigasi ke Page awal 2
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => const PageAwal2()),
+                  MaterialPageRoute(builder: (context) => const Awal2Page()),
                 );
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF29CC74),
                 padding:
-                    const EdgeInsets.symmetric(horizontal: 50, vertical: 7),
+                    const EdgeInsets.symmetric(horizontal: 40, vertical: 3),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(12),
                 ),
+                elevation: 5, // Tambahkan efek bayangan
+                shadowColor: Colors.black.withOpacity(0.2), // Warna bayangan
               ),
               child: Text(
                 'Mulai',
                 style: GoogleFonts.roboto(
-                  fontSize: 18,
+                  fontSize: 16,
                   fontWeight: FontWeight.bold,
                   color: Colors.white,
                 ),
@@ -62,7 +64,7 @@ class PageAwal1 extends StatelessWidget {
                 style: GoogleFonts.kurale(
                   fontSize: 15,
                   fontWeight: FontWeight.normal,
-                  color: Colors.green,
+                  color: const Color(0xFF29CC74),
                 ),
               ),
             ),

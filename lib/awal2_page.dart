@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:hydrogami2/registrasi_page.dart';
 
-class PageAwal2 extends StatelessWidget {
-  const PageAwal2({super.key});
+class Awal2Page extends StatelessWidget {
+  const Awal2Page({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -11,16 +12,22 @@ class PageAwal2 extends StatelessWidget {
       body: Column(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          const Spacer(),
+          Container(
+            height: 25,
+            color: const Color.fromARGB(255, 36, 209, 126),
+          ),
+          const SizedBox(height: 50),
+          // Tombol kembali di atas tulisan registrasi
+
           // Logo dan Judul
           Column(
             children: [
               Image.asset(
                 'assets/hydrogami_logo.png',
                 width: 300,
-                height: 150,
+                height: 200,
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 2),
               Text(
                 'Solusi cerdas hidroponik di era modren.',
                 textAlign: TextAlign.center,
@@ -61,7 +68,7 @@ class PageAwal2 extends StatelessWidget {
                   'real-time melalui teknologi IoT, dan kumpulkan poin dari '
                   'tantangan gamifikasi seru. Jadilah yang terbaik di leaderboard '
                   'sambil menjaga tanaman Anda tetap sehat.',
-                  textAlign: TextAlign.center,
+                  textAlign: TextAlign.justify,
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: 14,
@@ -79,16 +86,14 @@ class PageAwal2 extends StatelessWidget {
                           borderRadius: BorderRadius.circular(20),
                         ),
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 24, vertical: 12),
+                            horizontal: 30, vertical: 12),
                       ),
                       onPressed: () {
                         // Aksi tombol "Masuk" ditekan
                       },
                       child: const Text(
                         'Masuk',
-                        style: TextStyle(
-                            color: Color.fromARGB(255, 9, 195, 77),
-                            fontSize: 16),
+                        style: TextStyle(color: Colors.black, fontSize: 15),
                       ),
                     ),
                     ElevatedButton(
@@ -98,16 +103,19 @@ class PageAwal2 extends StatelessWidget {
                           borderRadius: BorderRadius.circular(20),
                         ),
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 24, vertical: 12),
+                            horizontal: 30, vertical: 12),
                       ),
                       onPressed: () {
                         // Aksi tombol "Daftar" ditekan
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) => const RegistrasiPage()),
+                        );
                       },
                       child: const Text(
                         'Daftar',
-                        style: TextStyle(
-                            color: Color.fromARGB(255, 9, 195, 77),
-                            fontSize: 16),
+                        style: TextStyle(color: Colors.black, fontSize: 15),
                       ),
                     ),
                   ],

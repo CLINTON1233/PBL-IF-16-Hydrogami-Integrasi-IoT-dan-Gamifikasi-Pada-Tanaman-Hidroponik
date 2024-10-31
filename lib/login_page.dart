@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:hydrogami2/pilih_page.dart';
 import 'package:hydrogami2/registrasi_page.dart';
 
 class LoginPage extends StatefulWidget {
@@ -217,7 +218,7 @@ class _LoginPageState extends State<LoginPage>
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                            builder: (context) => const LoginPage()),
+                            builder: (context) => const PilihPage()),
                       );
                     },
                     child: Text(
@@ -230,11 +231,11 @@ class _LoginPageState extends State<LoginPage>
                     ),
                   ),
                   const SizedBox(height: 10),
-                  // Login Text
+                  // Registrasi Text
                   Center(
                     child: GestureDetector(
                       onTap: () {
-                        // Navigasi ke halaman login
+                        // Navigasi ke halaman Registrasi
                         Navigator.push(
                           context,
                           MaterialPageRoute(

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:hydrogami2/login_page.dart';
 import 'package:hydrogami2/registrasi_page.dart';
 
 class Awal2Page extends StatelessWidget {
@@ -90,6 +91,11 @@ class Awal2Page extends StatelessWidget {
                       ),
                       onPressed: () {
                         // Aksi tombol "Masuk" ditekan
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) => const LoginPage()),
+                        );
                       },
                       child: const Text(
                         'Masuk',

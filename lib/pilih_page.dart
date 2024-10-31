@@ -16,14 +16,14 @@ class _PilihPageState extends State<PilihPage> {
       appBar: AppBar(
         backgroundColor: const Color.fromARGB(255, 36, 209, 126),
         elevation: 0,
-        toolbarHeight: 0, // untuk menghilangkan height dari appbar
+        toolbarHeight: 0, 
       ),
       body: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20),
           child: Column(
             children: [
-              const SizedBox(height: 30),
+              const SizedBox(height: 25),
               Text(
                 'Pilih Tanaman',
                 style: GoogleFonts.poppins(
@@ -50,7 +50,7 @@ class _PilihPageState extends State<PilihPage> {
                   crossAxisCount: 2,
                   crossAxisSpacing: 14,
                   mainAxisSpacing: 14,
-                  childAspectRatio: 0.63, // Atur childAspectRatio jika perlu
+                  childAspectRatio: 0.63, 
                 ),
                 children: [
                   _buildTanamanItem('assets/pakcoy.png', 'Pakcoy'),
@@ -70,36 +70,40 @@ class _PilihPageState extends State<PilihPage> {
   // Widget untuk item tanaman
   Widget _buildTanamanItem(String imagePath, String title) {
     return Column(
-      crossAxisAlignment:
-          CrossAxisAlignment.center, // Memastikan konten berada di tengah
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        Container(
-          decoration: BoxDecoration(
-            color: const Color(0xFFE0F2F1),
+        Card(
+          elevation: 4,
+          shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(10),
           ),
+          color: const Color(0xFFCFFFD2),
           child: Padding(
             padding: const EdgeInsets.all(10),
-            child: Image.asset(
-              imagePath,
-              width: 160, // Ubah lebar gambar
-              height: 160, // Ubah tinggi gambar
-              fit: BoxFit.cover, // Mengatur agar gambar tidak terdistorsi
+            child: Column(
+              children: [
+                Image.asset(
+                  imagePath,
+                  width: 140, 
+                  height: 140, 
+                  fit: BoxFit.cover,
+                ),
+              ],
             ),
           ),
         ),
-        const SizedBox(height: 10), // Jarak antara gambar dan tombol
+        const SizedBox(height: 10), 
         // Tombol untuk nama tanaman
         ElevatedButton(
           onPressed: () {},
           style: ElevatedButton.styleFrom(
             backgroundColor: Colors.white,
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(20),
+              borderRadius: BorderRadius.circular(10),
               side: BorderSide(color: const Color(0xFF2ABD77), width: 1),
             ),
             elevation: 2,
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+            padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 10),
           ),
           child: Text(
             title,
@@ -110,7 +114,7 @@ class _PilihPageState extends State<PilihPage> {
             ),
           ),
         ),
-        const SizedBox(height: 20), // Tambahkan jarak di bawah tombol
+        const SizedBox(height: 20), 
       ],
     );
   }

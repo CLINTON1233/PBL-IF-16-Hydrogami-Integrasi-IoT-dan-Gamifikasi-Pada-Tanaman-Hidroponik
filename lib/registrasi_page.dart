@@ -275,7 +275,6 @@ class _RegistrasiPageState extends State<RegistrasiPage> {
                   const SizedBox(height: 10),
 
                   // Login Text
-                  // Login Text
                   Center(
                     child: GestureDetector(
                       onTap: () {

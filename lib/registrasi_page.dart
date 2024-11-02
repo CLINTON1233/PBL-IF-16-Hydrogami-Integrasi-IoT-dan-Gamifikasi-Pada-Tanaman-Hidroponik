@@ -48,9 +48,13 @@ class _RegistrasiPageState extends State<RegistrasiPage> {
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const Icon(Icons.arrow_back_ios,
-                              color: Colors.white, size: 18), // Ukuran ikon
-                          const SizedBox(width: 4),
+                          Image.asset(
+                            'assets/ic_back.png',
+                            width: 16,
+                            height: 14,
+                            color: Colors.white,
+                          ),
+                          const SizedBox(width: 5),
                           Text(
                             'Kembali',
                             style: GoogleFonts.poppins(

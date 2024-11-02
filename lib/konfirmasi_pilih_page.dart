@@ -69,14 +69,18 @@ class _KonfirmasiPilihPageState extends State<KonfirmasiPilihPage> {
                             color: Color(0xFF2ABD77), width: 1),
                       ),
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 20, vertical: 10),
+                          horizontal: 23, vertical: 11),
                       elevation: 2,
                     ),
                     child: Row(
                       children: [
-                        const Icon(Icons.arrow_back_ios,
-                            color: Color(0xFF2ABD77), size: 18),
-                        const SizedBox(width: 4),
+                        Image.asset(
+                          'assets/ic_back.png',
+                          width: 16,
+                          height: 14,
+                          color: const Color(0xFF2ABD77),
+                        ),
+                        const SizedBox(width: 7),
                         Text(
                           'Tidak',
                           style: GoogleFonts.poppins(
@@ -121,8 +125,13 @@ class _KonfirmasiPilihPageState extends State<KonfirmasiPilihPage> {
                           ),
                         ),
                         const SizedBox(width: 10), // Jarak antara teks dan ikon
-                        const Icon(Icons.arrow_forward_ios,
-                            color: Color(0xFF2ABD77), size: 18),
+
+                        Image.asset(
+                          'assets/ic_next.png',
+                          width: 20,
+                          height: 20,
+                          color: const Color(0xFF2ABD77),
+                        ),
                       ],
                     ),
                   ),

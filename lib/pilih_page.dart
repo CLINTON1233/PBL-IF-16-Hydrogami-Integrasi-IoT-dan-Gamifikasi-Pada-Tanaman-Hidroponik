@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:hydrogami2/konfirmasi_pilih_page.dart';
 
 class PilihPage extends StatefulWidget {
   const PilihPage({super.key});
-
   @override
   State<PilihPage> createState() => _PilihPageState();
 }
@@ -16,19 +16,19 @@ class _PilihPageState extends State<PilihPage> {
       appBar: AppBar(
         backgroundColor: const Color.fromARGB(255, 36, 209, 126),
         elevation: 0,
-        toolbarHeight: 0, 
+        toolbarHeight: 0,
       ),
       body: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20),
           child: Column(
             children: [
-              const SizedBox(height: 25),
+              const SizedBox(height: 45),
               Text(
                 'Pilih Tanaman',
                 style: GoogleFonts.poppins(
                   fontSize: 24,
-                  color: const Color(0xFF29CC74),
+                  color: const Color.fromARGB(232, 8, 166, 82),
                   fontWeight: FontWeight.normal,
                 ),
               ),
@@ -36,7 +36,7 @@ class _PilihPageState extends State<PilihPage> {
                 'Hidroponikmu!',
                 style: GoogleFonts.poppins(
                   fontSize: 24,
-                  color: const Color(0xFF29CC74),
+                  color: const Color.fromARGB(232, 8, 166, 82),
                   fontWeight: FontWeight.bold,
                 ),
               ),
@@ -48,9 +48,9 @@ class _PilihPageState extends State<PilihPage> {
                 physics: const NeverScrollableScrollPhysics(),
                 gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: 2,
-                  crossAxisSpacing: 14,
-                  mainAxisSpacing: 14,
-                  childAspectRatio: 0.63, 
+                  crossAxisSpacing: 13,
+                  mainAxisSpacing: 13,
+                  childAspectRatio: 0.65,
                 ),
                 children: [
                   _buildTanamanItem('assets/pakcoy.png', 'Pakcoy'),
@@ -72,35 +72,37 @@ class _PilihPageState extends State<PilihPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        Card(
-          elevation: 4,
-          shape: RoundedRectangleBorder(
+        Container(
+          decoration: BoxDecoration(
+            color: const Color(0xFFCFFFD2),
             borderRadius: BorderRadius.circular(10),
           ),
-          color: const Color(0xFFCFFFD2),
-          child: Padding(
-            padding: const EdgeInsets.all(10),
-            child: Column(
-              children: [
-                Image.asset(
-                  imagePath,
-                  width: 140, 
-                  height: 140, 
-                  fit: BoxFit.cover,
-                ),
-              ],
-            ),
+          padding: const EdgeInsets.all(10),
+          child: Image.asset(
+            imagePath,
+            width: 150,
+            height: 150,
+            fit: BoxFit.cover,
           ),
         ),
-        const SizedBox(height: 10), 
+        const SizedBox(height: 10),
         // Tombol untuk nama tanaman
         ElevatedButton(
-          onPressed: () {},
+          onPressed: () {
+            if (title == 'Pakcoy') {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const KonfirmasiPilihPage(),
+                ),
+              );
+            }
+          },
           style: ElevatedButton.styleFrom(
             backgroundColor: Colors.white,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(10),
-              side: BorderSide(color: const Color(0xFF2ABD77), width: 1),
+              side: const BorderSide(color: Color(0xFF2ABD77), width: 1),
             ),
             elevation: 2,
             padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 10),
@@ -114,7 +116,7 @@ class _PilihPageState extends State<PilihPage> {
             ),
           ),
         ),
-        const SizedBox(height: 20), 
+        const SizedBox(height: 20),
       ],
     );
   }

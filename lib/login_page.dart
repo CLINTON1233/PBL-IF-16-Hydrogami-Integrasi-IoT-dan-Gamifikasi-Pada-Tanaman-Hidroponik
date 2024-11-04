@@ -127,6 +127,10 @@ class _LoginPageState extends State<LoginPage>
                     ),
                   ),
                   TextFormField(
+                    style: GoogleFonts.poppins(
+                      color: const Color(0xFF2ABD77),
+                      fontSize: 12.0,
+                    ),
                     decoration: InputDecoration(
                       hintText: 'Masukkan Nama Anda',
                       hintStyle: GoogleFonts.poppins(
@@ -153,6 +157,10 @@ class _LoginPageState extends State<LoginPage>
                     ),
                   ),
                   TextFormField(
+                    style: GoogleFonts.poppins(
+                      color: const Color(0xFF2ABD77),
+                      fontSize: 12.0,
+                    ),
                     decoration: InputDecoration(
                       hintText: 'Masukkan Email Anda',
                       hintStyle: GoogleFonts.poppins(
@@ -180,6 +188,10 @@ class _LoginPageState extends State<LoginPage>
                   ),
                   TextFormField(
                     obscureText: !_isPasswordVisible,
+                    style: GoogleFonts.poppins(
+                      color: const Color(0xFF2ABD77),
+                      fontSize: 12.0,
+                    ),
                     decoration: InputDecoration(
                       hintText: 'Masukkan Kata Sandi',
                       hintStyle: GoogleFonts.poppins(

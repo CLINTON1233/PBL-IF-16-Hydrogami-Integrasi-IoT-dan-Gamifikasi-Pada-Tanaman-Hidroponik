@@ -24,12 +24,10 @@ class _MonitoringPageState extends State<MonitoringPage> {
         elevation: 0,
         toolbarHeight: 0,
       ),
-      // Menambahkan body dan memanggil fungsi _buildBottomNavigation
-      body: Center(
+      body: const Center(
         child: Text('Halaman Monitoring'),
       ),
-      bottomNavigationBar:
-          _buildBottomNavigation(), // Menggunakan bottom navigation bar
+      bottomNavigationBar: _buildBottomNavigation(),
     );
   }
 

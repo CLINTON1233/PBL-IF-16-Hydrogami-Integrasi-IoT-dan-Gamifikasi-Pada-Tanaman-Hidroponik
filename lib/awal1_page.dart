@@ -24,10 +24,13 @@ class _Awal1PageState extends State<Awal1Page>
 
     // Menambahkan delay sebelum navigasi ke halaman selanjutnya
     Future.delayed(const Duration(seconds: 8), () {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const Awal2Page()),
-      );
+      if (mounted) {
+        // Mengecek apakah widget masih ada di widget tree
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const Awal2Page()),
+        );
+      }
     });
   }
 

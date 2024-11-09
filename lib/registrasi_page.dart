@@ -6,10 +6,11 @@ class RegistrasiPage extends StatefulWidget {
   const RegistrasiPage({super.key});
 
   @override
-  _RegistrasiPageState createState() => _RegistrasiPageState();
+  RegistrasiPageState createState() =>
+      RegistrasiPageState(); // Perhatikan perubahan di sini
 }
 
-class _RegistrasiPageState extends State<RegistrasiPage> {
+class RegistrasiPageState extends State<RegistrasiPage> {
   bool _isPasswordVisible = false;
   bool _isConfirmPasswordVisible = false;
 

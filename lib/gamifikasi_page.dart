@@ -24,7 +24,7 @@ class _GamifikasiPageState extends State<GamifikasiPage> {
         elevation: 0,
         toolbarHeight: 0,
       ),
-      body: Center(
+      body: const Center(
         child: Text('Halaman Gamifikasi'),
       ),
       bottomNavigationBar:

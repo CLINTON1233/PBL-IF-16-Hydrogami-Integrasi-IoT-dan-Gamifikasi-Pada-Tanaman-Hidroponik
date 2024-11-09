@@ -15,7 +15,56 @@ class BerandaPage extends StatefulWidget {
 }
 
 class _BerandaPageState extends State<BerandaPage> {
+  bool _showLogoutText = false;
   int _bottomNavCurrentIndex = 0;
+
+  // Fungsi untuk menampilkan dialog konfirmasi logout
+  void _showLogoutConfirmationDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Icon(Icons.warning, color: Colors.orange, size: 40),
+          content: const Text(
+            "Apakah Kamu Yakin ingin Melakukan Logout?",
+            textAlign: TextAlign.center,
+          ),
+          actions: <Widget>[
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.only(left: 16.0),
+                  child: TextButton(
+                    child: const Text("Tidak, Batalkan!",
+                        style: TextStyle(color: Colors.red)),
+                    onPressed: () {
+                      Navigator.of(context).pop(); // Tutup dialog
+                    },
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.only(right: 40.0),
+                  child: TextButton(
+                    child:
+                        const Text("Ya", style: TextStyle(color: Colors.green)),
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                      Navigator.pushReplacement(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => const LoginPage()),
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ],
+        );
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -34,7 +83,6 @@ class _BerandaPageState extends State<BerandaPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Row untuk logo dan teks "Hi, Anton!"
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -70,15 +118,34 @@ class _BerandaPageState extends State<BerandaPage> {
                           },
                         ),
                         const SizedBox(width: 20),
-                        IconButton(
-                          icon: const Icon(Icons.logout, color: Colors.black),
-                          onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                  builder: (context) => const LoginPage()),
-                            );
+                        MouseRegion(
+                          onEnter: (_) {
+                            setState(() {
+                              _showLogoutText = true;
+                            });
                           },
+                          onExit: (_) {
+                            setState(() {
+                              _showLogoutText = false;
+                            });
+                          },
+                          child: Column(
+                            children: [
+                              IconButton(
+                                icon: const Icon(Icons.logout,
+                                    color: Colors.black),
+                                onPressed: _showLogoutConfirmationDialog,
+                              ),
+                              if (_showLogoutText)
+                                const Text(
+                                  'Logout',
+                                  style: TextStyle(
+                                    color: Colors.black,
+                                    fontSize: 12,
+                                  ),
+                                ),
+                            ],
+                          ),
                         ),
                       ],
                     ),
@@ -152,14 +219,14 @@ class _BerandaPageState extends State<BerandaPage> {
                 mainAxisSpacing: 15,
                 childAspectRatio: 3 / 4,
                 children: <Widget>[
-                  _buildCard('Monitoring\nReal-Time', Icons.show_chart),
                   _buildCard('Gamifikasi', Icons.videogame_asset),
+                  _buildCard('Monitoring\nReal-Time', Icons.show_chart),
                   _buildCard('Panduan', Icons.assignment),
                   _buildCard('Kelola Profile', Icons.person),
                 ],
               ),
             ),
-          )
+          ),
         ],
       ),
       bottomNavigationBar: _buildBottomNavigation(),
@@ -177,30 +244,29 @@ class _BerandaPageState extends State<BerandaPage> {
       child: InkWell(
         borderRadius: BorderRadius.circular(10),
         onTap: () {
-          // Logika untuk mengarahkan ke halaman yang sesuai
           switch (title) {
-            case 'Monitoring\nReal-Time':
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => MonitoringPage()),
-              );
-              break;
             case 'Gamifikasi':
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => GamifikasiPage()),
+                MaterialPageRoute(builder: (context) => const GamifikasiPage()),
+              );
+              break;
+            case 'Monitoring\nReal-Time':
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const MonitoringPage()),
               );
               break;
             case 'Panduan':
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => PanduanPage()),
+                MaterialPageRoute(builder: (context) => const PanduanPage()),
               );
               break;
             case 'Kelola Profile':
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => ProfilPage()),
+                MaterialPageRoute(builder: (context) => const ProfilPage()),
               );
               break;
           }
@@ -243,25 +309,25 @@ class _BerandaPageState extends State<BerandaPage> {
           });
 
           switch (index) {
-            case 0: // Beranda
+            case 0:
               Navigator.pushReplacement(
                 context,
                 MaterialPageRoute(builder: (context) => const BerandaPage()),
               );
               break;
-            case 1: // Notifikasi
+            case 1:
               Navigator.pushReplacement(
                 context,
                 MaterialPageRoute(builder: (context) => const NotifikasiPage()),
               );
               break;
-            case 2: // Panduan
+            case 2:
               Navigator.pushReplacement(
                 context,
                 MaterialPageRoute(builder: (context) => const PanduanPage()),
               );
               break;
-            case 3: // Profil
+            case 3:
               Navigator.pushReplacement(
                 context,
                 MaterialPageRoute(builder: (context) => const ProfilPage()),

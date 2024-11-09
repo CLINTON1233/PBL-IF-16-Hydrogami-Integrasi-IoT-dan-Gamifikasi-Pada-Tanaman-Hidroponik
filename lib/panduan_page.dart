@@ -12,7 +12,7 @@ class PanduanPage extends StatefulWidget {
 
 class _PanduanPageState extends State<PanduanPage> {
   // Menambahkan variabel untuk menyimpan indeks BottomNavigation
-  int _bottomNavCurrentIndex = 0;
+  int _bottomNavCurrentIndex = 2;
 
   @override
   Widget build(BuildContext context) {
@@ -23,7 +23,7 @@ class _PanduanPageState extends State<PanduanPage> {
         elevation: 0,
         toolbarHeight: 0,
       ),
-      body: Center(
+      body: const Center(
         child: Text('Halaman Panduan'), // Ganti dengan konten halaman Panduan
       ),
       bottomNavigationBar:

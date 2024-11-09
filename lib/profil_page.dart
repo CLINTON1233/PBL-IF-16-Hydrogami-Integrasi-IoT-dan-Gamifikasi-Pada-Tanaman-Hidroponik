@@ -11,8 +11,7 @@ class ProfilPage extends StatefulWidget {
 }
 
 class _ProfilPageState extends State<ProfilPage> {
-  // Menambahkan variabel untuk menyimpan indeks BottomNavigation
-  int _bottomNavCurrentIndex = 0;
+  int _bottomNavCurrentIndex = 3;
 
   @override
   Widget build(BuildContext context) {
@@ -23,11 +22,10 @@ class _ProfilPageState extends State<ProfilPage> {
         elevation: 0,
         toolbarHeight: 0,
       ),
-      body: Center(
-        child: Text('Halaman Profil'), // Ganti dengan konten halaman Profil
+      body: const Center(
+        child: Text('Halaman Profil'),
       ),
-      bottomNavigationBar:
-          _buildBottomNavigation(), // Menggunakan bottom navigation bar
+      bottomNavigationBar: _buildBottomNavigation(),
     );
   }
 

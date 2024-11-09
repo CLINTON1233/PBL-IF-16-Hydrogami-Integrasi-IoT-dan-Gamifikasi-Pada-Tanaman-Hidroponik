@@ -9,6 +9,7 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  fl_chart: ^0.68.0 # Tambahkan library fl_chart
   gap: ^3.0.1
   google_fonts: ^6.2.0
   intl: ^0.19.0

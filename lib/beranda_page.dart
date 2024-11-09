@@ -1,3 +1,7 @@
+import 'package:application_hydrogami/gamifikasi_page.dart';
+import 'package:application_hydrogami/monitoring_page.dart';
+import 'package:application_hydrogami/panduan_page.dart';
+import 'package:application_hydrogami/profil_page.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:application_hydrogami/login_page.dart';
@@ -116,14 +120,12 @@ class _BerandaPageState extends State<BerandaPage> {
                         ),
                       ],
                     ),
-                    // Kolom untuk cuaca, di posisi kanan sejajar dengan icon logout
                     Row(
                       children: [
                         const Icon(
                           Icons.wb_sunny,
                           size: 18,
-                          color: Colors
-                              .orange, // Opsional: Ubah warna untuk merepresentasikan cuaca
+                          color: Colors.orange,
                         ),
                         const SizedBox(width: 8),
                         Text(
@@ -148,13 +150,12 @@ class _BerandaPageState extends State<BerandaPage> {
                 crossAxisCount: 2,
                 crossAxisSpacing: 15,
                 mainAxisSpacing: 15,
-                // Mengatur rasio aspek untuk memperpanjang tinggi kartu
                 childAspectRatio: 3 / 4,
                 children: <Widget>[
-                  _buildCard('Monitoring\nReal-Time'),
-                  _buildCard('Gamifikasi'),
-                  _buildCard('Panduan'),
-                  _buildCard('Kelola Profile'),
+                  _buildCard('Monitoring\nReal-Time', Icons.show_chart),
+                  _buildCard('Gamifikasi', Icons.videogame_asset),
+                  _buildCard('Panduan', Icons.assignment),
+                  _buildCard('Kelola Profile', Icons.person),
                 ],
               ),
             ),
@@ -165,35 +166,68 @@ class _BerandaPageState extends State<BerandaPage> {
     );
   }
 
-  // Fungsi untuk membuat Card dengan parameter teks
-  Widget _buildCard(String title) {
+  // Fungsi untuk membuat Card dengan parameter teks dan ikon
+  Widget _buildCard(String title, IconData icon) {
     return Card(
       color: const Color(0xFF29CC74),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(10),
       ),
-      elevation: 4, // Opsional: Menambahkan bayangan
+      elevation: 4,
       child: InkWell(
         borderRadius: BorderRadius.circular(10),
         onTap: () {
-          // Tambahkan fungsionalitas onTap di sini
+          // Logika untuk mengarahkan ke halaman yang sesuai
+          switch (title) {
+            case 'Monitoring\nReal-Time':
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => MonitoringPage()),
+              );
+              break;
+            case 'Gamifikasi':
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => GamifikasiPage()),
+              );
+              break;
+            case 'Panduan':
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => PanduanPage()),
+              );
+              break;
+            case 'Kelola Profile':
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => ProfilPage()),
+              );
+              break;
+          }
         },
         child: Center(
-          child: Text(
-            title,
-            textAlign: TextAlign.center,
-            style: const TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.bold,
-              fontSize: 16, // Opsional: Menambahkan ukuran font
-            ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, size: 40, color: Colors.white),
+              const SizedBox(height: 10),
+              Text(
+                title,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                ),
+              ),
+            ],
           ),
         ),
       ),
     );
   }
 
-  // Fungsi untuk membuat Bottom Navigation Bar dengan sudut melengkung
+  // Fungsi untuk membuat Bottom Navigation Bar
   Widget _buildBottomNavigation() {
     return ClipRRect(
       borderRadius: const BorderRadius.only(
@@ -207,6 +241,33 @@ class _BerandaPageState extends State<BerandaPage> {
           setState(() {
             _bottomNavCurrentIndex = index;
           });
+
+          switch (index) {
+            case 0: // Beranda
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (context) => const BerandaPage()),
+              );
+              break;
+            case 1: // Notifikasi
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (context) => const NotifikasiPage()),
+              );
+              break;
+            case 2: // Panduan
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (context) => const PanduanPage()),
+              );
+              break;
+            case 3: // Profil
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (context) => const ProfilPage()),
+              );
+              break;
+          }
         },
         currentIndex: _bottomNavCurrentIndex,
         items: const [

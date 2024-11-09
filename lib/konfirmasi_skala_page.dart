@@ -30,9 +30,9 @@ class _KonfirmasiSkalaPageState extends State<KonfirmasiSkalaPage> {
               Text(
                 'Kamu Yakin Memilih',
                 style: GoogleFonts.poppins(
-                  fontSize: 24,
-                  color: const Color(0xFF29CC74),
-                  fontWeight: FontWeight.normal,
+                  fontSize: 20,
+                  color: const Color.fromARGB(255, 45, 205, 128),
+                  fontWeight: FontWeight.bold,
                 ),
                 textAlign: TextAlign.center,
               ),
@@ -40,7 +40,7 @@ class _KonfirmasiSkalaPageState extends State<KonfirmasiSkalaPage> {
                 'Skala Easy?',
                 style: GoogleFonts.poppins(
                   fontSize: 24,
-                  color: const Color(0xFF29CC74),
+                  color: const Color.fromARGB(232, 8, 166, 82),
                   fontWeight: FontWeight.bold,
                 ),
                 textAlign: TextAlign.center,

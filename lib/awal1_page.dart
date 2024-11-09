@@ -48,18 +48,10 @@ class _Awal1PageState extends State<Awal1Page>
             const Spacer(),
             Image.asset(
               'assets/hydrogami_logo.png',
-              width: 320,
-              height: 170,
+              width: 400,
+              height: 200,
             ),
-            Text(
-              'Solusi cerdas hidroponik di era modern.',
-              textAlign: TextAlign.center,
-              style: GoogleFonts.kurale(
-                fontSize: 15,
-                fontWeight: FontWeight.normal,
-                color: const Color(0xFF29CC74),
-              ),
-            ),
+
             // Animasi loading titik-titik tepat di bawah teks
             AnimatedBuilder(
               animation: _controller,
@@ -88,7 +80,7 @@ class _Awal1PageState extends State<Awal1Page>
             Padding(
               padding: const EdgeInsets.only(bottom: 20.0),
               child: Text(
-                'Selamat Datang di HydroGami',
+                '',
                 style: GoogleFonts.kurale(
                   fontSize: 15,
                   fontWeight: FontWeight.normal,

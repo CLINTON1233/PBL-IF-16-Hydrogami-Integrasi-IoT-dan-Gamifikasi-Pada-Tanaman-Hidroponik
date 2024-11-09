@@ -18,9 +18,7 @@ class Awal2Page extends StatelessWidget {
             color: const Color.fromARGB(255, 36, 209, 126),
           ),
           const SizedBox(height: 50),
-          // Tombol kembali di atas tulisan registrasi
 
-          // Logo dan Judul
           Column(
             children: [
               Image.asset(
@@ -30,11 +28,11 @@ class Awal2Page extends StatelessWidget {
               ),
               const SizedBox(height: 2),
               Text(
-                'Solusi cerdas hidroponik di era modren.',
+                'Solusi Cerdas Hidroponik Di Era Modren.',
                 textAlign: TextAlign.center,
                 style: GoogleFonts.kurale(
                   color: const Color.fromARGB(255, 9, 195, 77),
-                  fontSize: 15,
+                  fontSize: 16,
                   fontWeight: FontWeight.normal,
                 ),
               ),

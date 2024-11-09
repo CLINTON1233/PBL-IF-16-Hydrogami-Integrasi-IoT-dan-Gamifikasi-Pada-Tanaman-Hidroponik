@@ -29,7 +29,7 @@ class _PilihSkalaPageState extends State<PilihSkalaPage> {
                 'Pilih Skala Hidroponikmu!',
                 style: GoogleFonts.poppins(
                   fontSize: 24,
-                  color: const Color(0xFF29CC74),
+                  color: const Color.fromARGB(232, 8, 166, 82),
                   fontWeight: FontWeight.bold,
                 ),
               ),

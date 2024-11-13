@@ -24,8 +24,84 @@ class _GamifikasiPageState extends State<GamifikasiPage> {
         elevation: 0,
         toolbarHeight: 0,
       ),
-      body: const Center(
-        child: Text('Halaman Gamifikasi'),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          children: [
+            // Bagian Level, Reward, Jumlah Koin
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Container(
+                  padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: Colors.green,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text("Level 5", style: TextStyle(color: Colors.white)),
+                ),
+                Container(
+                  padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: Colors.orange,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text("Reward", style: TextStyle(color: Colors.white)),
+                ),
+                Container(
+                  padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  child: Text("Jumlah Koin : 500"),
+                ),
+              ],
+            ),
+            SizedBox(height: 20),
+            // Gambar tanaman (placeholder)
+            Container(
+              height: 200,
+              color: Colors.grey[200],
+              child: Center(child: Text("Gambar Tanaman")),
+            ),
+            SizedBox(height: 20),
+            // Control Automatic
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text("Control Automatic"),
+                Switch(value: true, onChanged: (val) {}),
+              ],
+            ),
+            SizedBox(height: 20),
+            // Kontrol AB Mix, Water, pH UP, pH DOWN
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                ElevatedButton(
+                  onPressed: () {},
+                  style:
+                      ElevatedButton.styleFrom(backgroundColor: Colors.green),
+                  child: Text("AB Mix"),
+                ),
+                ElevatedButton(
+                  onPressed: () {},
+                  style: ElevatedButton.styleFrom(backgroundColor: Colors.blue),
+                  child: Text("Water"),
+                ),
+                ElevatedButton(
+                  onPressed: () {},
+                  style:
+                      ElevatedButton.styleFrom(backgroundColor: Colors.orange),
+                  child: Text("pH UP"),
+                ),
+                ElevatedButton(
+                  onPressed: () {},
+                  style:
+                      ElevatedButton.styleFrom(backgroundColor: Colors.yellow),
+                  child: Text("pH DOWN"),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
       bottomNavigationBar:
           _buildBottomNavigation(), // Menggunakan bottom navigation bar

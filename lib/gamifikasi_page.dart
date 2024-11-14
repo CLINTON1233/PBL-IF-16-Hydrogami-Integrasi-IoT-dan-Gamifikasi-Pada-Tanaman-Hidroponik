@@ -12,7 +12,6 @@ class GamifikasiPage extends StatefulWidget {
 }
 
 class _GamifikasiPageState extends State<GamifikasiPage> {
-  // Menambahkan variabel untuk menyimpan indeks BottomNavigation
   int _bottomNavCurrentIndex = 0;
 
   @override
@@ -55,11 +54,17 @@ class _GamifikasiPageState extends State<GamifikasiPage> {
               ],
             ),
             SizedBox(height: 20),
-            // Gambar tanaman (placeholder)
+            // Gambar tanaman
             Container(
               height: 200,
-              color: Colors.grey[200],
-              child: Center(child: Text("Gambar Tanaman")),
+              decoration: BoxDecoration(
+                color: Colors.grey[200],
+                image: DecorationImage(
+                  image: AssetImage(
+                      'assets/hydrogami_logo2.png'), // tambahkan gambar tanaman di sini
+                  fit: BoxFit.cover,
+                ),
+              ),
             ),
             SizedBox(height: 20),
             // Control Automatic
@@ -103,8 +108,7 @@ class _GamifikasiPageState extends State<GamifikasiPage> {
           ],
         ),
       ),
-      bottomNavigationBar:
-          _buildBottomNavigation(), // Menggunakan bottom navigation bar
+      bottomNavigationBar: _buildBottomNavigation(),
     );
   }
 
@@ -125,25 +129,25 @@ class _GamifikasiPageState extends State<GamifikasiPage> {
 
           // Menangani navigasi berdasarkan indeks
           switch (index) {
-            case 0: // Beranda
+            case 0:
               Navigator.pushReplacement(
                 context,
                 MaterialPageRoute(builder: (context) => const BerandaPage()),
               );
               break;
-            case 1: // Notifikasi
+            case 1:
               Navigator.pushReplacement(
                 context,
                 MaterialPageRoute(builder: (context) => const NotifikasiPage()),
               );
               break;
-            case 2: // Panduan
+            case 2:
               Navigator.pushReplacement(
                 context,
                 MaterialPageRoute(builder: (context) => const PanduanPage()),
               );
               break;
-            case 3: // Profil
+            case 3:
               Navigator.pushReplacement(
                 context,
                 MaterialPageRoute(builder: (context) => const ProfilPage()),
@@ -154,47 +158,23 @@ class _GamifikasiPageState extends State<GamifikasiPage> {
         currentIndex: _bottomNavCurrentIndex,
         items: const [
           BottomNavigationBarItem(
-            activeIcon: Icon(
-              Icons.home,
-              color: Colors.black,
-            ),
-            icon: Icon(
-              Icons.home,
-              color: Colors.white,
-            ),
+            activeIcon: Icon(Icons.home, color: Colors.black),
+            icon: Icon(Icons.home, color: Colors.white),
             label: 'Beranda',
           ),
           BottomNavigationBarItem(
-            activeIcon: Icon(
-              Icons.notification_add,
-              color: Colors.black,
-            ),
-            icon: Icon(
-              Icons.notification_add,
-              color: Colors.white,
-            ),
+            activeIcon: Icon(Icons.notification_add, color: Colors.black),
+            icon: Icon(Icons.notification_add, color: Colors.white),
             label: 'Notifikasi',
           ),
           BottomNavigationBarItem(
-            activeIcon: Icon(
-              Icons.assignment,
-              color: Colors.black,
-            ),
-            icon: Icon(
-              Icons.assignment,
-              color: Colors.white,
-            ),
+            activeIcon: Icon(Icons.assignment, color: Colors.black),
+            icon: Icon(Icons.assignment, color: Colors.white),
             label: 'Panduan',
           ),
           BottomNavigationBarItem(
-            activeIcon: Icon(
-              Icons.person,
-              color: Colors.black,
-            ),
-            icon: Icon(
-              Icons.person,
-              color: Colors.white,
-            ),
+            activeIcon: Icon(Icons.person, color: Colors.black),
+            icon: Icon(Icons.person, color: Colors.white),
             label: 'Akun',
           ),
         ],

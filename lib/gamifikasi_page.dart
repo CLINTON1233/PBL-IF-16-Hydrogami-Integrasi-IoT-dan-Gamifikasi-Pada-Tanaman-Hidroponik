@@ -88,7 +88,13 @@ class _GamifikasiPageState extends State<GamifikasiPage> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 const Text("Control Automatic"),
-                Switch(value: true, onChanged: (val) {}),
+                Switch(
+                    value: true,
+                    onChanged: (val) {
+                      setState(() {
+                        // Update switch state here if needed
+                      });
+                    }),
               ],
             ),
             const SizedBox(height: 20),

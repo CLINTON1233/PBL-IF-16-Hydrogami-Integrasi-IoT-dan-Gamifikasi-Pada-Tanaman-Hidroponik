@@ -77,7 +77,7 @@ class _GamifikasiPageState extends State<GamifikasiPage> {
               decoration: BoxDecoration(
                 color: Colors.grey[200],
                 image: const DecorationImage(
-                  image: AssetImage('assets/hydrogami_logo2.png'),
+                  image: AssetImage('assets/tanaman1.png'),
                   fit: BoxFit.cover,
                 ),
               ),
@@ -88,13 +88,7 @@ class _GamifikasiPageState extends State<GamifikasiPage> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 const Text("Control Automatic"),
-                Switch(
-                    value: true,
-                    onChanged: (val) {
-                      setState(() {
-                        // Update switch state here if needed
-                      });
-                    }),
+                Switch(value: true, onChanged: (val) {}),
               ],
             ),
             const SizedBox(height: 20),

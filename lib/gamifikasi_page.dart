@@ -21,7 +21,19 @@ class _GamifikasiPageState extends State<GamifikasiPage> {
       appBar: AppBar(
         backgroundColor: const Color(0xFF24D17E),
         elevation: 0,
-        toolbarHeight: 0,
+        title: Row(
+          children: [
+            CircleAvatar(
+              backgroundImage: AssetImage('assets/hydrogami_logo2.png'),
+              radius: 20,
+            ),
+            SizedBox(width: 10),
+            Text(
+              'Gamifikasi',
+              style: TextStyle(color: Colors.black),
+            ),
+          ],
+        ),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -60,8 +72,7 @@ class _GamifikasiPageState extends State<GamifikasiPage> {
               decoration: BoxDecoration(
                 color: Colors.grey[200],
                 image: DecorationImage(
-                  image: AssetImage(
-                      'assets/hydrogami_logo2.png'), // tambahkan gambar tanaman di sini
+                  image: AssetImage('assets/hydrogami_logo2.png'),
                   fit: BoxFit.cover,
                 ),
               ),

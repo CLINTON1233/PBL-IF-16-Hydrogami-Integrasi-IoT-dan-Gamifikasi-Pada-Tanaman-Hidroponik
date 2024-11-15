@@ -21,7 +21,19 @@ class _GamifikasiPageState extends State<GamifikasiPage> {
       appBar: AppBar(
         backgroundColor: const Color(0xFF24D17E),
         elevation: 0,
-        toolbarHeight: 0,
+        title: const Row(
+          children: [
+            CircleAvatar(
+              backgroundImage: AssetImage('assets/hydrogami_logo2.png'),
+              radius: 20,
+            ),
+            SizedBox(width: 10),
+            Text(
+              'Gamifikasi',
+              style: TextStyle(color: Colors.black),
+            ),
+          ],
+        ),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -32,50 +44,54 @@ class _GamifikasiPageState extends State<GamifikasiPage> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Container(
-                  padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                   decoration: BoxDecoration(
                     color: Colors.green,
                     borderRadius: BorderRadius.circular(20),
                   ),
-                  child: Text("Level 5", style: TextStyle(color: Colors.white)),
+                  child: const Text("Level 5",
+                      style: TextStyle(color: Colors.white)),
                 ),
                 Container(
-                  padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                   decoration: BoxDecoration(
                     color: Colors.orange,
                     borderRadius: BorderRadius.circular(20),
                   ),
-                  child: Text("Reward", style: TextStyle(color: Colors.white)),
+                  child: const Text("Reward",
+                      style: TextStyle(color: Colors.white)),
                 ),
                 Container(
-                  padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  child: Text("Jumlah Koin : 500"),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  child: const Text("Jumlah Koin : 500"),
                 ),
               ],
             ),
-            SizedBox(height: 20),
+            const SizedBox(height: 20),
             // Gambar tanaman
             Container(
               height: 200,
               decoration: BoxDecoration(
                 color: Colors.grey[200],
-                image: DecorationImage(
-                  image: AssetImage(
-                      'assets/hydrogami_logo2.png'), // tambahkan gambar tanaman di sini
+                image: const DecorationImage(
+                  image: AssetImage('assets/hydrogami_logo2.png'),
                   fit: BoxFit.cover,
                 ),
               ),
             ),
-            SizedBox(height: 20),
+            const SizedBox(height: 20),
             // Control Automatic
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text("Control Automatic"),
+                const Text("Control Automatic"),
                 Switch(value: true, onChanged: (val) {}),
               ],
             ),
-            SizedBox(height: 20),
+            const SizedBox(height: 20),
             // Kontrol AB Mix, Water, pH UP, pH DOWN
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -84,24 +100,24 @@ class _GamifikasiPageState extends State<GamifikasiPage> {
                   onPressed: () {},
                   style:
                       ElevatedButton.styleFrom(backgroundColor: Colors.green),
-                  child: Text("AB Mix"),
+                  child: const Text("AB Mix"),
                 ),
                 ElevatedButton(
                   onPressed: () {},
                   style: ElevatedButton.styleFrom(backgroundColor: Colors.blue),
-                  child: Text("Water"),
+                  child: const Text("Water"),
                 ),
                 ElevatedButton(
                   onPressed: () {},
                   style:
                       ElevatedButton.styleFrom(backgroundColor: Colors.orange),
-                  child: Text("pH UP"),
+                  child: const Text("pH UP"),
                 ),
                 ElevatedButton(
                   onPressed: () {},
                   style:
                       ElevatedButton.styleFrom(backgroundColor: Colors.yellow),
-                  child: Text("pH DOWN"),
+                  child: const Text("pH DOWN"),
                 ),
               ],
             ),

@@ -1,49 +1,19 @@
 import 'package:application_hydrogami/beranda_page.dart';
+import 'package:application_hydrogami/notifikasi_page.dart';
 import 'package:application_hydrogami/panduan_page.dart';
 import 'package:application_hydrogami/profil_page.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:intl/intl.dart'; // Paket untuk format tanggal dan waktu
 
-class NotifikasiPage extends StatefulWidget {
-  const NotifikasiPage({super.key});
+class DetailPanduanPage extends StatefulWidget {
+  const DetailPanduanPage({super.key});
 
   @override
-  State<NotifikasiPage> createState() => _NotifikasiPageState();
+  State<DetailPanduanPage> createState() => _DetailPanduanPageState();
 }
 
-class _NotifikasiPageState extends State<NotifikasiPage> {
-  // Menambahkan variabel untuk menyimpan indeks BottomNavigation
-  int _bottomNavCurrentIndex = 1;
-
-  // Contoh data notifikasi dengan waktu yang berbeda
-  final List<Map<String, dynamic>> notifications = [
-    {
-      'message':
-          'Kelembaban tanah di bawah batas ideal. Segera tambahkan air untuk menjaga kelembaban tanaman tetap optimal.',
-      'time': DateTime(2021, 4, 4, 16, 0),
-    },
-    {
-      'message':
-          'pH air terlalu asam (pH 5.2). Periksa sistem dan tambahkan buffer untuk menyeimbangkan pH.',
-      'time': DateTime(2021, 4, 4, 16, 0),
-    },
-    {
-      'message':
-          'Suhu lingkungan melebihi 30°C. Pastikan sirkulasi udara baik untuk mencegah stres pada tanaman.',
-      'time': DateTime(2021, 4, 4, 16, 0),
-    },
-    {
-      'message':
-          'Kadar air terlalu tinggi. Kurangi irigasi untuk mencegah akar tanaman tergenang air.',
-      'time': DateTime(2021, 4, 4, 16, 0),
-    },
-    {
-      'message':
-          'Kadar air terlalu tinggi. Kurangi irigasi untuk mencegah akar tanaman tergenang air.',
-      'time': DateTime(2021, 4, 4, 16, 0),
-    },
-  ];
+class _DetailPanduanPageState extends State<DetailPanduanPage> {
+  int _bottomNavCurrentIndex = 3;
 
   @override
   Widget build(BuildContext context) {
@@ -54,7 +24,7 @@ class _NotifikasiPageState extends State<NotifikasiPage> {
         elevation: 2,
         centerTitle: false,
         title: Text(
-          'Notifikasi',
+          'Panduan',
           style: GoogleFonts.poppins(
             fontSize: 20,
             fontWeight: FontWeight.w600,
@@ -79,74 +49,11 @@ class _NotifikasiPageState extends State<NotifikasiPage> {
           ),
         ],
       ),
-      body: ListView.builder(
-        itemCount: notifications.length,
-        itemBuilder: (context, index) {
-          final notification = notifications[index];
-          final time = notification['time'];
-          final message = notification['message'];
-          final timeAgo = _timeAgo(time); // Menghitung waktu lalu
-
-          return Padding(
-            padding:
-                const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
-            child: Container(
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.grey.withOpacity(0.2),
-                    spreadRadius: 2,
-                    blurRadius: 5,
-                    offset: const Offset(0, 3), // Bayangan bawah
-                  ),
-                ],
-              ),
-              child: ListTile(
-                contentPadding:
-                    const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
-                leading: const Icon(
-                  Icons.notifications,
-                  color: Color(0xFF24D17E),
-                ),
-                title: Text(
-                  message,
-                  style: GoogleFonts.poppins(
-                      fontSize: 14, fontWeight: FontWeight.w400),
-                ),
-                subtitle: Text(
-                  'Dikirim pada: ${DateFormat('dd MMM yyyy, HH:mm').format(time)} ($timeAgo)',
-                  style: GoogleFonts.poppins(
-                      fontSize: 12, fontWeight: FontWeight.w300),
-                ),
-              ),
-            ),
-          );
-        },
+      body: const Center(
+        child: Text('Halaman Detail Panduan'),
       ),
-      bottomNavigationBar:
-          _buildBottomNavigation(), // Menggunakan bottom navigation bar
+      bottomNavigationBar: _buildBottomNavigation(),
     );
-  }
-
-  String _timeAgo(DateTime time) {
-    final duration = DateTime.now().difference(time);
-    if (duration.inDays >= 365) {
-      return '${(duration.inDays / 365).floor()} tahun yang lalu';
-    } else if (duration.inDays >= 30) {
-      return '${(duration.inDays / 30).floor()} bulan yang lalu';
-    } else if (duration.inDays >= 7) {
-      return '${(duration.inDays / 7).floor()} minggu yang lalu';
-    } else if (duration.inDays >= 1) {
-      return '${duration.inDays} hari yang lalu';
-    } else if (duration.inHours >= 1) {
-      return '${duration.inHours} jam yang lalu';
-    } else if (duration.inMinutes >= 1) {
-      return '${duration.inMinutes} menit yang lalu';
-    } else {
-      return 'Baru saja';
-    }
   }
 
   // Fungsi untuk membuat BottomNavigationBar

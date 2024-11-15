@@ -3,6 +3,7 @@ import 'package:application_hydrogami/notifikasi_page.dart';
 import 'package:application_hydrogami/panduan_page.dart';
 import 'package:application_hydrogami/profil_page.dart';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:fl_chart/fl_chart.dart'; // Import library chart
 
 class MonitoringPage extends StatefulWidget {
@@ -49,16 +50,18 @@ class _MonitoringPageState extends State<MonitoringPage> {
       appBar: AppBar(
         backgroundColor: const Color(0xFF24D17E),
         elevation: 2,
-        centerTitle: true,
-        title: const Text(
+        centerTitle: false,
+        title: Text(
           'Monitoring Real-Time',
-          style: TextStyle(
+          style: GoogleFonts.poppins(
+            fontSize: 20,
+            fontWeight: FontWeight.w600,
             color: Colors.black,
-            fontWeight: FontWeight.bold,
           ),
         ),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios),
+          icon: const Icon(Icons.arrow_back_sharp),
+          iconSize: 20.0,
           onPressed: () {
             Navigator.pop(context);
           },

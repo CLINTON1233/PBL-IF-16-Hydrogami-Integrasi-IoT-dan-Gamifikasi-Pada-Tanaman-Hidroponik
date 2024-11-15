@@ -71,15 +71,55 @@ class _BerandaPageState extends State<BerandaPage> {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
+        automaticallyImplyLeading: false,
         backgroundColor: const Color(0xFF24D17E),
-        elevation: 0,
-        toolbarHeight: 0,
+        title: Row(
+          children: [
+            const SizedBox(width: 10),
+            Text(
+              'HYDROGAMI',
+              style: GoogleFonts.kurale(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: Colors.black,
+              ),
+            ),
+            const Spacer(),
+            MouseRegion(
+              onEnter: (_) {
+                setState(() {
+                  _showLogoutText = true;
+                });
+              },
+              onExit: (_) {
+                setState(() {
+                  _showLogoutText = false;
+                });
+              },
+              child: Column(
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.logout, color: Colors.black),
+                    onPressed: _showLogoutConfirmationDialog,
+                  ),
+                  if (_showLogoutText)
+                    const Text(
+                      'Logout',
+                      style: TextStyle(
+                        color: Colors.black,
+                        fontSize: 12,
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
       body: Column(
         children: [
-          const SizedBox(height: 1),
           Padding(
-            padding: const EdgeInsets.all(16.0),
+            padding: const EdgeInsets.all(5.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -117,35 +157,20 @@ class _BerandaPageState extends State<BerandaPage> {
                             );
                           },
                         ),
-                        const SizedBox(width: 20),
-                        MouseRegion(
-                          onEnter: (_) {
-                            setState(() {
-                              _showLogoutText = true;
-                            });
-                          },
-                          onExit: (_) {
-                            setState(() {
-                              _showLogoutText = false;
-                            });
-                          },
-                          child: Column(
-                            children: [
-                              IconButton(
-                                icon: const Icon(Icons.logout,
-                                    color: Colors.black),
-                                onPressed: _showLogoutConfirmationDialog,
-                              ),
-                              if (_showLogoutText)
-                                const Text(
-                                  'Logout',
-                                  style: TextStyle(
-                                    color: Colors.black,
-                                    fontSize: 12,
-                                  ),
-                                ),
-                            ],
-                          ),
+                        Column(
+                          children: [
+                            IconButton(
+                              icon: const Icon(Icons.account_circle,
+                                  color: Colors.black),
+                              onPressed: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                      builder: (context) => const ProfilPage()),
+                                );
+                              },
+                            ),
+                          ],
                         ),
                       ],
                     ),
@@ -191,10 +216,10 @@ class _BerandaPageState extends State<BerandaPage> {
                       children: [
                         const Icon(
                           Icons.wb_sunny,
-                          size: 18,
+                          size: 25,
                           color: Colors.orange,
                         ),
-                        const SizedBox(width: 8),
+                        const SizedBox(width: 10),
                         Text(
                           '35°C',
                           style: GoogleFonts.roboto(

@@ -167,7 +167,7 @@ class _MonitoringPageState extends State<MonitoringPage> {
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   const Text(
-                    'pH Tanaman Pakcoy Selama 10 Hari',
+                    'PH Tanaman Pakcoy Selama 10 Hari',
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
                     ),

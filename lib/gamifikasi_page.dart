@@ -1,7 +1,3 @@
-import 'package:application_hydrogami/beranda_page.dart';
-import 'package:application_hydrogami/notifikasi_page.dart';
-import 'package:application_hydrogami/panduan_page.dart';
-import 'package:application_hydrogami/profil_page.dart';
 import 'package:flutter/material.dart';
 
 class GamifikasiPage extends StatefulWidget {
@@ -14,6 +10,12 @@ class GamifikasiPage extends StatefulWidget {
 class _GamifikasiPageState extends State<GamifikasiPage> {
   int _bottomNavCurrentIndex = 0;
 
+  // Status toggle untuk kontrol
+  bool _isABMixOn = false;
+  bool _isWaterOn = false;
+  bool _isPHUpOn = false;
+  bool _isPHDownOn = false;
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -21,110 +23,152 @@ class _GamifikasiPageState extends State<GamifikasiPage> {
       appBar: AppBar(
         backgroundColor: const Color(0xFF24D17E),
         elevation: 0,
-        title: const Row(
-          children: [
-            CircleAvatar(
-              backgroundImage: AssetImage('assets/hydrogami_logo2.png'),
-              radius: 20,
-            ),
-            SizedBox(width: 10),
-            Text(
-              'Gamifikasi',
-              style: TextStyle(color: Colors.black),
-            ),
-          ],
+        centerTitle: true,
+        title: const Text(
+          'Gamifikasi',
+          style: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.w600,
+            color: Colors.black,
+          ),
         ),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            // Bagian Level, Reward, Jumlah Koin
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: Colors.green,
-                    borderRadius: BorderRadius.circular(20),
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Bagian Level, Reward, Jumlah Koin
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  _buildBadge("Level 5", Colors.green),
+                  _buildBadge("Reward", Colors.orange),
+                  _buildBadge("Jumlah Koin: 500", Colors.amber),
+                ],
+              ),
+              const SizedBox(height: 20),
+
+              // Gambar tanaman
+              Container(
+                height: 300,
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  color: Colors.grey[200],
+                  image: const DecorationImage(
+                    image: AssetImage('assets/tanaman1.jpg'),
+                    fit: BoxFit.cover,
                   ),
-                  child: const Text("Level 5",
-                      style: TextStyle(color: Colors.white)),
-                ),
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: Colors.orange,
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: const Text("Reward",
-                      style: TextStyle(color: Colors.white)),
-                ),
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  child: const Text("Jumlah Koin : 500"),
-                ),
-              ],
-            ),
-            const SizedBox(height: 20),
-            // Gambar tanaman
-            Container(
-              height: 200,
-              decoration: BoxDecoration(
-                color: Colors.grey[200],
-                image: const DecorationImage(
-                  image: AssetImage('assets/tanaman1.png'),
-                  fit: BoxFit.cover,
+                  borderRadius: BorderRadius.circular(10),
                 ),
               ),
-            ),
-            const SizedBox(height: 20),
-            // Control Automatic
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text("Control Automatic"),
-                Switch(value: true, onChanged: (val) {}),
-              ],
-            ),
-            const SizedBox(height: 20),
-            // Kontrol AB Mix, Water, pH UP, pH DOWN
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                ElevatedButton(
-                  onPressed: () {},
-                  style:
-                      ElevatedButton.styleFrom(backgroundColor: Colors.green),
-                  child: const Text("AB Mix"),
-                ),
-                ElevatedButton(
-                  onPressed: () {},
-                  style: ElevatedButton.styleFrom(backgroundColor: Colors.blue),
-                  child: const Text("Water"),
-                ),
-                ElevatedButton(
-                  onPressed: () {},
-                  style:
-                      ElevatedButton.styleFrom(backgroundColor: Colors.orange),
-                  child: const Text("pH UP"),
-                ),
-                ElevatedButton(
-                  onPressed: () {},
-                  style:
-                      ElevatedButton.styleFrom(backgroundColor: Colors.yellow),
-                  child: const Text("pH DOWN"),
-                ),
-              ],
-            ),
-          ],
+              const SizedBox(height: 20),
+
+              // Control Automatic
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text("Control Automatic"),
+                  Switch(
+                    value: _isABMixOn,
+                    onChanged: (val) {
+                      setState(() {
+                        _isABMixOn = val;
+                      });
+                    },
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+
+              // Kontrol AB Mix, Water, pH UP, pH DOWN
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [
+                  _buildToggleButton(
+                    "AB Mix",
+                    _isABMixOn,
+                    Colors.green,
+                    (val) => setState(() => _isABMixOn = val),
+                  ),
+                  _buildToggleButton(
+                    "Water",
+                    _isWaterOn,
+                    Colors.blue,
+                    (val) => setState(() => _isWaterOn = val),
+                  ),
+                  _buildToggleButton(
+                    "pH UP",
+                    _isPHUpOn,
+                    Colors.orange,
+                    (val) => setState(() => _isPHUpOn = val),
+                  ),
+                  _buildToggleButton(
+                    "pH DOWN",
+                    _isPHDownOn,
+                    Colors.yellow,
+                    (val) => setState(() => _isPHDownOn = val),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+
+              // Bagian misi
+              const Text(
+                "Misi",
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 10),
+              ListView.builder(
+                shrinkWrap: true, // Agar ListView menyesuaikan konten
+                physics:
+                    const NeverScrollableScrollPhysics(), // Nonaktifkan scroll ListView
+                itemCount: 10, // Contoh jumlah misi
+                itemBuilder: (context, index) {
+                  return Card(
+                    margin: const EdgeInsets.symmetric(vertical: 8),
+                    child: ListTile(
+                      leading: const Icon(Icons.task_alt, color: Colors.green),
+                      title: Text("Misi ${index + 1}"),
+                      subtitle: Text("Detail misi ke-${index + 1}"),
+                      trailing: const Icon(Icons.arrow_forward_ios),
+                    ),
+                  );
+                },
+              ),
+            ],
+          ),
         ),
       ),
       bottomNavigationBar: _buildBottomNavigation(),
+    );
+  }
+
+  // Fungsi untuk membuat badge
+  Widget _buildBadge(String text, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: color,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Text(
+        text,
+        style: const TextStyle(color: Colors.black),
+      ),
+    );
+  }
+
+  // Fungsi untuk membuat tombol toggle
+  Widget _buildToggleButton(
+      String text, bool isActive, Color color, Function(bool) onToggle) {
+    return ElevatedButton(
+      onPressed: () => onToggle(!isActive),
+      style: ElevatedButton.styleFrom(
+        backgroundColor: isActive ? color : color.withOpacity(0.5),
+      ),
+      child: Text(text),
     );
   }
 
@@ -144,53 +188,28 @@ class _GamifikasiPageState extends State<GamifikasiPage> {
           });
 
           // Menangani navigasi berdasarkan indeks
-          switch (index) {
-            case 0:
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(builder: (context) => const BerandaPage()),
-              );
-              break;
-            case 1:
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(builder: (context) => const NotifikasiPage()),
-              );
-              break;
-            case 2:
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(builder: (context) => const PanduanPage()),
-              );
-              break;
-            case 3:
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(builder: (context) => const ProfilPage()),
-              );
-              break;
-          }
+          // Sesuaikan navigasi sesuai kebutuhan
         },
         currentIndex: _bottomNavCurrentIndex,
         items: const [
           BottomNavigationBarItem(
-            activeIcon: Icon(Icons.home, color: Colors.black),
             icon: Icon(Icons.home, color: Colors.white),
+            activeIcon: Icon(Icons.home, color: Colors.black),
             label: 'Beranda',
           ),
           BottomNavigationBarItem(
-            activeIcon: Icon(Icons.notification_add, color: Colors.black),
             icon: Icon(Icons.notification_add, color: Colors.white),
+            activeIcon: Icon(Icons.notification_add, color: Colors.black),
             label: 'Notifikasi',
           ),
           BottomNavigationBarItem(
-            activeIcon: Icon(Icons.assignment, color: Colors.black),
             icon: Icon(Icons.assignment, color: Colors.white),
+            activeIcon: Icon(Icons.assignment, color: Colors.black),
             label: 'Panduan',
           ),
           BottomNavigationBarItem(
-            activeIcon: Icon(Icons.person, color: Colors.black),
             icon: Icon(Icons.person, color: Colors.white),
+            activeIcon: Icon(Icons.person, color: Colors.black),
             label: 'Akun',
           ),
         ],

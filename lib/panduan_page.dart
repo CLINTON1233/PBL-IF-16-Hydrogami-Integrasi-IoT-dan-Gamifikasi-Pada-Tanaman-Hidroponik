@@ -1,9 +1,11 @@
 import 'package:application_hydrogami/beranda_page.dart';
+import 'package:application_hydrogami/detail_panduan_hidroponik_page.dart';
+import 'package:application_hydrogami/detail_panduan_sensor_page.dart';
+import 'package:application_hydrogami/detail_panduan_tanaman_page.dart'; // Pastikan menambahkan import untuk halaman detail yang diperlukan
 import 'package:application_hydrogami/notifikasi_page.dart';
 import 'package:application_hydrogami/profil_page.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:application_hydrogami/detail_panduan_page.dart';
 
 class PanduanPage extends StatefulWidget {
   const PanduanPage({super.key});
@@ -58,46 +60,20 @@ class _PanduanPageState extends State<PanduanPage> {
               _buildPanduanCard(
                 'assets/panduan_hidroponik.png',
                 'Panduan Merakit Sistem Hidroponik',
+                const DetailPanduanHidroponikPage(),
               ),
               const SizedBox(height: 16),
               _buildPanduanCard(
                 'assets/panduan_sensor.png',
                 'Panduan Pemasangan Sensor IoT',
+                const DetailPanduanSensorPage(),
               ),
               const SizedBox(height: 16),
               _buildPanduanCard(
                 'assets/tanaman_panduan.png',
                 'Panduan Pengelolaan Tanaman',
+                const DetailPanduanTanamanPage(),
               ),
-              const SizedBox(height: 5),
-              Align(
-                alignment: Alignment.centerRight,
-                child: Padding(
-                  padding:
-                      const EdgeInsets.only(right: 20), // Jarak dari tepi kanan
-                  child: ElevatedButton(
-                    onPressed: () {
-                      // Tambahkan fungsi ketika tombol "Mulai" ditekan
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF24D17E),
-                      minimumSize:
-                          const Size(100, 35), // Atur ukuran minimum tombol
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                    ),
-                    child: Text(
-                      'Mulai',
-                      style: GoogleFonts.poppins(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ),
-                ),
-              )
             ],
           ),
         ),
@@ -107,12 +83,14 @@ class _PanduanPageState extends State<PanduanPage> {
   }
 
   // Fungsi _buildPanduanCard yang dimodifikasi
-  Widget _buildPanduanCard(String imagePath, String title) {
+  Widget _buildPanduanCard(String imagePath, String title, Widget detailPage) {
     return GestureDetector(
       onTap: () {
         Navigator.push(
           context,
-          MaterialPageRoute(builder: (context) => const DetailPanduanPage()),
+          MaterialPageRoute(
+            builder: (context) => detailPage,
+          ),
         );
       },
       child: Container(
@@ -147,7 +125,7 @@ class _PanduanPageState extends State<PanduanPage> {
               padding: const EdgeInsets.all(12),
               width: double.infinity,
               decoration: const BoxDecoration(
-                color: Color(0xFF24D17E),
+                color: Color(0xFF29CC74),
                 borderRadius: BorderRadius.only(
                   bottomLeft: Radius.circular(10),
                   bottomRight: Radius.circular(10),

@@ -135,7 +135,7 @@ class _BerandaPageState extends State<BerandaPage> {
                         ),
                         const SizedBox(width: 10),
                         Text(
-                          'Hi, Anton!',
+                          'Hi Anton!',
                           style: GoogleFonts.roboto(
                             fontSize: 20,
                             fontWeight: FontWeight.bold,
@@ -306,8 +306,9 @@ class _BerandaPageState extends State<BerandaPage> {
                 title,
                 textAlign: TextAlign.center,
                 style: const TextStyle(
+                  fontFamily: 'Helvetica',
                   color: Colors.white,
-                  fontWeight: FontWeight.bold,
+                  fontWeight: FontWeight.w600,
                   fontSize: 16,
                 ),
               ),

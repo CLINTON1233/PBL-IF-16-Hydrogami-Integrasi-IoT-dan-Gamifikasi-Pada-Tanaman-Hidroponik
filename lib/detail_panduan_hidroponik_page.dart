@@ -5,15 +5,17 @@ import 'package:application_hydrogami/profil_page.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-class DetailPanduanPage extends StatefulWidget {
-  const DetailPanduanPage({super.key});
+class DetailPanduanHidroponikPage extends StatefulWidget {
+  const DetailPanduanHidroponikPage({super.key});
 
   @override
-  State<DetailPanduanPage> createState() => _DetailPanduanPageState();
+  State<DetailPanduanHidroponikPage> createState() =>
+      _DetailPanduanHidroponikPageState();
 }
 
-class _DetailPanduanPageState extends State<DetailPanduanPage> {
-  int _bottomNavCurrentIndex = 3;
+class _DetailPanduanHidroponikPageState
+    extends State<DetailPanduanHidroponikPage> {
+  int _bottomNavCurrentIndex = 2;
 
   @override
   Widget build(BuildContext context) {
@@ -49,8 +51,76 @@ class _DetailPanduanPageState extends State<DetailPanduanPage> {
           ),
         ],
       ),
-      body: const Center(
-        child: Text('Halaman Detail Panduan'),
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Judul diletakkan di luar card
+              Center(
+                child: Text(
+                  'Panduan Merakit Sistem Hidroponik',
+                  style: GoogleFonts.poppins(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.black,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+              const SizedBox(height: 20),
+              Card(
+                elevation: 4,
+                color: Colors.white, // Mengubah warna card menjadi putih
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(10),
+                        child: Image.asset(
+                          'assets/hidroponikDetail.png',
+                          fit: BoxFit.cover,
+                          width: double.infinity,
+                          height: 200,
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                      Text(
+                        '1. Siapkan Pipa PVC\n'
+                        'Gunakan pipa PVC berdiameter cukup untuk aliran air dan akar tanaman. Lubangi untuk menempatkan netpot.\n\n'
+                        '2. Siapkan Rangka Penyangga\n'
+                        'Buat rangka kokoh untuk meletakkan pipa dengan kemiringan agar air mengalir lancar.\n\n'
+                        '3. Pasang Pompa Air\n'
+                        'Letakkan pompa di tangki nutrisi dan hubungkan dengan pipa PVC bagian atas menggunakan selang.\n\n'
+                        '4. Pasang Sistem Aliran Nutrisi\n'
+                        'Alirkan nutrisi ke dalam pipa dan pastikan air bersirkulasi kembali ke tangki.\n\n'
+                        '5. Letakkan Netpot dan Tanaman\n'
+                        'Tempatkan netpot dengan media tanam ke lubang pipa dan tanam bibit yang diinginkan.\n\n'
+                        '6. Siapkan Larutan Nutrisi\n'
+                        'Campurkan nutrisi sesuai takaran dan sesuaikan pH untuk kebutuhan tanaman.\n\n'
+                        '7. Pasang Sistem Pengembalian Air\n'
+                        'Pasang saluran untuk mengembalikan air nutrisi ke tangki agar sirkulasi berfungsi.',
+                        style: GoogleFonts.poppins(
+                          fontSize: 14,
+                          color: const Color(0xFF20934E),
+                          fontWeight: FontWeight.w600,
+                          height: 1.6,
+                        ),
+                        textAlign: TextAlign.justify,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
       bottomNavigationBar: _buildBottomNavigation(),
     );

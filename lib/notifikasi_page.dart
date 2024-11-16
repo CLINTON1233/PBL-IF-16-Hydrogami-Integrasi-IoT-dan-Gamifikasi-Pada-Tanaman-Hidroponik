@@ -1,9 +1,5 @@
-import 'package:application_hydrogami/beranda_page.dart';
-import 'package:application_hydrogami/panduan_page.dart';
-import 'package:application_hydrogami/profil_page.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:intl/intl.dart'; // Paket untuk format tanggal dan waktu
 
 class NotifikasiPage extends StatefulWidget {
   const NotifikasiPage({super.key});
@@ -13,40 +9,77 @@ class NotifikasiPage extends StatefulWidget {
 }
 
 class _NotifikasiPageState extends State<NotifikasiPage> {
-  // Menambahkan variabel untuk menyimpan indeks BottomNavigation
   int _bottomNavCurrentIndex = 1;
 
-  // Contoh data notifikasi dengan waktu yang berbeda
-  final List<Map<String, dynamic>> notifications = [
+  List<Map<String, dynamic>> notifications = [
+    {
+      'message':
+          'Suhu lingkungan melebihi 30°C. Pastikan sirkulasi udara baik untuk mencegah stress pada tanaman.',
+      'time': DateTime.now().subtract(const Duration(hours: 1)), // Baru saja
+    },
+    {
+      'message':
+          'Kadar air terlalu tinggi. Kurangi irigasi untuk mencegah akar tanaman tergenang air.',
+      'time': DateTime.now().subtract(const Duration(hours: 3)), // Baru saja
+    },
     {
       'message':
           'Kelembaban tanah di bawah batas ideal. Segera tambahkan air untuk menjaga kelembaban tanaman tetap optimal.',
-      'time': DateTime(2021, 4, 4, 16, 0),
+      'time': DateTime.now().subtract(const Duration(days: 1)), // Kemarin
     },
     {
       'message':
-          'pH air terlalu asam (pH 5.2). Periksa sistem dan tambahkan buffer untuk menyeimbangkan pH.',
-      'time': DateTime(2021, 4, 4, 16, 0),
+          'Nutrisi tanaman kurang. Segera tambahkan nutrisi untuk menjaga nutrisi tanaman.',
+      'time': DateTime.now().subtract(const Duration(days: 1)), // Kemarin
+    },
+    {
+      'message': 'Kelembaban tanah di bawah batas ideal. Segera tambahkan air.',
+      'time': DateTime.now().subtract(const Duration(days: 2)),
     },
     {
       'message':
-          'Suhu lingkungan melebihi 30°C. Pastikan sirkulasi udara baik untuk mencegah stres pada tanaman.',
-      'time': DateTime(2021, 4, 4, 16, 0),
+          'pH air terlalu asam (pH 5.2). Periksa sistem dan tambahkan buffer.',
+      'time': DateTime.now().subtract(const Duration(days: 10)),
     },
     {
-      'message':
-          'Kadar air terlalu tinggi. Kurangi irigasi untuk mencegah akar tanaman tergenang air.',
-      'time': DateTime(2021, 4, 4, 16, 0),
+      'message': 'Suhu lingkungan melebihi 30°C. Periksa sirkulasi udara.',
+      'time': DateTime.now().subtract(const Duration(days: 16)),
     },
     {
+      'message': 'Kadar air terlalu tinggi. Kurangi irigasi segera.',
+      'time': DateTime.now().subtract(const Duration(days: 22)),
+    },
+    // Notifikasi baru untuk 2 minggu terakhir
+    {
+      'message': 'Nutrisi tanaman rendah. Tambahkan pupuk segera.',
+      'time': DateTime.now().subtract(const Duration(days: 12)),
+    },
+    {
+      'message': 'Intensitas cahaya terlalu rendah. Sesuaikan pencahayaan.',
+      'time': DateTime.now().subtract(const Duration(days: 14)),
+    },
+    // Notifikasi baru untuk 3 minggu terakhir
+    {
       'message':
-          'Kadar air terlalu tinggi. Kurangi irigasi untuk mencegah akar tanaman tergenang air.',
-      'time': DateTime(2021, 4, 4, 16, 0),
+          'Kelembaban udara terlalu rendah. Periksa sistem humidifikasi.',
+      'time': DateTime.now().subtract(const Duration(days: 19)),
+    },
+    {
+      'message': 'Kadar oksigen di air menurun. Tambahkan aerator.',
+      'time': DateTime.now().subtract(const Duration(days: 21)),
     },
   ];
 
+  void removeNotification(int index) {
+    setState(() {
+      notifications.removeAt(index);
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
+    final categories = _categorizeNotifications();
+
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
@@ -63,82 +96,166 @@ class _NotifikasiPageState extends State<NotifikasiPage> {
         ),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_sharp),
-          iconSize: 20.0,
           onPressed: () {
             Navigator.pop(context);
           },
         ),
-        actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 16.0),
-            child: Image.asset(
-              'assets/hydrogami_logo2.png',
-              width: 30,
-              height: 30,
-            ),
-          ),
-        ],
       ),
-      body: ListView.builder(
-        itemCount: notifications.length,
-        itemBuilder: (context, index) {
-          final notification = notifications[index];
-          final time = notification['time'];
-          final message = notification['message'];
-          final timeAgo = _timeAgo(time); // Menghitung waktu lalu
-
+      body: ListView(
+        children: categories.entries.map((entry) {
           return Padding(
             padding:
                 const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
-            child: Container(
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.grey.withOpacity(0.2),
-                    spreadRadius: 2,
-                    blurRadius: 5,
-                    offset: const Offset(0, 3), // Bayangan bawah
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Menambahkan SizedBox untuk jarak
+                SizedBox(height: 16),
+                Text(
+                  entry.key,
+                  style: GoogleFonts.poppins(
+                    fontSize: 16,
+                    fontWeight:
+                        FontWeight.w600, // Ganti font weight menjadi 600
                   ),
-                ],
-              ),
-              child: ListTile(
-                contentPadding:
-                    const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
-                leading: const Icon(
-                  Icons.notifications,
-                  color: Color.fromARGB(255, 0, 0, 0),
                 ),
-                title: Text(
-                  message,
-                  style: GoogleFonts.poppins(
-                      fontSize: 14, fontWeight: FontWeight.w400),
-                ),
-                subtitle: Text(
-                  'Dikirim pada: ${DateFormat('dd MMM yyyy, HH:mm').format(time)} ($timeAgo)',
-                  style: GoogleFonts.poppins(
-                      fontSize: 12, fontWeight: FontWeight.w300),
-                ),
-              ),
+                ...entry.value.map((notification) {
+                  final timeAgo = _timeAgo(notification['time']);
+                  return GestureDetector(
+                    onLongPress: () {
+                      showDialog(
+                        context: context,
+                        builder: (BuildContext context) {
+                          return AlertDialog(
+                            title: const Icon(Icons.warning,
+                                color: Colors.orange, size: 40),
+                            content: const SingleChildScrollView(
+                              child: Text(
+                                "Apakah Kamu Yakin ingin Menghapus Notifikasi ini?",
+                                textAlign: TextAlign.center,
+                                style: TextStyle(fontSize: 16),
+                              ),
+                            ),
+                            actions: <Widget>[
+                              Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceEvenly,
+                                children: [
+                                  TextButton(
+                                    child: const Text(
+                                      "Tidak, Batalkan!",
+                                      style: TextStyle(color: Colors.red),
+                                    ),
+                                    onPressed: () {
+                                      Navigator.of(context)
+                                          .pop(); // Tutup dialog
+                                    },
+                                  ),
+                                  TextButton(
+                                    child: const Text(
+                                      "Ya, Hapus",
+                                      style: TextStyle(color: Colors.green),
+                                    ),
+                                    onPressed: () {
+                                      setState(() {
+                                        notifications.remove(notification);
+                                      });
+                                      Navigator.of(context).pop();
+                                    },
+                                  ),
+                                ],
+                              ),
+                            ],
+                          );
+                        },
+                      );
+                    },
+                    child: Container(
+                      margin: const EdgeInsets.symmetric(vertical: 8.0),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.grey.withOpacity(0.2),
+                            spreadRadius: 2,
+                            blurRadius: 5,
+                            offset: const Offset(0, 3),
+                          ),
+                        ],
+                      ),
+                      child: ListTile(
+                        contentPadding: const EdgeInsets.symmetric(
+                          vertical: 10,
+                          horizontal: 16,
+                        ),
+                        title: Text(
+                          notification['message'],
+                          style: GoogleFonts.poppins(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        subtitle: Text(
+                          'Dikirim: $timeAgo',
+                          style: GoogleFonts.poppins(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w300,
+                            color: Colors.grey[600],
+                          ),
+                        ),
+                        trailing: const Icon(
+                          Icons.notifications,
+                          color: Colors.black,
+                        ),
+                      ),
+                    ),
+                  );
+                }).toList(),
+              ],
             ),
           );
-        },
+        }).toList(),
       ),
-      bottomNavigationBar:
-          _buildBottomNavigation(), // Menggunakan bottom navigation bar
+      bottomNavigationBar: _buildBottomNavigation(),
     );
+  }
+
+  Map<String, List<Map<String, dynamic>>> _categorizeNotifications() {
+    final newNotifications = <Map<String, dynamic>>[];
+    final yesterdayNotifications = <Map<String, dynamic>>[];
+    final oneWeek = <Map<String, dynamic>>[];
+    final twoWeeks = <Map<String, dynamic>>[];
+    final threeWeeks = <Map<String, dynamic>>[];
+
+    for (var notification in notifications) {
+      final difference = DateTime.now().difference(notification['time']).inDays;
+
+      if (difference == 0) {
+        newNotifications.add(notification); // Baru saja
+      } else if (difference == 1) {
+        yesterdayNotifications.add(notification); // Semalam
+      } else if (difference <= 7) {
+        oneWeek.add(notification); // 1 Minggu Terakhir
+      } else if (difference <= 14) {
+        twoWeeks.add(notification); // 2 Minggu Terakhir
+      } else if (difference <= 21) {
+        threeWeeks.add(notification); // 3 Minggu Terakhir
+      }
+    }
+
+    return {
+      'Baru Saja': newNotifications,
+      'Kemarin': yesterdayNotifications,
+      '1 Minggu Terakhir': oneWeek,
+      '2 Minggu Terakhir': twoWeeks,
+      '3 Minggu Terakhir': threeWeeks,
+    };
   }
 
   String _timeAgo(DateTime time) {
     final duration = DateTime.now().difference(time);
-    if (duration.inDays >= 365) {
-      return '${(duration.inDays / 365).floor()} tahun yang lalu';
-    } else if (duration.inDays >= 30) {
-      return '${(duration.inDays / 30).floor()} bulan yang lalu';
-    } else if (duration.inDays >= 7) {
-      return '${(duration.inDays / 7).floor()} minggu yang lalu';
-    } else if (duration.inDays >= 1) {
+    if (duration.inDays >= 1) {
       return '${duration.inDays} hari yang lalu';
     } else if (duration.inHours >= 1) {
       return '${duration.inHours} jam yang lalu';
@@ -149,7 +266,6 @@ class _NotifikasiPageState extends State<NotifikasiPage> {
     }
   }
 
-  // Fungsi untuk membuat BottomNavigationBar
   Widget _buildBottomNavigation() {
     return ClipRRect(
       borderRadius: const BorderRadius.only(
@@ -163,80 +279,24 @@ class _NotifikasiPageState extends State<NotifikasiPage> {
           setState(() {
             _bottomNavCurrentIndex = index;
           });
-
-          // Menangani navigasi berdasarkan indeks
-          switch (index) {
-            case 0: // Beranda
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(builder: (context) => const BerandaPage()),
-              );
-              break;
-            case 1: // Notifikasi
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(builder: (context) => const NotifikasiPage()),
-              );
-              break;
-            case 2: // Panduan
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(builder: (context) => const PanduanPage()),
-              );
-              break;
-            case 3: // Profil
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(builder: (context) => const ProfilPage()),
-              );
-              break;
-          }
         },
         currentIndex: _bottomNavCurrentIndex,
         items: const [
           BottomNavigationBarItem(
-            activeIcon: Icon(
-              Icons.home,
-              color: Colors.black,
-            ),
-            icon: Icon(
-              Icons.home,
-              color: Colors.white,
-            ),
+            icon: Icon(Icons.home),
             label: 'Beranda',
           ),
           BottomNavigationBarItem(
-            activeIcon: Icon(
-              Icons.notification_add,
-              color: Colors.black,
-            ),
-            icon: Icon(
-              Icons.notification_add,
-              color: Colors.white,
-            ),
+            icon: Icon(Icons.notifications),
             label: 'Notifikasi',
           ),
           BottomNavigationBarItem(
-            activeIcon: Icon(
-              Icons.assignment,
-              color: Colors.black,
-            ),
-            icon: Icon(
-              Icons.assignment,
-              color: Colors.white,
-            ),
+            icon: Icon(Icons.assignment),
             label: 'Panduan',
           ),
           BottomNavigationBarItem(
-            activeIcon: Icon(
-              Icons.person,
-              color: Colors.black,
-            ),
-            icon: Icon(
-              Icons.person,
-              color: Colors.white,
-            ),
-            label: 'Akun',
+            icon: Icon(Icons.person),
+            label: 'Profil',
           ),
         ],
         selectedItemColor: Colors.black,

@@ -1,7 +1,7 @@
 import 'package:application_hydrogami/beranda_page.dart';
 import 'package:application_hydrogami/detail_panduan_hidroponik_page.dart';
 import 'package:application_hydrogami/detail_panduan_sensor_page.dart';
-import 'package:application_hydrogami/detail_panduan_tanaman_page.dart'; // Pastikan menambahkan import untuk halaman detail yang diperlukan
+import 'package:application_hydrogami/detail_panduan_tanaman_page.dart';
 import 'package:application_hydrogami/notifikasi_page.dart';
 import 'package:application_hydrogami/profil_page.dart';
 import 'package:flutter/material.dart';

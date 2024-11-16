@@ -28,7 +28,7 @@ class _PilihPageState extends State<PilihPage> {
                 'Pilih Tanaman',
                 style: GoogleFonts.poppins(
                   fontSize: 20,
-                  color: const Color.fromARGB(255, 45, 205, 128),
+                  color: const Color.fromARGB(232, 8, 166, 82),
                   fontWeight: FontWeight.bold,
                 ),
               ),

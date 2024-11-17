@@ -20,16 +20,90 @@ class _ProfilPageState extends State<ProfilPage> {
       appBar: AppBar(
         backgroundColor: const Color(0xFF24D17E),
         elevation: 0,
-        toolbarHeight: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () {
+            Navigator.pop(context); // Navigasi kembali ke halaman sebelumnya
+          },
+        ),
+        title: const Text(
+          'Kelola Profil',
+          style: TextStyle(color: Color.fromARGB(255, 2, 0, 0)),
+        ),
       ),
-      body: const Center(
-        child: Text('Halaman Profil'),
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            children: [
+              const CircleAvatar(
+                radius: 50,
+                backgroundImage: AssetImage('assets/profile.jpg'),
+              ),
+              const SizedBox(height: 20),
+              buildTextField('Nama', 'Masukkan Nama Anda'),
+              const SizedBox(height: 20),
+              buildTextField('Email', 'Masukkan Email Anda'),
+              const SizedBox(height: 20),
+              buildTextField('Password Saat Ini', 'Masukkan Password Anda',
+                  obscureText: true),
+              const SizedBox(height: 20),
+              buildTextField('Password Baru', 'Masukkan Password Baru',
+                  obscureText: true),
+              const SizedBox(height: 20),
+              ElevatedButton(
+                onPressed: () {},
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF24D17E),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 50, vertical: 15),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+                child: const Text('Simpan', style: TextStyle(fontSize: 16)),
+              ),
+            ],
+          ),
+        ),
       ),
       bottomNavigationBar: _buildBottomNavigation(),
     );
   }
 
-  // Fungsi untuk membuat BottomNavigationBar
+  Widget buildTextField(String labelText, String placeholder,
+      {bool obscureText = false}) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          labelText,
+          style: TextStyle(
+            color: Colors.grey[700],
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        const SizedBox(height: 8),
+        TextField(
+          obscureText: obscureText,
+          decoration: InputDecoration(
+            hintText: placeholder,
+            hintStyle: const TextStyle(color: Color(0xFF24D17E)),
+            contentPadding:
+                const EdgeInsets.symmetric(vertical: 10, horizontal: 20),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10),
+              borderSide: const BorderSide(color: Color(0xFF24D17E)),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
   Widget _buildBottomNavigation() {
     return ClipRRect(
       borderRadius: const BorderRadius.only(

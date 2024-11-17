@@ -1,3 +1,7 @@
+import 'package:application_hydrogami/beranda_page.dart';
+import 'package:application_hydrogami/notifikasi_page.dart';
+import 'package:application_hydrogami/panduan_page.dart';
+import 'package:application_hydrogami/profil_page.dart';
 import 'package:flutter/material.dart';
 
 class GamifikasiPage extends StatefulWidget {
@@ -43,24 +47,30 @@ class _GamifikasiPageState extends State<GamifikasiPage> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  _buildBadge("Level 5", Colors.green),
-                  _buildBadge("Reward", Colors.orange),
-                  _buildBadge("Jumlah Koin: 500", Colors.amber),
+                  _buildBadge("Level 5", const Color(0xFF2ABD77)),
+                  _buildBadge(
+                      "Reward", const Color.fromARGB(255, 169, 165, 165)),
+                  _buildBadge("Jumlah Koin: 500", Colors.orange),
                 ],
               ),
               const SizedBox(height: 20),
 
-              // Gambar tanaman
-              Container(
-                height: 300,
-                width: double.infinity,
-                decoration: BoxDecoration(
-                  color: Colors.grey[200],
-                  image: const DecorationImage(
-                    image: AssetImage('assets/tanaman1.jpg'),
-                    fit: BoxFit.cover,
-                  ),
+              Card(
+                elevation: 5,
+                shadowColor: Colors.black.withOpacity(0.1),
+                shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(10),
+                ),
+                child: Container(
+                  height: 300,
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(10),
+                    image: const DecorationImage(
+                      image: AssetImage('assets/tanaman1.jpg'),
+                      fit: BoxFit.cover,
+                    ),
+                  ),
                 ),
               ),
               const SizedBox(height: 20),
@@ -69,7 +79,14 @@ class _GamifikasiPageState extends State<GamifikasiPage> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text("Control Automatic"),
+                  const Text(
+                    "Control Automatic",
+                    style: TextStyle(
+                      fontFamily: 'Poppins',
+                      fontWeight: FontWeight.w600,
+                      fontSize: 15,
+                    ),
+                  ),
                   Switch(
                     value: _isABMixOn,
                     onChanged: (val) {
@@ -83,35 +100,48 @@ class _GamifikasiPageState extends State<GamifikasiPage> {
               const SizedBox(height: 20),
 
               // Kontrol AB Mix, Water, pH UP, pH DOWN
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
+              Column(
                 children: [
-                  _buildToggleButton(
-                    "AB Mix",
-                    _isABMixOn,
-                    Colors.green,
-                    (val) => setState(() => _isABMixOn = val),
-                  ),
-                  _buildToggleButton(
-                    "Water",
-                    _isWaterOn,
-                    Colors.blue,
-                    (val) => setState(() => _isWaterOn = val),
-                  ),
-                  _buildToggleButton(
-                    "pH UP",
-                    _isPHUpOn,
-                    Colors.orange,
-                    (val) => setState(() => _isPHUpOn = val),
-                  ),
-                  _buildToggleButton(
-                    "pH DOWN",
-                    _isPHDownOn,
-                    Colors.yellow,
-                    (val) => setState(() => _isPHDownOn = val),
-                  ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    children: [
+                      _customToggleButton(
+                        textTop: "AB",
+                        textBottom: "MIX",
+                        isActive: _isABMixOn,
+                        activeColor: const Color(0xFF2AD5B6),
+                        inactiveColor: const Color(0xFF2AD5B6).withOpacity(0.3),
+                        onToggle: (val) => setState(() => _isABMixOn = val),
+                      ),
+                      _customToggleButton(
+                        textTop: "Water",
+                        textBottom: "",
+                        isActive: _isWaterOn,
+                        activeColor: const Color(0xFF50B7F2),
+                        inactiveColor: const Color(0xFF50B7F2).withOpacity(0.5),
+                        onToggle: (val) => setState(() => _isWaterOn = val),
+                      ),
+                      _customToggleButton(
+                        textTop: "PH",
+                        textBottom: "UP",
+                        isActive: _isPHUpOn,
+                        activeColor: const Color(0xFFFBBB00),
+                        inactiveColor: const Color(0xFFFBBB00).withOpacity(0.5),
+                        onToggle: (val) => setState(() => _isPHUpOn = val),
+                      ),
+                      _customToggleButton(
+                        textTop: "PH",
+                        textBottom: "DOWN",
+                        isActive: _isPHDownOn,
+                        activeColor: const Color(0xFFD9D9D9),
+                        inactiveColor: const Color(0xFFD9D9D9).withOpacity(0.5),
+                        onToggle: (val) => setState(() => _isPHDownOn = val),
+                      ),
+                    ],
+                  )
                 ],
               ),
+
               const SizedBox(height: 20),
 
               // Bagian misi
@@ -121,17 +151,24 @@ class _GamifikasiPageState extends State<GamifikasiPage> {
               ),
               const SizedBox(height: 10),
               ListView.builder(
-                shrinkWrap: true, // Agar ListView menyesuaikan konten
-                physics:
-                    const NeverScrollableScrollPhysics(), // Nonaktifkan scroll ListView
-                itemCount: 10, // Contoh jumlah misi
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: 10,
                 itemBuilder: (context, index) {
                   return Card(
                     margin: const EdgeInsets.symmetric(vertical: 8),
+                    color: const Color(0xFFe9e9e9),
                     child: ListTile(
-                      leading: const Icon(Icons.task_alt, color: Colors.green),
-                      title: Text("Misi ${index + 1}"),
-                      subtitle: Text("Detail misi ke-${index + 1}"),
+                      leading:
+                          Icon(Icons.task_alt, color: Colors.green.shade600),
+                      title: Text(
+                        "Misi ${index + 1}",
+                        style: const TextStyle(color: Colors.black),
+                      ),
+                      subtitle: Text(
+                        "Detail misi ke-${index + 1}",
+                        style: TextStyle(color: Colors.grey.shade600),
+                      ),
                       trailing: const Icon(Icons.arrow_forward_ios),
                     ),
                   );
@@ -153,22 +190,70 @@ class _GamifikasiPageState extends State<GamifikasiPage> {
         color: color,
         borderRadius: BorderRadius.circular(20),
       ),
-      child: Text(
-        text,
-        style: const TextStyle(color: Colors.black),
-      ),
+      child: Text(text,
+          style: const TextStyle(
+            fontFamily: 'Poppins',
+            fontWeight: FontWeight.w600,
+            fontSize: 14,
+            color: Colors.white,
+          )),
     );
   }
 
-  // Fungsi untuk membuat tombol toggle
-  Widget _buildToggleButton(
-      String text, bool isActive, Color color, Function(bool) onToggle) {
-    return ElevatedButton(
-      onPressed: () => onToggle(!isActive),
-      style: ElevatedButton.styleFrom(
-        backgroundColor: isActive ? color : color.withOpacity(0.5),
+  Widget _customToggleButton({
+    required String textTop,
+    required String textBottom,
+    required bool isActive,
+    required Color activeColor,
+    required Color inactiveColor,
+    required Function(bool) onToggle,
+  }) {
+    return GestureDetector(
+      onTap: () => onToggle(!isActive),
+      child: InkWell(
+        onTap: () => onToggle(!isActive),
+        splashColor: Colors.white.withOpacity(0.3),
+        borderRadius: BorderRadius.circular(10),
+        child: Container(
+          width: 85,
+          height: 90,
+          padding: const EdgeInsets.all(8.0),
+          decoration: BoxDecoration(
+            color: isActive ? activeColor : inactiveColor,
+            borderRadius: BorderRadius.circular(10),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.2),
+                offset: Offset(2, 2),
+                blurRadius: 5,
+              ),
+            ],
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Text(
+                textTop,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              const SizedBox(height: 5),
+              Text(
+                textBottom,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
-      child: Text(text),
     );
   }
 
@@ -188,28 +273,77 @@ class _GamifikasiPageState extends State<GamifikasiPage> {
           });
 
           // Menangani navigasi berdasarkan indeks
-          // Sesuaikan navigasi sesuai kebutuhan
+          switch (index) {
+            case 0: // Beranda
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (context) => const BerandaPage()),
+              );
+              break;
+            case 1: // Notifikasi
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (context) => const NotifikasiPage()),
+              );
+              break;
+            case 2: // Panduan
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (context) => const PanduanPage()),
+              );
+              break;
+            case 3: // Profil
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (context) => const ProfilPage()),
+              );
+              break;
+          }
         },
         currentIndex: _bottomNavCurrentIndex,
         items: const [
           BottomNavigationBarItem(
-            icon: Icon(Icons.home, color: Colors.white),
-            activeIcon: Icon(Icons.home, color: Colors.black),
+            activeIcon: Icon(
+              Icons.home,
+              color: Colors.black,
+            ),
+            icon: Icon(
+              Icons.home,
+              color: Colors.white,
+            ),
             label: 'Beranda',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.notification_add, color: Colors.white),
-            activeIcon: Icon(Icons.notification_add, color: Colors.black),
+            activeIcon: Icon(
+              Icons.notification_add,
+              color: Colors.black,
+            ),
+            icon: Icon(
+              Icons.notification_add,
+              color: Colors.white,
+            ),
             label: 'Notifikasi',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.assignment, color: Colors.white),
-            activeIcon: Icon(Icons.assignment, color: Colors.black),
+            activeIcon: Icon(
+              Icons.assignment,
+              color: Colors.black,
+            ),
+            icon: Icon(
+              Icons.assignment,
+              color: Colors.white,
+            ),
             label: 'Panduan',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.person, color: Colors.white),
-            activeIcon: Icon(Icons.person, color: Colors.black),
+            activeIcon: Icon(
+              Icons.person,
+              color: Colors.black,
+            ),
+            icon: Icon(
+              Icons.person,
+              color: Colors.white,
+            ),
             label: 'Akun',
           ),
         ],

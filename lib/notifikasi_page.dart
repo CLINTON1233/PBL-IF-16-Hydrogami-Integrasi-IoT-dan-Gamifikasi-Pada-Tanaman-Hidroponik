@@ -1,3 +1,6 @@
+import 'package:application_hydrogami/beranda_page.dart';
+import 'package:application_hydrogami/panduan_page.dart';
+import 'package:application_hydrogami/profil_page.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -279,24 +282,80 @@ class _NotifikasiPageState extends State<NotifikasiPage> {
           setState(() {
             _bottomNavCurrentIndex = index;
           });
+
+          // Menangani navigasi berdasarkan indeks
+          switch (index) {
+            case 0: // Beranda
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (context) => const BerandaPage()),
+              );
+              break;
+            case 1: // Notifikasi
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (context) => const NotifikasiPage()),
+              );
+              break;
+            case 2: // Panduan
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (context) => const PanduanPage()),
+              );
+              break;
+            case 3: // Profil
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (context) => const ProfilPage()),
+              );
+              break;
+          }
         },
         currentIndex: _bottomNavCurrentIndex,
         items: const [
           BottomNavigationBarItem(
-            icon: Icon(Icons.home),
+            activeIcon: Icon(
+              Icons.home,
+              color: Colors.black,
+            ),
+            icon: Icon(
+              Icons.home,
+              color: Colors.white,
+            ),
             label: 'Beranda',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.notifications),
+            activeIcon: Icon(
+              Icons.notification_add,
+              color: Colors.black,
+            ),
+            icon: Icon(
+              Icons.notification_add,
+              color: Colors.white,
+            ),
             label: 'Notifikasi',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.assignment),
+            activeIcon: Icon(
+              Icons.assignment,
+              color: Colors.black,
+            ),
+            icon: Icon(
+              Icons.assignment,
+              color: Colors.white,
+            ),
             label: 'Panduan',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.person),
-            label: 'Profil',
+            activeIcon: Icon(
+              Icons.person,
+              color: Colors.black,
+            ),
+            icon: Icon(
+              Icons.person,
+              color: Colors.white,
+            ),
+            label: 'Akun',
           ),
         ],
         selectedItemColor: Colors.black,

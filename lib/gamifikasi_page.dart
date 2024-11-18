@@ -27,7 +27,7 @@ class _GamifikasiPageState extends State<GamifikasiPage> {
       appBar: AppBar(
         backgroundColor: const Color(0xFF24D17E),
         elevation: 0,
-        centerTitle: true,
+        centerTitle: false,
         title: const Text(
           'Gamifikasi',
           style: TextStyle(

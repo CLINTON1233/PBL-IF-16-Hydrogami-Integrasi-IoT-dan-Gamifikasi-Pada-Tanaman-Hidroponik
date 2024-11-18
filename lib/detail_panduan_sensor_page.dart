@@ -154,7 +154,7 @@ class _DetailPanduanSensorPageState extends State<DetailPanduanSensorPage> {
                         'Selalu ikuti instruksi produsen untuk setiap komponen.',
                         style: GoogleFonts.poppins(
                           fontSize: 14,
-                          color: const Color(0xFF20934E),
+                          color: Colors.black,
                           fontWeight: FontWeight.w600,
                           height: 1.6,
                         ),

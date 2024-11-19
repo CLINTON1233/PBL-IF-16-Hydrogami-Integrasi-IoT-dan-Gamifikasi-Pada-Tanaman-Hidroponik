@@ -73,7 +73,7 @@ class _LoginPageState extends State<LoginPage>
                                   child: Row(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
-                                      Icon(Icons.arrow_back,
+                                      const Icon(Icons.arrow_back,
                                           color: Colors.white, size: 16),
                                       const SizedBox(width: 5),
                                       Text(
@@ -245,7 +245,8 @@ class _LoginPageState extends State<LoginPage>
                                   Navigator.push(
                                     context,
                                     MaterialPageRoute(
-                                        builder: (context) => PilihPage()),
+                                        builder: (context) =>
+                                            const PilihPage()),
                                   );
                                 },
                                 child: Text(
@@ -265,7 +266,7 @@ class _LoginPageState extends State<LoginPage>
                                       context,
                                       MaterialPageRoute(
                                           builder: (context) =>
-                                              RegistrasiPage()),
+                                              const RegistrasiPage()),
                                     );
                                   },
                                   child: RichText(

@@ -28,7 +28,7 @@ class _ProfilPageState extends State<ProfilPage> {
           },
         ),
         title: Text(
-          'Profile',
+          'Kelola Profil',
           style: GoogleFonts.poppins(
             fontSize: 20,
             fontWeight: FontWeight.w600,

@@ -113,7 +113,7 @@ class _NotifikasiPageState extends State<NotifikasiPage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // Menambahkan SizedBox untuk jarak
-                SizedBox(height: 16),
+                const SizedBox(height: 16),
                 Text(
                   entry.key,
                   style: GoogleFonts.poppins(

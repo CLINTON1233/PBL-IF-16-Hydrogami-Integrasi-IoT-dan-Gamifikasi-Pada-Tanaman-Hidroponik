@@ -137,7 +137,7 @@ class _DetailPanduanTanamanPageState extends State<DetailPanduanTanamanPage> {
                         '\n',
                         style: GoogleFonts.poppins(
                           fontSize: 14,
-                          color: const Color(0xFF20934E),
+                          color: Colors.black,
                           fontWeight: FontWeight.w600,
                           height: 1.6,
                         ),

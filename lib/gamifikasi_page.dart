@@ -1,8 +1,9 @@
+import 'package:flutter/material.dart';
 import 'package:application_hydrogami/beranda_page.dart';
 import 'package:application_hydrogami/notifikasi_page.dart';
 import 'package:application_hydrogami/panduan_page.dart';
 import 'package:application_hydrogami/profil_page.dart';
-import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class GamifikasiPage extends StatefulWidget {
   const GamifikasiPage({super.key});
@@ -13,138 +14,120 @@ class GamifikasiPage extends StatefulWidget {
 
 class _GamifikasiPageState extends State<GamifikasiPage> {
   int _bottomNavCurrentIndex = 0;
+  bool isAutomaticControl = false; // Tambahkan deklarasi ini
+  Map<String, bool> controls = {
+    "AB MIX": false,
+    "WATER": false,
+    "PH UP": false,
+    "PH DOWN": false,
+  };
 
-  // Status toggle untuk kontrol
-  bool _isABMixOn = false;
-  bool _isWaterOn = false;
-  bool _isPHUpOn = false;
-  bool _isPHDownOn = false;
+  // Peta untuk warna aktif setiap kontrol
+  final Map<String, Color> activeColors = {
+    "AB MIX": const Color(0xFF2AD5B6),
+    "WATER": const Color(0xFF50B7F2),
+    "PH UP": const Color(0xFFFBBB00),
+    "PH DOWN": Colors.red,
+  };
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
       appBar: AppBar(
         backgroundColor: const Color(0xFF24D17E),
-        elevation: 0,
-        centerTitle: true,
-        title: const Text(
+        centerTitle: false,
+        title: Text(
           'Gamifikasi',
-          style: TextStyle(
+          style: GoogleFonts.poppins(
             fontSize: 20,
             fontWeight: FontWeight.w600,
             color: Colors.black,
           ),
         ),
       ),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: SingleChildScrollView(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Bagian Level, Reward, Jumlah Koin
+              // Bagian Level, Reward dan Leaderboard
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  _buildBadge("Level 5", const Color(0xFF2ABD77)),
-                  _buildBadge(
-                      "Reward", const Color.fromARGB(255, 169, 165, 165)),
-                  _buildBadge("Jumlah Koin: 500", Colors.orange),
+                  _buildLevelWidget(level: 5),
+                  _buildRewardWidget(coins: 500),
+                  _buildLeaderboardWidget(),
                 ],
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 8),
 
-              Card(
-                elevation: 5,
-                shadowColor: Colors.black.withOpacity(0.1),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Container(
-                  height: 300,
-                  width: double.infinity,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(10),
-                    image: const DecorationImage(
-                      image: AssetImage('assets/tanaman1.jpg'),
-                      fit: BoxFit.cover,
-                    ),
-                  ),
+              // Gamification Graphic
+              Center(
+                child: Image.asset(
+                  'assets/skala_easy.png',
+                  width: 400,
+                  height: 400,
+                  fit: BoxFit.cover,
                 ),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 1),
 
-              // Control Automatic
+              // Control Automatic Switch
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   const Text(
                     "Control Automatic",
                     style: TextStyle(
-                      fontFamily: 'Poppins',
-                      fontWeight: FontWeight.w600,
                       fontSize: 15,
+                      fontWeight: FontWeight.w500,
                     ),
                   ),
-                  Switch(
-                    value: _isABMixOn,
-                    onChanged: (val) {
+                  GestureDetector(
+                    onTap: () {
                       setState(() {
-                        _isABMixOn = val;
+                        isAutomaticControl = !isAutomaticControl;
                       });
                     },
+                    child: Icon(
+                      isAutomaticControl ? Icons.toggle_on : Icons.toggle_off,
+                      color: isAutomaticControl ? Colors.green : Colors.grey,
+                      size: 50,
+                    ),
                   ),
                 ],
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 10),
 
-              // Kontrol AB Mix, Water, pH UP, pH DOWN
-              Column(
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceAround,
-                    children: [
-                      _customToggleButton(
-                        textTop: "AB",
-                        textBottom: "MIX",
-                        isActive: _isABMixOn,
-                        activeColor: const Color(0xFF2AD5B6),
-                        inactiveColor: const Color(0xFF2AD5B6).withOpacity(0.3),
-                        onToggle: (val) => setState(() => _isABMixOn = val),
-                      ),
-                      _customToggleButton(
-                        textTop: "Water",
-                        textBottom: "",
-                        isActive: _isWaterOn,
-                        activeColor: const Color(0xFF50B7F2),
-                        inactiveColor: const Color(0xFF50B7F2).withOpacity(0.5),
-                        onToggle: (val) => setState(() => _isWaterOn = val),
-                      ),
-                      _customToggleButton(
-                        textTop: "PH",
-                        textBottom: "UP",
-                        isActive: _isPHUpOn,
-                        activeColor: const Color(0xFFFBBB00),
-                        inactiveColor: const Color(0xFFFBBB00).withOpacity(0.5),
-                        onToggle: (val) => setState(() => _isPHUpOn = val),
-                      ),
-                      _customToggleButton(
-                        textTop: "PH",
-                        textBottom: "DOWN",
-                        isActive: _isPHDownOn,
-                        activeColor: const Color(0xFFD9D9D9),
-                        inactiveColor: const Color(0xFFD9D9D9).withOpacity(0.5),
-                        onToggle: (val) => setState(() => _isPHDownOn = val),
-                      ),
-                    ],
-                  )
-                ],
+              // Control Buttons Section
+              GridView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2,
+                  mainAxisSpacing: 10,
+                  crossAxisSpacing: 10,
+                  childAspectRatio: 2.5,
+                ),
+                itemCount: controls.keys.length,
+                itemBuilder: (context, index) {
+                  String controlName = controls.keys.elementAt(index);
+                  return _buildControlButton(
+                    name: controlName,
+                    isActive: controls[controlName]!,
+                    activeColor: activeColors[controlName]!,
+                    onTap: () {
+                      setState(() {
+                        controls[controlName] = !controls[controlName]!;
+                      });
+                    },
+                  );
+                },
               ),
 
-              const SizedBox(height: 20),
-
-              // Bagian misi
+              // Bagian Misi
+              const SizedBox(height: 20), // Spasi sebelum misi
               const Text(
                 "Misi",
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
@@ -182,72 +165,181 @@ class _GamifikasiPageState extends State<GamifikasiPage> {
     );
   }
 
-  // Fungsi untuk membuat badge
-  Widget _buildBadge(String text, Color color) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(
-        color: color,
-        borderRadius: BorderRadius.circular(20),
+  // Widget untuk Level dengan Ikon
+  Widget _buildLevelWidget({required int level}) {
+    return InkWell(
+      onTap: () {
+        // Tambahkan logika jika perlu saat level di-tap
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Anda telah mencapai Level $level!')),
+        );
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: const Color.fromARGB(192, 16, 134, 77),
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 5,
+              offset: const Offset(0, 3),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            const Icon(Icons.grade,
+                color: Colors.white, size: 20), // Ikon Level
+            const SizedBox(width: 6),
+            Text(
+              'Level $level',
+              style: const TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
+            ),
+          ],
+        ),
       ),
-      child: Text(text,
-          style: const TextStyle(
-            fontFamily: 'Poppins',
-            fontWeight: FontWeight.w600,
-            fontSize: 14,
-            color: Colors.white,
-          )),
     );
   }
 
-  Widget _customToggleButton({
-    required String textTop,
-    required String textBottom,
+  // Widget untuk Reward (Jumlah Koin)
+  Widget _buildRewardWidget({required int coins}) {
+    return InkWell(
+      onTap: () {
+        // Tambahkan logika jika perlu saat jumlah koin di-tap
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Jumlah Koin Anda: $coins')),
+        );
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: [
+              Color(0xFFFFC107),
+              Color(0xFFFF9800)
+            ], // Warna Kuning dan Orange
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 5,
+              offset: const Offset(0, 3),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            const Icon(Icons.monetization_on, color: Colors.white, size: 20),
+            const SizedBox(width: 6),
+            Text(
+              'Koin: $coins',
+              style: const TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLeaderboardWidget() {
+    return InkWell(
+      onTap: () {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Tampilkan Leaderboard')),
+        );
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          // Menggunakan gradien biru ke hijau
+          gradient: const LinearGradient(
+            colors: [Colors.blue, Colors.green], // Warna gradien biru dan hijau
+            begin: Alignment.topLeft, // Mulai dari kiri atas
+            end: Alignment.bottomRight, // Berakhir di kanan bawah
+          ),
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 5,
+              offset: const Offset(0, 3),
+            ),
+          ],
+        ),
+        child: const Row(
+          children: [
+            Icon(Icons.leaderboard, color: Colors.white, size: 20),
+            SizedBox(width: 6),
+            Text(
+              'Leaderboard',
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // Tambahkan peta untuk mencocokkan kontrol dengan ikon
+  final Map<String, IconData> controlIcons = {
+    "AB MIX": Icons.water_drop,
+    "WATER": Icons.invert_colors,
+    "PH UP": Icons.arrow_upward,
+    "PH DOWN": Icons.arrow_downward,
+  };
+
+  // Widget untuk Control Button
+  Widget _buildControlButton({
+    required String name,
     required bool isActive,
     required Color activeColor,
-    required Color inactiveColor,
-    required Function(bool) onToggle,
+    required VoidCallback onTap,
   }) {
     return GestureDetector(
-      onTap: () => onToggle(!isActive),
-      child: InkWell(
-        onTap: () => onToggle(!isActive),
-        splashColor: Colors.white.withOpacity(0.3),
-        borderRadius: BorderRadius.circular(10),
-        child: Container(
-          width: 85,
-          height: 90,
-          padding: const EdgeInsets.all(8.0),
-          decoration: BoxDecoration(
-            color: isActive ? activeColor : inactiveColor,
-            borderRadius: BorderRadius.circular(10),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.2),
-                offset: Offset(2, 2),
-                blurRadius: 5,
-              ),
-            ],
-          ),
+      onTap: onTap,
+      child: Container(
+        decoration: BoxDecoration(
+          color: isActive ? activeColor : Colors.grey.shade300,
+          borderRadius: BorderRadius.circular(10),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 5,
+              offset: const Offset(0, 3),
+            ),
+          ],
+        ),
+        child: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Text(
-                textTop,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                ),
+              Icon(
+                controlIcons[name],
+                color: isActive ? Colors.white : Colors.black,
+                size: 24,
               ),
-              const SizedBox(height: 5),
+              const SizedBox(height: 4),
               Text(
-                textBottom,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
+                name,
+                style: TextStyle(
+                  color: isActive ? Colors.white : Colors.black,
+                  fontWeight: FontWeight.bold,
                 ),
               ),
             ],
@@ -257,7 +349,7 @@ class _GamifikasiPageState extends State<GamifikasiPage> {
     );
   }
 
-  // Fungsi untuk membuat BottomNavigationBar
+  // Fungsi untuk membuat Bottom Navigation Bar
   Widget _buildBottomNavigation() {
     return ClipRRect(
       borderRadius: const BorderRadius.only(
@@ -272,27 +364,27 @@ class _GamifikasiPageState extends State<GamifikasiPage> {
             _bottomNavCurrentIndex = index;
           });
 
-          // Menangani navigasi berdasarkan indeks
+          // Navigasi halaman berdasarkan index
           switch (index) {
-            case 0: // Beranda
+            case 0:
               Navigator.pushReplacement(
                 context,
                 MaterialPageRoute(builder: (context) => const BerandaPage()),
               );
               break;
-            case 1: // Notifikasi
+            case 1:
               Navigator.pushReplacement(
                 context,
                 MaterialPageRoute(builder: (context) => const NotifikasiPage()),
               );
               break;
-            case 2: // Panduan
+            case 2:
               Navigator.pushReplacement(
                 context,
                 MaterialPageRoute(builder: (context) => const PanduanPage()),
               );
               break;
-            case 3: // Profil
+            case 3:
               Navigator.pushReplacement(
                 context,
                 MaterialPageRoute(builder: (context) => const ProfilPage()),

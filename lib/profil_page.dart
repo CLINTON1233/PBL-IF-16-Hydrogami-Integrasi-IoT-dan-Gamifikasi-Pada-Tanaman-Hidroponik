@@ -2,6 +2,7 @@ import 'package:application_hydrogami/beranda_page.dart';
 import 'package:application_hydrogami/notifikasi_page.dart';
 import 'package:application_hydrogami/panduan_page.dart';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class ProfilPage extends StatefulWidget {
   const ProfilPage({super.key});
@@ -21,14 +22,18 @@ class _ProfilPageState extends State<ProfilPage> {
         backgroundColor: const Color(0xFF24D17E),
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          icon: const Icon(Icons.arrow_back, color: Colors.black),
           onPressed: () {
-            Navigator.pop(context); // Navigasi kembali ke halaman sebelumnya
+            Navigator.pop(context);
           },
         ),
-        title: const Text(
+        title: Text(
           'Kelola Profil',
-          style: TextStyle(color: Color.fromARGB(255, 2, 0, 0)),
+          style: GoogleFonts.poppins(
+            fontSize: 20,
+            fontWeight: FontWeight.w600,
+            color: Colors.black,
+          ),
         ),
       ),
       body: SingleChildScrollView(

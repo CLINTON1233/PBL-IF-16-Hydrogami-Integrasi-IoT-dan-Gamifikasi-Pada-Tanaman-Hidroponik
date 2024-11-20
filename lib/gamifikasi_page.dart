@@ -1,3 +1,5 @@
+import 'package:application_hydrogami/leaderboard_page.dart';
+import 'package:application_hydrogami/reward_page.dart';
 import 'package:flutter/material.dart';
 import 'package:application_hydrogami/beranda_page.dart';
 import 'package:application_hydrogami/notifikasi_page.dart';
@@ -14,7 +16,7 @@ class GamifikasiPage extends StatefulWidget {
 
 class _GamifikasiPageState extends State<GamifikasiPage> {
   int _bottomNavCurrentIndex = 0;
-  bool isAutomaticControl = false; // Tambahkan deklarasi ini
+  bool isAutomaticControl = false;
   Map<String, bool> controls = {
     "AB MIX": false,
     "WATER": false,
@@ -210,9 +212,10 @@ class _GamifikasiPageState extends State<GamifikasiPage> {
   Widget _buildRewardWidget({required int coins}) {
     return InkWell(
       onTap: () {
-        // Tambahkan logika jika perlu saat jumlah koin di-tap
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Jumlah Koin Anda: $coins')),
+        // Navigasi ke halaman RewardPage
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const RewardPage()),
         );
       },
       child: Container(
@@ -256,8 +259,10 @@ class _GamifikasiPageState extends State<GamifikasiPage> {
   Widget _buildLeaderboardWidget() {
     return InkWell(
       onTap: () {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Tampilkan Leaderboard')),
+        // Navigasi ke halaman RewardPage
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const LeaderboardPage()),
         );
       },
       child: Container(
@@ -265,9 +270,9 @@ class _GamifikasiPageState extends State<GamifikasiPage> {
         decoration: BoxDecoration(
           // Menggunakan gradien biru ke hijau
           gradient: const LinearGradient(
-            colors: [Colors.blue, Colors.green], // Warna gradien biru dan hijau
-            begin: Alignment.topLeft, // Mulai dari kiri atas
-            end: Alignment.bottomRight, // Berakhir di kanan bawah
+            colors: [Colors.blue, Colors.green],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
           ),
           borderRadius: BorderRadius.circular(20),
           boxShadow: [

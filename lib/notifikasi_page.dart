@@ -117,7 +117,7 @@ class _NotifikasiPageState extends State<NotifikasiPage> {
                 Text(
                   entry.key,
                   style: GoogleFonts.poppins(
-                    fontSize: 16,
+                    fontSize: 14,
                     fontWeight:
                         FontWeight.w600, // Ganti font weight menjadi 600
                   ),
@@ -195,7 +195,7 @@ class _NotifikasiPageState extends State<NotifikasiPage> {
                         title: Text(
                           notification['message'],
                           style: GoogleFonts.poppins(
-                            fontSize: 14,
+                            fontSize: 12,
                             fontWeight: FontWeight.w500,
                           ),
                         ),

@@ -27,8 +27,7 @@ class _RewardPageState extends State<RewardPage> {
       body: const Center(
         child: Text('Halaman Reward'),
       ),
-      bottomNavigationBar:
-          _buildBottomNavigation(), // Menggunakan bottom navigation bar
+      bottomNavigationBar: _buildBottomNavigation(),
     );
   }
 

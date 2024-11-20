@@ -41,32 +41,43 @@ class _ProfilPageState extends State<ProfilPage> {
           padding: const EdgeInsets.all(16.0),
           child: Column(
             children: [
+              // Profile Image
               const CircleAvatar(
                 radius: 50,
                 backgroundImage: AssetImage('assets/profile.jpg'),
               ),
               const SizedBox(height: 20),
+
+              // Text Fields
               buildTextField('Nama', 'Masukkan Nama Anda'),
-              const SizedBox(height: 20),
+              const SizedBox(height: 10),
               buildTextField('Email', 'Masukkan Email Anda'),
-              const SizedBox(height: 20),
+              const SizedBox(height: 10),
               buildTextField('Password Saat Ini', 'Masukkan Password Anda',
                   obscureText: true),
-              const SizedBox(height: 20),
+              const SizedBox(height: 10),
               buildTextField('Password Baru', 'Masukkan Password Baru',
                   obscureText: true),
               const SizedBox(height: 20),
+
+              // Save Button
               ElevatedButton(
                 onPressed: () {},
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF24D17E),
                   padding:
-                      const EdgeInsets.symmetric(horizontal: 50, vertical: 15),
+                      const EdgeInsets.symmetric(horizontal: 30, vertical: 10),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(10),
                   ),
                 ),
-                child: const Text('Simpan', style: TextStyle(fontSize: 16)),
+                child: const Text(
+                  'Simpan',
+                  style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white),
+                ),
               ),
             ],
           ),
@@ -76,6 +87,7 @@ class _ProfilPageState extends State<ProfilPage> {
     );
   }
 
+  // Build Text Field
   Widget buildTextField(String labelText, String placeholder,
       {bool obscureText = false}) {
     return Column(
@@ -83,25 +95,35 @@ class _ProfilPageState extends State<ProfilPage> {
       children: [
         Text(
           labelText,
-          style: TextStyle(
-            color: Colors.grey[700],
-            fontWeight: FontWeight.bold,
+          style: GoogleFonts.poppins(
+            color: Colors.black,
+            fontWeight: FontWeight.normal,
+            fontSize: 13,
           ),
         ),
         const SizedBox(height: 8),
-        TextField(
-          obscureText: obscureText,
-          decoration: InputDecoration(
-            hintText: placeholder,
-            hintStyle: const TextStyle(color: Color(0xFF24D17E)),
-            contentPadding:
-                const EdgeInsets.symmetric(vertical: 10, horizontal: 20),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(10),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(10),
-              borderSide: const BorderSide(color: Color(0xFF24D17E)),
+        // Card Style for TextField with white background
+        Card(
+          color: Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+          elevation: 3,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+            child: TextField(
+              obscureText: obscureText,
+              style: GoogleFonts.poppins(fontSize: 12),
+              decoration: InputDecoration(
+                hintText: placeholder,
+                hintStyle: GoogleFonts.poppins(
+                  color: const Color(0xFF24D17E),
+                  fontSize: 12,
+                ),
+                contentPadding:
+                    const EdgeInsets.symmetric(vertical: 10, horizontal: 0),
+                border: InputBorder.none, // Menghilangkan border
+              ),
             ),
           ),
         ),
@@ -109,6 +131,7 @@ class _ProfilPageState extends State<ProfilPage> {
     );
   }
 
+  // Fungsi untuk membuat Bottom Navigation Bar
   Widget _buildBottomNavigation() {
     return ClipRRect(
       borderRadius: const BorderRadius.only(
@@ -123,27 +146,27 @@ class _ProfilPageState extends State<ProfilPage> {
             _bottomNavCurrentIndex = index;
           });
 
-          // Menangani navigasi berdasarkan indeks
+          // Navigasi halaman berdasarkan index
           switch (index) {
-            case 0: // Beranda
+            case 0:
               Navigator.pushReplacement(
                 context,
                 MaterialPageRoute(builder: (context) => const BerandaPage()),
               );
               break;
-            case 1: // Notifikasi
+            case 1:
               Navigator.pushReplacement(
                 context,
                 MaterialPageRoute(builder: (context) => const NotifikasiPage()),
               );
               break;
-            case 2: // Panduan
+            case 2:
               Navigator.pushReplacement(
                 context,
                 MaterialPageRoute(builder: (context) => const PanduanPage()),
               );
               break;
-            case 3: // Profil
+            case 3:
               Navigator.pushReplacement(
                 context,
                 MaterialPageRoute(builder: (context) => const ProfilPage()),

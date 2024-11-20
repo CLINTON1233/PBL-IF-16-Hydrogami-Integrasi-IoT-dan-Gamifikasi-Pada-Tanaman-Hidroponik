@@ -130,8 +130,8 @@ class _BerandaPageState extends State<BerandaPage> {
                       children: [
                         Image.asset(
                           'assets/hydrogami_logo.png',
-                          width: 85,
-                          height: 85,
+                          width: 87,
+                          height: 87,
                         ),
                         const SizedBox(width: 10),
                         Text(
@@ -214,6 +214,7 @@ class _BerandaPageState extends State<BerandaPage> {
                     ),
                     Row(
                       children: [
+                        const SizedBox(width: 50),
                         const Icon(
                           Icons.wb_sunny,
                           size: 25,

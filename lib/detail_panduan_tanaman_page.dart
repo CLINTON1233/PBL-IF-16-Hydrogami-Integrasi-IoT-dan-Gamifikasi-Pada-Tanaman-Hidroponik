@@ -136,7 +136,7 @@ class _DetailPanduanTanamanPageState extends State<DetailPanduanTanamanPage> {
                         'Selalu ikuti instruksi produsen untuk setiap produk yang Anda gunakan.'
                         '\n',
                         style: GoogleFonts.poppins(
-                          fontSize: 14,
+                          fontSize: 12,
                           color: Colors.black,
                           fontWeight: FontWeight.w600,
                           height: 1.6,

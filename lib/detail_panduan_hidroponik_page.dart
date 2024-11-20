@@ -107,7 +107,7 @@ class _DetailPanduanHidroponikPageState
                         '7. Pasang Sistem Pengembalian Air\n'
                         'Pasang saluran untuk mengembalikan air nutrisi ke tangki agar sirkulasi berfungsi.',
                         style: GoogleFonts.poppins(
-                          fontSize: 14,
+                          fontSize: 12,
                           color: Colors.black,
                           fontWeight: FontWeight.w600,
                           height: 1.6,

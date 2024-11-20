@@ -153,7 +153,7 @@ class _DetailPanduanSensorPageState extends State<DetailPanduanSensorPage> {
                         ' Pastikan Anda memahami risiko yang terkait dengan penggunaan listrik dan komponen elektronik.'
                         'Selalu ikuti instruksi produsen untuk setiap komponen.',
                         style: GoogleFonts.poppins(
-                          fontSize: 14,
+                          fontSize: 12,
                           color: Colors.black,
                           fontWeight: FontWeight.w600,
                           height: 1.6,

@@ -12,27 +12,80 @@ class RewardPage extends StatefulWidget {
 }
 
 class _RewardPageState extends State<RewardPage> {
-  // Menambahkan variabel untuk menyimpan indeks BottomNavigation
   int _bottomNavCurrentIndex = 0;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Colors.grey[100],
       appBar: AppBar(
         backgroundColor: const Color(0xFF24D17E),
         elevation: 0,
-        toolbarHeight: 0,
+        toolbarHeight: 60,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          onPressed: () {
+            Navigator.pop(context);
+          },
+        ),
+        title: const Text(
+          'Reward',
+          style: TextStyle(
+            color: Colors.black,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
       ),
-      body: const Center(
-        child: Text('Halaman Reward'),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Container(
+          padding: const EdgeInsets.all(16.0),
+          decoration: BoxDecoration(
+            color: Colors.grey[300],
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Column(
+            children: [
+              RewardItem(
+                title: 'Nutrisi',
+                percentage: 90,
+                color: Colors.green,
+                buttonText: 'Klaim Koin',
+              ),
+              RewardItem(
+                title: 'Kelembaban',
+                percentage: 90,
+                color: Colors.green,
+                buttonText: 'Klaim Koin',
+              ),
+              RewardItem(
+                title: 'Air',
+                percentage: 90,
+                color: Colors.green,
+                buttonText: 'Klaim Koin',
+              ),
+              RewardItem(
+                title: 'PH',
+                percentage: 40,
+                color: Colors.red,
+                buttonText: 'Selesaikan',
+                buttonColor: Colors.green,
+              ),
+              RewardItem(
+                title: 'Intensitas Cahaya',
+                percentage: 40,
+                color: Colors.yellow,
+                buttonText: 'Selesaikan',
+                buttonColor: Colors.green,
+              ),
+            ],
+          ),
+        ),
       ),
-      bottomNavigationBar:
-          _buildBottomNavigation(), // Menggunakan bottom navigation bar
+      bottomNavigationBar: _buildBottomNavigation(),
     );
   }
 
-  // Fungsi untuk membuat BottomNavigationBar
   Widget _buildBottomNavigation() {
     return ClipRRect(
       borderRadius: const BorderRadius.only(
@@ -47,27 +100,26 @@ class _RewardPageState extends State<RewardPage> {
             _bottomNavCurrentIndex = index;
           });
 
-          // Menangani navigasi berdasarkan indeks
           switch (index) {
-            case 0: // Beranda
+            case 0:
               Navigator.pushReplacement(
                 context,
                 MaterialPageRoute(builder: (context) => const BerandaPage()),
               );
               break;
-            case 1: // Notifikasi
+            case 1:
               Navigator.pushReplacement(
                 context,
                 MaterialPageRoute(builder: (context) => const NotifikasiPage()),
               );
               break;
-            case 2: // Panduan
+            case 2:
               Navigator.pushReplacement(
                 context,
                 MaterialPageRoute(builder: (context) => const PanduanPage()),
               );
               break;
-            case 3: // Profil
+            case 3:
               Navigator.pushReplacement(
                 context,
                 MaterialPageRoute(builder: (context) => const ProfilPage()),
@@ -124,6 +176,89 @@ class _RewardPageState extends State<RewardPage> {
         ],
         selectedItemColor: Colors.black,
         unselectedItemColor: Colors.white,
+      ),
+    );
+  }
+}
+
+class RewardItem extends StatelessWidget {
+  final String title;
+  final int percentage;
+  final Color color;
+  final String buttonText;
+  final Color buttonColor;
+
+  const RewardItem({
+    Key? key,
+    required this.title,
+    required this.percentage,
+    required this.color,
+    required this.buttonText,
+    this.buttonColor = Colors.grey,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                title,
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
+              Text(
+                '$percentage%',
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Stack(
+            children: [
+              Container(
+                height: 8,
+                decoration: BoxDecoration(
+                  color: Colors.grey[300],
+                  borderRadius: BorderRadius.circular(4),
+                ),
+              ),
+              Container(
+                height: 8,
+                width: (percentage / 100) * MediaQuery.of(context).size.width,
+                decoration: BoxDecoration(
+                  color: color,
+                  borderRadius: BorderRadius.circular(4),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Align(
+            alignment: Alignment.centerRight,
+            child: ElevatedButton.icon(
+              onPressed: () {
+                // Tambahkan logika tombol
+              },
+              icon: const Icon(
+                Icons.monetization_on, // Menggunakan ikon bawaan
+                color: Colors.yellow,
+                size: 16,
+              ),
+              label: Text(buttonText),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: buttonColor,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

@@ -44,7 +44,7 @@ class _RewardPageState extends State<RewardPage> {
             color: Colors.grey[300],
             borderRadius: BorderRadius.circular(8),
           ),
-          child: Column(
+          child: const Column(
             children: [
               RewardItem(
                 title: 'Nutrisi',
@@ -189,13 +189,13 @@ class RewardItem extends StatelessWidget {
   final Color buttonColor;
 
   const RewardItem({
-    Key? key,
+    super.key,
     required this.title,
     required this.percentage,
     required this.color,
     required this.buttonText,
     this.buttonColor = Colors.grey,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

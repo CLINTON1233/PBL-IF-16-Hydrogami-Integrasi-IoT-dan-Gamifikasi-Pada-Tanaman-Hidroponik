@@ -181,7 +181,7 @@ class _RewardPageState extends State<RewardPage> {
   }
 }
 
-class RewardItem extends StatelessWidget {
+class RewardItem extends StatefulWidget {
   final String title;
   final int percentage;
   final Color color;
@@ -198,6 +198,24 @@ class RewardItem extends StatelessWidget {
   });
 
   @override
+  State<RewardItem> createState() => _RewardItemState();
+}
+
+class _RewardItemState extends State<RewardItem> {
+  double _animatedWidth = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    // Start animating after widget is built
+    Future.delayed(Duration.zero, () {
+      setState(() {
+        _animatedWidth = widget.percentage.toDouble();
+      });
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 16.0),
@@ -208,11 +226,11 @@ class RewardItem extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                title,
+                widget.title,
                 style: const TextStyle(fontWeight: FontWeight.bold),
               ),
               Text(
-                '$percentage%',
+                '${widget.percentage}%',
                 style: const TextStyle(fontWeight: FontWeight.bold),
               ),
             ],
@@ -227,11 +245,14 @@ class RewardItem extends StatelessWidget {
                   borderRadius: BorderRadius.circular(4),
                 ),
               ),
-              Container(
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 500),
+                curve: Curves.easeInOut,
                 height: 8,
-                width: (percentage / 100) * MediaQuery.of(context).size.width,
+                width:
+                    (_animatedWidth / 100) * MediaQuery.of(context).size.width,
                 decoration: BoxDecoration(
-                  color: color,
+                  color: widget.color,
                   borderRadius: BorderRadius.circular(4),
                 ),
               ),
@@ -245,13 +266,21 @@ class RewardItem extends StatelessWidget {
                 // Tambahkan logika tombol
               },
               icon: const Icon(
-                Icons.monetization_on, // Menggunakan ikon bawaan
+                Icons.monetization_on,
                 color: Colors.yellow,
                 size: 16,
               ),
-              label: Text(buttonText),
+              label: Text(
+                widget.buttonText,
+                style: const TextStyle(
+                  color: Colors.white,
+                ),
+              ),
               style: ElevatedButton.styleFrom(
-                backgroundColor: buttonColor,
+                backgroundColor: widget.buttonColor,
+                foregroundColor: Colors.white,
+                elevation: 1,
+                shadowColor: Colors.black,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(20),
                 ),

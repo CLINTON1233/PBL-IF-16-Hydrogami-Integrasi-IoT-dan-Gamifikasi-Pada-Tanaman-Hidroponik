@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart'; // Tambahkan ini
 import 'package:google_fonts/google_fonts.dart';
 import 'package:application_hydrogami/awal2_page.dart';
 
@@ -16,16 +17,21 @@ class _Awal1PageState extends State<Awal1Page>
   @override
   void initState() {
     super.initState();
+    SystemChrome.setSystemUIOverlayStyle(
+      const SystemUiOverlayStyle(
+        statusBarColor: Colors.white,
+        statusBarIconBrightness: Brightness.dark,
+      ),
+    );
+
     // Animasi titik-titik
     _controller = AnimationController(
       duration: const Duration(seconds: 1),
       vsync: this,
     )..repeat();
 
-    // Menambahkan delay sebelum navigasi ke halaman selanjutnya
     Future.delayed(const Duration(seconds: 8), () {
       if (mounted) {
-        // Mengecek apakah widget masih ada di widget tree
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (context) => const Awal2Page()),
@@ -43,6 +49,11 @@ class _Awal1PageState extends State<Awal1Page>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        iconTheme: const IconThemeData(color: Colors.black),
+      ),
       backgroundColor: Colors.white,
       body: Center(
         child: Column(

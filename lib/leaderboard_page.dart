@@ -116,7 +116,7 @@ class _LeaderboardPageState extends State<LeaderboardPage> {
                       leading: Container(
                         width: 36,
                         height: 36,
-                        decoration: BoxDecoration(
+                        decoration: const BoxDecoration(
                           shape: BoxShape.circle,
                           color: const Color(0xFFF3F3F3),
                         ),

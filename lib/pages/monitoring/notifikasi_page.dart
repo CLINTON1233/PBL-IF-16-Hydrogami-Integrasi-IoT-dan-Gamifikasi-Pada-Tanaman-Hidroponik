@@ -1,6 +1,6 @@
-import 'package:application_hydrogami/beranda_page.dart';
-import 'package:application_hydrogami/panduan_page.dart';
-import 'package:application_hydrogami/profil_page.dart';
+import 'package:application_hydrogami/pages/beranda_page.dart';
+import 'package:application_hydrogami/pages/panduan/panduan_page.dart';
+import 'package:application_hydrogami/pages/profil_page.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 

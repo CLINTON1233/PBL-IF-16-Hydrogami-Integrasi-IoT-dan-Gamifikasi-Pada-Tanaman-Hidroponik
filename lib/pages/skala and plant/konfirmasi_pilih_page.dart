@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:application_hydrogami/beranda_page.dart';
+import 'package:application_hydrogami/pages/skala%20and%20plant/pilih_skala.dart';
 
-class KonfirmasiSkalaPage extends StatefulWidget {
-  const KonfirmasiSkalaPage({super.key});
+class KonfirmasiPilihPage extends StatefulWidget {
+  const KonfirmasiPilihPage({super.key});
 
   @override
-  State<KonfirmasiSkalaPage> createState() => _KonfirmasiSkalaPageState();
+  State<KonfirmasiPilihPage> createState() => _KonfirmasiPilihPageState();
 }
 
-class _KonfirmasiSkalaPageState extends State<KonfirmasiSkalaPage> {
+class _KonfirmasiPilihPageState extends State<KonfirmasiPilihPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -37,7 +37,7 @@ class _KonfirmasiSkalaPageState extends State<KonfirmasiSkalaPage> {
                 textAlign: TextAlign.center,
               ),
               Text(
-                'Skala Easy?',
+                'Pakcoy?',
                 style: GoogleFonts.poppins(
                   fontSize: 24,
                   color: const Color.fromARGB(232, 8, 166, 82),
@@ -47,7 +47,7 @@ class _KonfirmasiSkalaPageState extends State<KonfirmasiSkalaPage> {
               ),
               const SizedBox(height: 10),
               Image.asset(
-                'assets/skala_easy.png',
+                'assets/pakcoy2.png',
                 width: 400,
                 height: 500,
                 fit: BoxFit.cover,
@@ -99,7 +99,7 @@ class _KonfirmasiSkalaPageState extends State<KonfirmasiSkalaPage> {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => const BerandaPage(),
+                          builder: (context) => const PilihSkalaPage(),
                         ),
                       );
                     },

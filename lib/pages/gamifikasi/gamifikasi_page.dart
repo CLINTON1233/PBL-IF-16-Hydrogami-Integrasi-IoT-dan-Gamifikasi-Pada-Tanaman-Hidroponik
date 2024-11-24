@@ -1,10 +1,10 @@
-import 'package:application_hydrogami/leaderboard_page.dart';
-import 'package:application_hydrogami/reward_page.dart';
+import 'package:application_hydrogami/pages/gamifikasi/leaderboard_page.dart';
+import 'package:application_hydrogami/pages/gamifikasi/reward_page.dart';
 import 'package:flutter/material.dart';
-import 'package:application_hydrogami/beranda_page.dart';
-import 'package:application_hydrogami/notifikasi_page.dart';
-import 'package:application_hydrogami/panduan_page.dart';
-import 'package:application_hydrogami/profil_page.dart';
+import 'package:application_hydrogami/pages/beranda_page.dart';
+import 'package:application_hydrogami/pages/monitoring/notifikasi_page.dart';
+import 'package:application_hydrogami/pages/panduan/panduan_page.dart';
+import 'package:application_hydrogami/pages/profil_page.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class GamifikasiPage extends StatefulWidget {

@@ -1,4 +1,4 @@
-import 'package:application_hydrogami/awal1_page.dart';
+import 'package:application_hydrogami/pages/splash_screen/awal1_page.dart';
 import 'package:flutter/material.dart';
 
 void main() {

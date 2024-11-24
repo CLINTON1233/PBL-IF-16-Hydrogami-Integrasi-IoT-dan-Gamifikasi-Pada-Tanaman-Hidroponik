@@ -1,11 +1,11 @@
-import 'package:application_hydrogami/gamifikasi_page.dart';
-import 'package:application_hydrogami/monitoring_page.dart';
-import 'package:application_hydrogami/panduan_page.dart';
-import 'package:application_hydrogami/profil_page.dart';
+import 'package:application_hydrogami/pages/gamifikasi/gamifikasi_page.dart';
+import 'package:application_hydrogami/pages/monitoring/monitoring_page.dart';
+import 'package:application_hydrogami/pages/panduan/panduan_page.dart';
+import 'package:application_hydrogami/pages/profil_page.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:application_hydrogami/login_page.dart';
-import 'package:application_hydrogami/notifikasi_page.dart';
+import 'package:application_hydrogami/pages/auth/login_page.dart';
+import 'package:application_hydrogami/pages/monitoring/notifikasi_page.dart';
 
 class BerandaPage extends StatefulWidget {
   const BerandaPage({super.key});

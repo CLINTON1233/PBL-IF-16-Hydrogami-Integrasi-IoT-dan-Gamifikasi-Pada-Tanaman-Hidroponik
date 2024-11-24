@@ -1,9 +1,9 @@
-import 'package:application_hydrogami/beranda_page.dart';
-import 'package:application_hydrogami/detail_panduan_hidroponik_page.dart';
-import 'package:application_hydrogami/detail_panduan_sensor_page.dart';
-import 'package:application_hydrogami/detail_panduan_tanaman_page.dart';
-import 'package:application_hydrogami/notifikasi_page.dart';
-import 'package:application_hydrogami/profil_page.dart';
+import 'package:application_hydrogami/pages/beranda_page.dart';
+import 'package:application_hydrogami/pages/panduan/detail_panduan_hidroponik_page.dart';
+import 'package:application_hydrogami/pages/panduan/detail_panduan_sensor_page.dart';
+import 'package:application_hydrogami/pages/panduan/detail_panduan_tanaman_page.dart';
+import 'package:application_hydrogami/pages/monitoring/notifikasi_page.dart';
+import 'package:application_hydrogami/pages/profil_page.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:application_hydrogami/login_page.dart';
+import 'package:application_hydrogami/pages/auth/login_page.dart';
 
 class RegistrasiPage extends StatefulWidget {
   const RegistrasiPage({super.key});

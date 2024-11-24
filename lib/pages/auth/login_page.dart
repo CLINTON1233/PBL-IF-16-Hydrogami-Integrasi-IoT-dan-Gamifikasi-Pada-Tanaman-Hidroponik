@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:application_hydrogami/pilih_page.dart';
-import 'package:application_hydrogami/registrasi_page.dart';
+import 'package:application_hydrogami/pages/skala%20and%20plant/pilih_page.dart';
+import 'package:application_hydrogami/pages/auth/registrasi_page.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -13,8 +13,7 @@ class LoginPage extends StatefulWidget {
 class _LoginPageState extends State<LoginPage>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
-  bool _isPasswordVisible =
-      false; // Deklarasi variabel untuk visibilitas password
+  bool _isPasswordVisible = false;
 
   @override
   void initState() {

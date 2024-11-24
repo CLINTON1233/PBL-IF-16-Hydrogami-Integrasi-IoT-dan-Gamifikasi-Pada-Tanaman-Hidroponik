@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:application_hydrogami/konfirmasi_pilih_page.dart';
+import 'package:application_hydrogami/pages/skala%20and%20plant/konfirmasi_pilih_page.dart';
 
 class PilihPage extends StatefulWidget {
   const PilihPage({super.key});

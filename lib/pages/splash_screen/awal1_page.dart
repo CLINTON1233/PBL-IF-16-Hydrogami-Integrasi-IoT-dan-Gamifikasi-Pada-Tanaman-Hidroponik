@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart'; // Tambahkan ini
 import 'package:google_fonts/google_fonts.dart';
-import 'package:application_hydrogami/awal2_page.dart';
+import 'package:application_hydrogami/pages/splash_screen/awal2_page.dart';
 
 class Awal1Page extends StatefulWidget {
   const Awal1Page({super.key});

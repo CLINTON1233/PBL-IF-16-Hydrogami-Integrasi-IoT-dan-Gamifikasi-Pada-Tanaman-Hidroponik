@@ -118,7 +118,7 @@ class _LeaderboardPageState extends State<LeaderboardPage> {
                         height: 36,
                         decoration: const BoxDecoration(
                           shape: BoxShape.circle,
-                          color: const Color(0xFFF3F3F3),
+                          color: Color(0xFFF3F3F3),
                         ),
                         child: Center(
                           child: Text(

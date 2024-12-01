@@ -1,7 +1,13 @@
+import 'dart:convert';
+
+import 'package:application_hydrogami/pages/widgets/rounded_button.dart';
+import 'package:application_hydrogami/services/auth_services.dart';
+import 'package:application_hydrogami/services/globals.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:application_hydrogami/pages/skala%20and%20plant/pilih_page.dart';
 import 'package:application_hydrogami/pages/auth/registrasi_page.dart';
+import 'package:http/http.dart' as http;
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -14,6 +20,47 @@ class _LoginPageState extends State<LoginPage>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   bool _isPasswordVisible = false;
+
+  String email = '';
+  String password = '';
+
+  // Tambahkan TextEditingController untuk email dan password
+  final TextEditingController emailController = TextEditingController();
+  final TextEditingController passwordController = TextEditingController();
+
+  LoginPressed() async {
+    // Mengambil nilai email dan password dari controller
+    email = emailController.text;
+    password = passwordController.text;
+
+    if (email.isNotEmpty && password.isNotEmpty) {
+      try {
+        http.Response response = await AuthServices.login(email, password);
+        Map responseMap = jsonDecode(response.body);
+
+        if (response.statusCode == 200) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (BuildContext context) => const PilihPage(),
+            ),
+          );
+        } else {
+          if (responseMap.containsKey('email')) {
+            errorSnackBar(context, 'Email tidak valid');
+          } else if (responseMap.containsKey('password')) {
+            errorSnackBar(context, 'Password salah');
+          } else {
+            errorSnackBar(context, 'Terjadi kesalahan, coba lagi');
+          }
+        }
+      } catch (e) {
+        errorSnackBar(context, 'Terjadi kesalahan, coba lagi');
+      }
+    } else {
+      errorSnackBar(context, 'Isi Semua Field');
+    }
+  }
 
   @override
   void initState() {
@@ -30,25 +77,19 @@ class _LoginPageState extends State<LoginPage>
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      // Menghilangkan fokus saat area di luar field diketuk
       onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
       child: Scaffold(
         backgroundColor: Colors.white,
-        resizeToAvoidBottomInset: false, // Cegah otomatis resize
+        resizeToAvoidBottomInset: false,
         body: LayoutBuilder(
           builder: (context, constraints) {
             return SingleChildScrollView(
               child: ConstrainedBox(
-                constraints: BoxConstraints(
-                  minHeight: constraints.maxHeight,
-                ),
+                constraints: BoxConstraints(minHeight: constraints.maxHeight),
                 child: IntrinsicHeight(
                   child: Column(
                     children: [
-                      Container(
-                        height: 25,
-                        color: const Color(0xFF2ABD77),
-                      ),
+                      Container(height: 25, color: const Color(0xFF2ABD77)),
                       const SizedBox(height: 15),
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 12.0),
@@ -109,53 +150,20 @@ class _LoginPageState extends State<LoginPage>
                         ),
                       ),
                       const SizedBox(height: 10),
-                      Image.asset(
-                        'assets/hydrogami_logo.png',
-                        height: 120.0,
-                      ),
+                      Image.asset('assets/hydrogami_logo.png', height: 120.0),
                       const SizedBox(height: 5),
                       Expanded(
                         child: Container(
                           padding: const EdgeInsets.all(30),
                           decoration: const BoxDecoration(
                             color: Color(0xFF29CC74),
-                            borderRadius: BorderRadius.only(
-                              topLeft: Radius.circular(60),
-                            ),
+                            borderRadius:
+                                BorderRadius.only(topLeft: Radius.circular(60)),
                           ),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
-                              Text(
-                                'Nama',
-                                style: GoogleFonts.poppins(
-                                  fontSize: 14.0,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.white,
-                                ),
-                              ),
-                              TextFormField(
-                                style: GoogleFonts.poppins(
-                                  color: const Color(0xFF2ABD77),
-                                  fontSize: 12.0,
-                                ),
-                                decoration: InputDecoration(
-                                  hintText: 'Masukkan Nama Anda',
-                                  hintStyle: GoogleFonts.poppins(
-                                    color: const Color(0xFF2ABD77),
-                                    fontSize: 12.0,
-                                  ),
-                                  filled: true,
-                                  fillColor: Colors.white,
-                                  contentPadding: const EdgeInsets.symmetric(
-                                      vertical: 8, horizontal: 15),
-                                  border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(10),
-                                    borderSide: BorderSide.none,
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(height: 10),
+                              const SizedBox(height: 20),
                               Text(
                                 'Email',
                                 style: GoogleFonts.poppins(
@@ -165,6 +173,8 @@ class _LoginPageState extends State<LoginPage>
                                 ),
                               ),
                               TextFormField(
+                                controller:
+                                    emailController, // Tambahkan controller
                                 style: GoogleFonts.poppins(
                                   color: const Color(0xFF2ABD77),
                                   fontSize: 12.0,
@@ -195,6 +205,8 @@ class _LoginPageState extends State<LoginPage>
                                 ),
                               ),
                               TextFormField(
+                                controller:
+                                    passwordController, // Tambahkan controller
                                 obscureText: !_isPasswordVisible,
                                 style: GoogleFonts.poppins(
                                   color: const Color(0xFF2ABD77),
@@ -231,31 +243,9 @@ class _LoginPageState extends State<LoginPage>
                                 ),
                               ),
                               const SizedBox(height: 20),
-                              ElevatedButton(
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.white,
-                                  padding:
-                                      const EdgeInsets.symmetric(vertical: 12),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(30),
-                                  ),
-                                ),
-                                onPressed: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                        builder: (context) =>
-                                            const PilihPage()),
-                                  );
-                                },
-                                child: Text(
-                                  'Login',
-                                  style: GoogleFonts.poppins(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                    color: const Color(0xFF29CC74),
-                                  ),
-                                ),
+                              RoundedButton(
+                                btnText: 'Login',
+                                onBtnPressed: () => LoginPressed(),
                               ),
                               const SizedBox(height: 10),
                               Center(
@@ -272,9 +262,7 @@ class _LoginPageState extends State<LoginPage>
                                     text: TextSpan(
                                       text: 'Belum memiliki akun? ',
                                       style: GoogleFonts.poppins(
-                                        fontSize: 14,
-                                        color: Colors.white,
-                                      ),
+                                          fontSize: 14, color: Colors.white),
                                       children: [
                                         TextSpan(
                                           text: 'Daftar',

@@ -1,6 +1,11 @@
+import 'dart:convert';
+import 'package:application_hydrogami/pages/widgets/rounded_button.dart';
+import 'package:application_hydrogami/services/auth_services.dart';
+import 'package:application_hydrogami/services/globals.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:application_hydrogami/pages/auth/login_page.dart';
+import 'package:http/http.dart' as http;
 
 class RegistrasiPage extends StatefulWidget {
   const RegistrasiPage({super.key});
@@ -10,14 +15,77 @@ class RegistrasiPage extends StatefulWidget {
 }
 
 class RegistrasiPageState extends State<RegistrasiPage> {
+  final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
+  final TextEditingController _confirmPasswordController =
+      TextEditingController();
+
   bool _isPasswordVisible = false;
   bool _isConfirmPasswordVisible = false;
+
+  void createAccountPressed() async {
+    String name = _nameController.text.trim();
+    String email = _emailController.text.trim();
+    String password = _passwordController.text.trim();
+    String confirmPassword = _confirmPasswordController.text.trim();
+
+    if (name.isEmpty ||
+        email.isEmpty ||
+        password.isEmpty ||
+        confirmPassword.isEmpty) {
+      errorSnackBar(context, 'Semua form harus diisi!');
+      return;
+    }
+
+    if (password.length < 6) {
+      errorSnackBar(context, 'Kata sandi harus lebih dari 6 karakter!');
+      return;
+    }
+
+    if (password != confirmPassword) {
+      errorSnackBar(context, 'Kata sandi dan konfirmasi tidak cocok!');
+      return;
+    }
+
+    bool emailValid =
+        RegExp(r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$")
+            .hasMatch(email);
+
+    if (!emailValid) {
+      errorSnackBar(context, 'Email tidak valid!');
+      return;
+    }
+
+    try {
+      http.Response response =
+          await AuthServices.register(name, email, password);
+
+      Map responseMap = jsonDecode(response.body);
+
+      if (response.statusCode == 200) {
+        // Gunakan fungsi successSnackBar untuk notifikasi berhasil
+        successSnackBar(context, 'Pendaftaran berhasil!');
+        Future.delayed(const Duration(seconds: 2), () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const LoginPage()),
+          );
+        });
+      } else {
+        errorSnackBar(
+            context, responseMap['message'] ?? 'Terjadi kesalahan, coba lagi!');
+      }
+    } catch (e) {
+      errorSnackBar(
+          context, 'Gagal terhubung ke server. Periksa koneksi internet Anda.');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      resizeToAvoidBottomInset:
-          false, // Agar keyboard tidak menyebabkan overflow
+      resizeToAvoidBottomInset: false,
       backgroundColor: Colors.white,
       appBar: AppBar(
         backgroundColor: const Color.fromARGB(255, 36, 209, 126),
@@ -28,7 +96,7 @@ class RegistrasiPageState extends State<RegistrasiPage> {
         child: LayoutBuilder(
           builder: (context, constraints) {
             return SingleChildScrollView(
-              physics: const ClampingScrollPhysics(), // Tidak bisa digeser
+              physics: const ClampingScrollPhysics(),
               child: ConstrainedBox(
                 constraints: BoxConstraints(minHeight: constraints.maxHeight),
                 child: IntrinsicHeight(
@@ -116,16 +184,19 @@ class RegistrasiPageState extends State<RegistrasiPage> {
                               crossAxisAlignment: CrossAxisAlignment.stretch,
                               children: [
                                 _buildTextField(
+                                  controller: _nameController,
                                   label: "Nama",
                                   hint: "Masukkan Nama Anda",
                                 ),
                                 const SizedBox(height: 10),
                                 _buildTextField(
+                                  controller: _emailController,
                                   label: "Email",
                                   hint: "Masukkan Email Anda",
                                 ),
                                 const SizedBox(height: 10),
                                 _buildPasswordField(
+                                  controller: _passwordController,
                                   label: "Kata Sandi",
                                   hint: "Masukkan Kata Sandi",
                                   isPasswordVisible: _isPasswordVisible,
@@ -137,6 +208,7 @@ class RegistrasiPageState extends State<RegistrasiPage> {
                                 ),
                                 const SizedBox(height: 10),
                                 _buildPasswordField(
+                                  controller: _confirmPasswordController,
                                   label: "Konfirmasi Kata Sandi",
                                   hint: "Konfirmasi Kata Sandi",
                                   isPasswordVisible: _isConfirmPasswordVisible,
@@ -148,32 +220,9 @@ class RegistrasiPageState extends State<RegistrasiPage> {
                                   },
                                 ),
                                 const SizedBox(height: 20),
-                                ElevatedButton(
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.white,
-                                    padding: const EdgeInsets.symmetric(
-                                        vertical: 12),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(30),
-                                    ),
-                                  ),
-                                  onPressed: () {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                          builder: (context) =>
-                                              const LoginPage()),
-                                    );
-                                  },
-                                  child: Text(
-                                    'Daftar',
-                                    style: GoogleFonts.poppins(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold,
-                                      color: const Color(0xFF29CC74),
-                                    ),
-                                  ),
-                                ),
+                                RoundedButton(
+                                    btnText: 'Daftar',
+                                    onBtnPressed: createAccountPressed),
                                 const SizedBox(height: 10),
                                 Center(
                                   child: GestureDetector(
@@ -223,6 +272,7 @@ class RegistrasiPageState extends State<RegistrasiPage> {
   }
 
   Widget _buildTextField({
+    required TextEditingController controller,
     required String label,
     required String hint,
   }) {
@@ -238,6 +288,7 @@ class RegistrasiPageState extends State<RegistrasiPage> {
           ),
         ),
         TextFormField(
+          controller: controller,
           style: GoogleFonts.poppins(
             color: const Color(0xFF2ABD77),
             fontSize: 12.0,
@@ -263,6 +314,7 @@ class RegistrasiPageState extends State<RegistrasiPage> {
   }
 
   Widget _buildPasswordField({
+    required TextEditingController controller,
     required String label,
     required String hint,
     required bool isPasswordVisible,
@@ -280,11 +332,12 @@ class RegistrasiPageState extends State<RegistrasiPage> {
           ),
         ),
         TextFormField(
-          obscureText: !isPasswordVisible,
+          controller: controller,
           style: GoogleFonts.poppins(
             color: const Color(0xFF2ABD77),
             fontSize: 12.0,
           ),
+          obscureText: !isPasswordVisible,
           decoration: InputDecoration(
             hintText: hint,
             hintStyle: GoogleFonts.poppins(

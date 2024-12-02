@@ -99,8 +99,12 @@ class _NotifikasiPageState extends State<NotifikasiPage> {
         ),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_sharp),
+          iconSize: 20.0,
           onPressed: () {
-            Navigator.pop(context);
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const BerandaPage()),
+            );
           },
         ),
       ),

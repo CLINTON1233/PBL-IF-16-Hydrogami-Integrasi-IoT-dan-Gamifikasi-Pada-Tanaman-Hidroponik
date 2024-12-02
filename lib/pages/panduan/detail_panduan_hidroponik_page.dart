@@ -1,12 +1,15 @@
+import 'package:flutter/material.dart';
 import 'package:application_hydrogami/pages/beranda_page.dart';
 import 'package:application_hydrogami/pages/monitoring/notifikasi_page.dart';
 import 'package:application_hydrogami/pages/panduan/panduan_page.dart';
 import 'package:application_hydrogami/pages/profil_page.dart';
-import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:application_hydrogami/models/panduan_model.dart';
+import 'package:application_hydrogami/services/detail_panduan_services.dart';
 
 class DetailPanduanHidroponikPage extends StatefulWidget {
-  const DetailPanduanHidroponikPage({super.key});
+  final int idPanduan;
+  const DetailPanduanHidroponikPage({super.key, required this.idPanduan});
 
   @override
   State<DetailPanduanHidroponikPage> createState() =>
@@ -15,7 +18,14 @@ class DetailPanduanHidroponikPage extends StatefulWidget {
 
 class _DetailPanduanHidroponikPageState
     extends State<DetailPanduanHidroponikPage> {
+  late Future<Panduan?> panduanDetail;
   int _bottomNavCurrentIndex = 2;
+
+  @override
+  void initState() {
+    super.initState();
+    panduanDetail = DetailPanduanService.fetchPanduanDetail(widget.idPanduan);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -26,7 +36,7 @@ class _DetailPanduanHidroponikPageState
         elevation: 2,
         centerTitle: false,
         title: Text(
-          'Panduan',
+          'Detail Panduan',
           style: GoogleFonts.poppins(
             fontSize: 20,
             fontWeight: FontWeight.w600,
@@ -37,7 +47,10 @@ class _DetailPanduanHidroponikPageState
           icon: const Icon(Icons.arrow_back_sharp),
           iconSize: 20.0,
           onPressed: () {
-            Navigator.pop(context);
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const PanduanPage()),
+            );
           },
         ),
         actions: [
@@ -51,82 +64,82 @@ class _DetailPanduanHidroponikPageState
           ),
         ],
       ),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Judul diletakkan di luar card
-              Center(
-                child: Text(
-                  'Panduan Merakit Sistem Hidroponik',
-                  style: GoogleFonts.poppins(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.black,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-              ),
-              const SizedBox(height: 20),
-              Card(
-                elevation: 4,
-                color: Colors.white, // Mengubah warna card menjadi putih
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(10),
-                        child: Image.asset(
-                          'assets/hidroponikDetail.png',
-                          fit: BoxFit.cover,
-                          width: double.infinity,
-                          height: 200,
-                        ),
+      body: FutureBuilder<Panduan?>(
+        future: panduanDetail,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          } else if (snapshot.hasError || snapshot.data == null) {
+            return const Center(
+              child: Text('Gagal memuat data panduan.'),
+            );
+          }
+
+          final panduan = snapshot.data!;
+          return SingleChildScrollView(
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Center(
+                    child: Text(
+                      'Panduan Merakit Sistem Hidroponik',
+                      style: GoogleFonts.poppins(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.black,
                       ),
-                      const SizedBox(height: 20),
-                      Text(
-                        '1. Siapkan Pipa PVC\n'
-                        'Gunakan pipa PVC berdiameter cukup untuk aliran air dan akar tanaman. Lubangi untuk menempatkan netpot.\n\n'
-                        '2. Siapkan Rangka Penyangga\n'
-                        'Buat rangka kokoh untuk meletakkan pipa dengan kemiringan agar air mengalir lancar.\n\n'
-                        '3. Pasang Pompa Air\n'
-                        'Letakkan pompa di tangki nutrisi dan hubungkan dengan pipa PVC bagian atas menggunakan selang.\n\n'
-                        '4. Pasang Sistem Aliran Nutrisi\n'
-                        'Alirkan nutrisi ke dalam pipa dan pastikan air bersirkulasi kembali ke tangki.\n\n'
-                        '5. Letakkan Netpot dan Tanaman\n'
-                        'Tempatkan netpot dengan media tanam ke lubang pipa dan tanam bibit yang diinginkan.\n\n'
-                        '6. Siapkan Larutan Nutrisi\n'
-                        'Campurkan nutrisi sesuai takaran dan sesuaikan pH untuk kebutuhan tanaman.\n\n'
-                        '7. Pasang Sistem Pengembalian Air\n'
-                        'Pasang saluran untuk mengembalikan air nutrisi ke tangki agar sirkulasi berfungsi.',
-                        style: GoogleFonts.poppins(
-                          fontSize: 12,
-                          color: Colors.black,
-                          fontWeight: FontWeight.w600,
-                          height: 1.6,
-                        ),
-                        textAlign: TextAlign.justify,
-                      ),
-                    ],
+                      textAlign: TextAlign.center,
+                    ),
                   ),
-                ),
+                  const SizedBox(height: 20),
+                  Card(
+                    elevation: 4,
+                    color: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          if (panduan.gambar != null)
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(10),
+                              child: Image.network(
+                                'http://localhost/storage/${panduan.gambar}',
+                                fit: BoxFit.cover,
+                                width: double.infinity,
+                                height: 200,
+                              ),
+                            ),
+                          const SizedBox(height: 20),
+                          Text(
+                            panduan.deskPanduan ?? 'Deskripsi tidak tersedia.',
+                            style: GoogleFonts.poppins(
+                              fontSize: 12,
+                              color: Colors.black,
+                              fontWeight: FontWeight.w600,
+                              height: 1.6,
+                            ),
+                            textAlign: TextAlign.justify,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
               ),
-            ],
-          ),
-        ),
+            ),
+          );
+        },
       ),
       bottomNavigationBar: _buildBottomNavigation(),
     );
   }
 
-  // Fungsi untuk membuat BottomNavigationBar
   Widget _buildBottomNavigation() {
     return ClipRRect(
       borderRadius: const BorderRadius.only(
@@ -141,27 +154,26 @@ class _DetailPanduanHidroponikPageState
             _bottomNavCurrentIndex = index;
           });
 
-          // Menangani navigasi berdasarkan indeks
           switch (index) {
-            case 0: // Beranda
+            case 0:
               Navigator.pushReplacement(
                 context,
                 MaterialPageRoute(builder: (context) => const BerandaPage()),
               );
               break;
-            case 1: // Notifikasi
+            case 1:
               Navigator.pushReplacement(
                 context,
                 MaterialPageRoute(builder: (context) => const NotifikasiPage()),
               );
               break;
-            case 2: // Panduan
+            case 2:
               Navigator.pushReplacement(
                 context,
                 MaterialPageRoute(builder: (context) => const PanduanPage()),
               );
               break;
-            case 3: // Profil
+            case 3:
               Navigator.pushReplacement(
                 context,
                 MaterialPageRoute(builder: (context) => const ProfilPage()),

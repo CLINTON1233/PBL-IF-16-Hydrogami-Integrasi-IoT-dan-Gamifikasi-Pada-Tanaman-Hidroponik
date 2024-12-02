@@ -37,7 +37,10 @@ class _PanduanPageState extends State<PanduanPage> {
           icon: const Icon(Icons.arrow_back_sharp),
           iconSize: 20.0,
           onPressed: () {
-            Navigator.pop(context);
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const BerandaPage()),
+            );
           },
         ),
         actions: [
@@ -60,7 +63,7 @@ class _PanduanPageState extends State<PanduanPage> {
               _buildPanduanCard(
                 'assets/panduan_hidroponik.png',
                 'Panduan Merakit Sistem Hidroponik',
-                const DetailPanduanHidroponikPage(),
+                const DetailPanduanHidroponikPage(idPanduan: 1),
               ),
               const SizedBox(height: 16),
               _buildPanduanCard(

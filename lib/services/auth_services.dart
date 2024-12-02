@@ -6,11 +6,12 @@ import 'package:http/http.dart' as http;
 class AuthServices {
   //Register
   static Future<http.Response> register(
-      String name, String email, String password) async {
+      String username, String email, String password, int poin) async {
     Map data = {
-      "name": name,
+      "username": username,
       "email": email,
       "password": password,
+      "poin": poin,
     };
     var body = json.encode(data);
     var url = Uri.parse(baseURL + 'auth/register');

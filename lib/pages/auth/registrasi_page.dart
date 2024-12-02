@@ -1,4 +1,5 @@
 import 'dart:convert';
+// import 'dart:ffi';
 import 'package:application_hydrogami/pages/widgets/rounded_button.dart';
 import 'package:application_hydrogami/services/auth_services.dart';
 import 'package:application_hydrogami/services/globals.dart';
@@ -15,22 +16,26 @@ class RegistrasiPage extends StatefulWidget {
 }
 
 class RegistrasiPageState extends State<RegistrasiPage> {
-  final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _usernameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _confirmPasswordController =
       TextEditingController();
+  final TextEditingController _poinController = TextEditingController();
 
   bool _isPasswordVisible = false;
   bool _isConfirmPasswordVisible = false;
 
   void createAccountPressed() async {
-    String name = _nameController.text.trim();
+    String username = _usernameController.text.trim();
     String email = _emailController.text.trim();
     String password = _passwordController.text.trim();
     String confirmPassword = _confirmPasswordController.text.trim();
+    int poin = _poinController.text.isEmpty
+        ? 0
+        : int.parse(_poinController.text.trim());
 
-    if (name.isEmpty ||
+    if (username.isEmpty ||
         email.isEmpty ||
         password.isEmpty ||
         confirmPassword.isEmpty) {
@@ -59,7 +64,7 @@ class RegistrasiPageState extends State<RegistrasiPage> {
 
     try {
       http.Response response =
-          await AuthServices.register(name, email, password);
+          await AuthServices.register(username, email, password, poin);
 
       Map responseMap = jsonDecode(response.body);
 
@@ -184,9 +189,9 @@ class RegistrasiPageState extends State<RegistrasiPage> {
                               crossAxisAlignment: CrossAxisAlignment.stretch,
                               children: [
                                 _buildTextField(
-                                  controller: _nameController,
-                                  label: "Nama",
-                                  hint: "Masukkan Nama Anda",
+                                  controller: _usernameController,
+                                  label: "Username",
+                                  hint: "Masukkan Username",
                                 ),
                                 const SizedBox(height: 10),
                                 _buildTextField(

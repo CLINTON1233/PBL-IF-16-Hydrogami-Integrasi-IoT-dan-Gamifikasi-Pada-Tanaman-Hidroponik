@@ -84,7 +84,7 @@ class _DetailPanduanHidroponikPageState
                 children: [
                   Center(
                     child: Text(
-                      'Panduan Merakit Sistem Hidroponik',
+                      panduan.judul ?? 'Judul tidak tersedia.',
                       style: GoogleFonts.poppins(
                         fontSize: 18,
                         fontWeight: FontWeight.w600,
@@ -108,8 +108,10 @@ class _DetailPanduanHidroponikPageState
                           if (panduan.gambar != null)
                             ClipRRect(
                               borderRadius: BorderRadius.circular(10),
-                              child: Image.network(
-                                'http://localhost/storage/${panduan.gambar}',
+                              child: Image.asset(
+                                'assets/panduan_hidroponik.png',
+                                // child: Image.network(
+                                // 'http://localhost/storage/${panduan.gambar}',
                                 fit: BoxFit.cover,
                                 width: double.infinity,
                                 height: 200,

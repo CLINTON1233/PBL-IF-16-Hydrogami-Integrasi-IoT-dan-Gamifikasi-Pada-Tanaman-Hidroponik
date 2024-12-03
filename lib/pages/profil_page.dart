@@ -46,6 +46,7 @@ class _ProfilPageState extends State<ProfilPage> {
                 radius: 50,
                 backgroundImage: AssetImage('assets/profile.jpg'),
               ),
+
               const SizedBox(height: 20),
 
               // Text Fields

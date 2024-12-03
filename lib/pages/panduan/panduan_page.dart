@@ -69,13 +69,13 @@ class _PanduanPageState extends State<PanduanPage> {
               _buildPanduanCard(
                 'assets/panduan_sensor.png',
                 'Panduan Pemasangan Sensor IoT',
-                const DetailPanduanSensorPage(),
+                const DetailPanduanSensorPage(idPanduan: 2),
               ),
               const SizedBox(height: 16),
               _buildPanduanCard(
                 'assets/tanaman_panduan.png',
                 'Panduan Pengelolaan Tanaman',
-                const DetailPanduanTanamanPage(),
+                const DetailPanduanTanamanPage(idPanduan: 3),
               ),
             ],
           ),

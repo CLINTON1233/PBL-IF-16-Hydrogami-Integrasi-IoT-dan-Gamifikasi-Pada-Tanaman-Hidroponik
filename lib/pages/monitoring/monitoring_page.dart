@@ -4,7 +4,9 @@ import 'package:application_hydrogami/pages/panduan/panduan_page.dart';
 import 'package:application_hydrogami/pages/profil_page.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:fl_chart/fl_chart.dart'; // Import library chart
+import 'package:fl_chart/fl_chart.dart';
+import 'package:application_hydrogami/services/monitoring_subscriber.dart';
+import 'dart:math';
 
 class MonitoringPage extends StatefulWidget {
   const MonitoringPage({super.key});
@@ -16,33 +18,148 @@ class MonitoringPage extends StatefulWidget {
 class _MonitoringPageState extends State<MonitoringPage> {
   int _bottomNavCurrentIndex = 0;
 
-  // Data untuk grafik TDS
-  List<FlSpot> chartDataTDS = [
-    const FlSpot(1, 400),
-    const FlSpot(2, 500),
-    const FlSpot(3, 600),
-    const FlSpot(4, 700),
-    const FlSpot(5, 650),
-    const FlSpot(6, 800),
-    const FlSpot(7, 900),
-    const FlSpot(8, 950),
-    const FlSpot(9, 950),
-    const FlSpot(10, 900),
-  ];
+  late MQTTSubscriber mqttSubscriber;
+  Map<String, dynamic> sensorData = {
+    'temperature': 0.0,
+    'humidity': 0.0,
+    'light': 0.0,
+    'soil_moisture': 0,
+    'tds': 0.0,
+    'ph': 0.0,
+  };
 
-  // Data untuk grafik pH
-  List<FlSpot> chartDataPH = [
-    const FlSpot(1, 7),
-    const FlSpot(2, 6.5),
-    const FlSpot(3, 6),
-    const FlSpot(4, 5.5),
-    const FlSpot(5, 5.8),
-    const FlSpot(6, 6),
-    const FlSpot(7, 6.5),
-    const FlSpot(8, 6.8),
-    const FlSpot(9, 6.8),
-    const FlSpot(10, 6.5),
-  ];
+  static const int maxDataPoints = 30;
+
+  List<FlSpot> tdsSpots = [];
+  List<FlSpot> phSpots = [];
+  int dataPoint = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    mqttSubscriber = MQTTSubscriber(onDataReceived: updateSensorData);
+    mqttSubscriber.initialize();
+  }
+
+  @override
+  void dispose() {
+    mqttSubscriber.disconnect();
+    super.dispose();
+  }
+
+  void updateSensorData(Map<String, dynamic> data) {
+    setState(() {
+      sensorData = data;
+      final timestamp =
+          DateTime.now().millisecondsSinceEpoch / 1000; // Konversi ke detik
+
+      // Update TDS spots
+      if (tdsSpots.length >= maxDataPoints) {
+        tdsSpots.removeAt(0);
+        // Geser semua titik ke kiri
+        for (int i = 0; i < tdsSpots.length; i++) {
+          tdsSpots[i] = FlSpot(i.toDouble(), tdsSpots[i].y);
+        }
+      }
+      tdsSpots.add(FlSpot(tdsSpots.length.toDouble(), data['tds'].toDouble()));
+
+      // Update pH spots
+      if (phSpots.length >= maxDataPoints) {
+        phSpots.removeAt(0);
+        // Geser semua titik ke kiri
+        for (int i = 0; i < phSpots.length; i++) {
+          phSpots[i] = FlSpot(i.toDouble(), phSpots[i].y);
+        }
+      }
+      phSpots.add(FlSpot(phSpots.length.toDouble(), data['ph'].toDouble()));
+    });
+  }
+
+  LineChartData _createChartData(List<FlSpot> spots, {double interval = 1.0}) {
+    final minY = spots.isEmpty ? 0.0 : spots.map((spot) => spot.y).reduce(min);
+    final maxY = spots.isEmpty ? 10.0 : spots.map((spot) => spot.y).reduce(max);
+    final padding = (maxY - minY) * 0.1;
+
+    return LineChartData(
+      lineBarsData: [
+        LineChartBarData(
+          spots: spots,
+          isCurved: true,
+          barWidth: 2,
+          color: Colors.black,
+          dotData: const FlDotData(show: true), // Tampilkan titik data
+          belowBarData: BarAreaData(
+            show: true,
+            color: Colors.black.withOpacity(0.1),
+          ),
+        ),
+      ],
+      titlesData: FlTitlesData(
+        show: true,
+        topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+        rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+        bottomTitles: AxisTitles(
+          sideTitles: SideTitles(
+            showTitles: true,
+            getTitlesWidget: (value, titleMeta) {
+              if (value % 5 == 0) {
+                // Tampilkan label setiap 5 detik
+                return Text(
+                  value.toInt().toString(),
+                  style: const TextStyle(
+                    color: Colors.black,
+                    fontSize: 10,
+                  ),
+                );
+              }
+              return const Text('');
+            },
+          ),
+        ),
+        leftTitles: AxisTitles(
+          sideTitles: SideTitles(
+            showTitles: true,
+            getTitlesWidget: (value, titleMeta) {
+              return Text(
+                value.toInt().toString(),
+                style: const TextStyle(
+                  color: Colors.black,
+                  fontSize: 10,
+                ),
+              );
+            },
+            reservedSize: 40,
+          ),
+        ),
+      ),
+      gridData: FlGridData(
+        show: true,
+        horizontalInterval: interval,
+        verticalInterval: 5, // Grid vertikal setiap 5 detik
+        drawVerticalLine: true,
+        getDrawingHorizontalLine: (value) {
+          return FlLine(
+            color: Colors.black12,
+            strokeWidth: 1,
+          );
+        },
+        getDrawingVerticalLine: (value) {
+          return FlLine(
+            color: Colors.black12,
+            strokeWidth: 1,
+          );
+        },
+      ),
+      borderData: FlBorderData(
+        show: true,
+        border: Border.all(color: Colors.black12),
+      ),
+      minY: minY - padding,
+      maxY: maxY + padding,
+      clipData: FlClipData.all(),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -95,20 +212,20 @@ class _MonitoringPageState extends State<MonitoringPage> {
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   const Text(
-                    'TDS Tanaman Pakcoy Selama 10 Hari',
+                    'GRAFIK TDS AIR',
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
                     ),
                   ),
                   const SizedBox(height: 10.0),
                   SizedBox(
-                    height: 150,
+                    height: 150, // Tinggi grafik ditambah
                     width: MediaQuery.of(context).size.width * 0.9,
                     child: LineChart(
                       LineChartData(
                         lineBarsData: [
                           LineChartBarData(
-                            spots: chartDataTDS,
+                            spots: tdsSpots,
                             isCurved: true,
                             barWidth: 2,
                             color: Colors.black,
@@ -170,7 +287,7 @@ class _MonitoringPageState extends State<MonitoringPage> {
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   const Text(
-                    'PH Tanaman Pakcoy Selama 10 Hari',
+                    'GRAFIK PH',
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
                     ),
@@ -183,7 +300,7 @@ class _MonitoringPageState extends State<MonitoringPage> {
                       LineChartData(
                         lineBarsData: [
                           LineChartBarData(
-                            spots: chartDataPH,
+                            spots: phSpots,
                             isCurved: true,
                             barWidth: 2,
                             color: Colors.black,
@@ -257,42 +374,50 @@ class _MonitoringPageState extends State<MonitoringPage> {
                     children: [
                       _buildMonitoringCard(
                         icon: Icons.thermostat,
-                        title: 'TDS',
-                        value: '256',
-                        unit: 'PPM',
-                      ),
-                      _buildMonitoringCard(
-                        icon: Icons.water_drop,
-                        title: 'Air',
-                        value: '16',
-                        unit: 'Lux',
+                        title: 'TDS', // Total Dissolved Solids
+                        value: sensorData['tds']?.toStringAsFixed(1) ?? '0',
+                        unit: 'ppm', // Parts Per Million
                       ),
                       _buildMonitoringCard(
                         icon: Icons.thermostat,
-                        title: 'PH',
-                        value: '7.2',
-                        unit: 'PH',
+                        title: 'Suhu', // Temperature
+                        value: sensorData['temperature']?.toStringAsFixed(1) ??
+                            '0',
+                        unit: '°C', // Degrees Celsius
+                      ),
+                      _buildMonitoringCard(
+                        icon: Icons.thermostat,
+                        title: 'pH',
+                        value: sensorData['ph']?.toStringAsFixed(1) ?? '0',
+                        unit: '', // pH tidak memerlukan satuan
                       ),
                     ],
                   ),
                   const SizedBox(height: 16.0),
-                  // Row 2
+// Row 2
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceAround,
                     children: [
                       _buildMonitoringCard(
                         icon: Icons.water_drop,
-                        title: 'Kelembaban',
-                        value: '62',
-                        unit: '%',
-                        width: 150,
+                        title: 'Kelembaban Tanah', // Soil Moisture
+                        value:
+                            sensorData['soil_moisture']?.toStringAsFixed(1) ??
+                                '0',
+                        unit: '%', // Persentase
+                      ),
+                      _buildMonitoringCard(
+                        icon: Icons.water_drop,
+                        title: 'Kelembaban Udara', // Air Humidity
+                        value:
+                            sensorData['humidity']?.toStringAsFixed(1) ?? '0',
+                        unit: '%', // Persentase
                       ),
                       _buildMonitoringCard(
                         icon: Icons.brightness_high,
-                        title: 'Intensitas',
-                        value: '1000',
-                        unit: 'Cd',
-                        width: 150,
+                        title: 'Intensitas Cahaya', // Light Intensity
+                        value: sensorData['light']?.toStringAsFixed(1) ?? '0',
+                        unit: 'lux', // Illuminance
                       ),
                     ],
                   ),
@@ -492,11 +617,4 @@ class _MonitoringPageState extends State<MonitoringPage> {
       ),
     );
   }
-}
-
-// Data class untuk grafik
-class _ChartData {
-  _ChartData(this.x, this.y);
-  final int x;
-  final double y;
 }

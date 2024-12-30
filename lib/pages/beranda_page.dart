@@ -6,6 +6,8 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:application_hydrogami/pages/auth/login_page.dart';
 import 'package:application_hydrogami/pages/monitoring/notifikasi_page.dart';
+import 'package:application_hydrogami/services/beranda_services.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class BerandaPage extends StatefulWidget {
   const BerandaPage({super.key});
@@ -15,10 +17,38 @@ class BerandaPage extends StatefulWidget {
 }
 
 class _BerandaPageState extends State<BerandaPage> {
+  String userName = 'Guest';
   bool _showLogoutText = false;
   int _bottomNavCurrentIndex = 0;
 
-  // Fungsi untuk menampilkan dialog konfirmasi logout
+  @override
+  void initState() {
+    super.initState();
+    fetchUserNameFromAPI();
+  }
+
+  Future<void> fetchUserNameFromAPI() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('token'); // Simpan token saat login
+
+      if (token != null) {
+        String name = await BerandaServices.getUserDetails(token);
+        setState(() {
+          userName = name;
+        });
+      } else {
+        setState(() {
+          userName = 'Guest';
+        });
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Error fetching user name')),
+      );
+    }
+  }
+
   void _showLogoutConfirmationDialog() {
     showDialog(
       context: context,
@@ -30,35 +60,22 @@ class _BerandaPageState extends State<BerandaPage> {
             textAlign: TextAlign.center,
           ),
           actions: <Widget>[
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                Padding(
-                  padding: const EdgeInsets.only(left: 16.0),
-                  child: TextButton(
-                    child: const Text("Tidak, Batalkan!",
-                        style: TextStyle(color: Colors.red)),
-                    onPressed: () {
-                      Navigator.of(context).pop(); // Tutup dialog
-                    },
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.only(right: 40.0),
-                  child: TextButton(
-                    child:
-                        const Text("Ya", style: TextStyle(color: Colors.green)),
-                    onPressed: () {
-                      Navigator.of(context).pop();
-                      Navigator.pushReplacement(
-                        context,
-                        MaterialPageRoute(
-                            builder: (context) => const LoginPage()),
-                      );
-                    },
-                  ),
-                ),
-              ],
+            TextButton(
+              child: const Text("Tidak, Batalkan!",
+                  style: TextStyle(color: Colors.red)),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+            TextButton(
+              child: const Text("Ya", style: TextStyle(color: Colors.green)),
+              onPressed: () {
+                Navigator.of(context).pop();
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(builder: (context) => const LoginPage()),
+                );
+              },
             ),
           ],
         );
@@ -135,7 +152,7 @@ class _BerandaPageState extends State<BerandaPage> {
                         ),
                         const SizedBox(width: 10),
                         Text(
-                          'Hi Anton!',
+                          'Hi $userName!',
                           style: GoogleFonts.roboto(
                             fontSize: 20,
                             fontWeight: FontWeight.bold,

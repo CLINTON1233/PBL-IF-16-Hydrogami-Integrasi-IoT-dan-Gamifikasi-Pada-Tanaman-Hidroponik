@@ -30,7 +30,7 @@ class _Awal1PageState extends State<Awal1Page>
       vsync: this,
     )..repeat();
 
-    Future.delayed(const Duration(seconds: 8), () {
+    Future.delayed(const Duration(seconds: 15), () {
       if (mounted) {
         Navigator.pushReplacement(
           context,

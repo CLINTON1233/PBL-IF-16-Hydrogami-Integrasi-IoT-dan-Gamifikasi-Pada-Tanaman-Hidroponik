@@ -8,6 +8,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:application_hydrogami/pages/skala%20and%20plant/pilih_page.dart';
 import 'package:application_hydrogami/pages/auth/registrasi_page.dart';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -27,6 +28,37 @@ class _LoginPageState extends State<LoginPage>
   // Tambahkan TextEditingController untuk email dan password
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
+
+  void loginUser(String email, String password) async {
+    try {
+      final response = await http.post(
+        Uri.parse('http://localhost:8000/api/auth/login'),
+        body: {
+          'email': email,
+          'password': password,
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('token', data['token']); // Simpan token
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const PilihPage()),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+              content: Text('Login gagal. Periksa kredensial Anda.')),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Terjadi kesalahan saat login')),
+      );
+    }
+  }
 
   LoginPressed() async {
     // Mengambil nilai email dan password dari controller

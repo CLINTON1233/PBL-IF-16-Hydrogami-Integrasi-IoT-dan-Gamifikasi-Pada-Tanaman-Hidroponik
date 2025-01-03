@@ -5,8 +5,9 @@ import 'package:application_hydrogami/pages/profil_page.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:fl_chart/fl_chart.dart';
-import 'package:application_hydrogami/services/monitoring_subscriber.dart';
-import 'dart:math';
+import 'dart:convert';
+import 'package:mqtt_client/mqtt_client.dart';
+import 'package:mqtt_client/mqtt_server_client.dart';
 
 class MonitoringPage extends StatefulWidget {
   const MonitoringPage({super.key});
@@ -18,145 +19,339 @@ class MonitoringPage extends StatefulWidget {
 class _MonitoringPageState extends State<MonitoringPage> {
   int _bottomNavCurrentIndex = 0;
 
-  late MQTTSubscriber mqttSubscriber;
-  Map<String, dynamic> sensorData = {
-    'temperature': 0.0,
-    'humidity': 0.0,
-    'light': 0.0,
-    'soil_moisture': 0,
-    'tds': 0.0,
-    'ph': 0.0,
-  };
+  // MQTT Client
+  late MqttServerClient client;
+  final String broker = '192.168.113.189';
+  final String clientIdentifier = 'flutter_client';
 
-  static const int maxDataPoints = 30;
+  // Data sensor real-time
+  double currentTDS = 0;
+  double currentPH = 0;
+  double currentTemp = 0;
+  double currentHumidity = 0;
+  double currentLight = 0;
+  int currentSoilMoisture = 0;
 
-  List<FlSpot> tdsSpots = [];
-  List<FlSpot> phSpots = [];
-  int dataPoint = 0;
+  // Data untuk grafik TDS
+  List<FlSpot> chartDataTDS = [];
+  List<FlSpot> chartDataPH = [];
+
+  int timeCounter = 0;
+  final int maxDataPoints = 10;
 
   @override
   void initState() {
     super.initState();
-    mqttSubscriber = MQTTSubscriber(onDataReceived: updateSensorData);
-    mqttSubscriber.initialize();
+    // Inisialisasi chart kosong
+    for (int i = 0; i < maxDataPoints; i++) {
+      chartDataTDS.add(FlSpot(i.toDouble(), 0));
+      chartDataPH.add(FlSpot(i.toDouble(), 0));
+    }
+    setupMqttClient();
+    connectClient();
   }
 
   @override
   void dispose() {
-    mqttSubscriber.disconnect();
+    client.disconnect();
     super.dispose();
   }
 
-  void updateSensorData(Map<String, dynamic> data) {
-    setState(() {
-      sensorData = data;
-      final timestamp =
-          DateTime.now().millisecondsSinceEpoch / 1000; // Konversi ke detik
+  // Setup MQTT Client
+  void setupMqttClient() {
+    client = MqttServerClient.withPort(broker, clientIdentifier, 1883);
+    client.logging(on: true);
+    client.onConnected = onConnected;
+    client.onDisconnected = onDisconnected;
+    client.onSubscribed = onSubscribed;
+    client.onSubscribeFail = onSubscribeFail;
+    client.pongCallback = pong;
+    client.keepAlivePeriod = 60;
+    client.onBadCertificate = (cert) => true;
+  }
 
-      // Update TDS spots
-      if (tdsSpots.length >= maxDataPoints) {
-        tdsSpots.removeAt(0);
-        // Geser semua titik ke kiri
-        for (int i = 0; i < tdsSpots.length; i++) {
-          tdsSpots[i] = FlSpot(i.toDouble(), tdsSpots[i].y);
-        }
-      }
-      tdsSpots.add(FlSpot(tdsSpots.length.toDouble(), data['tds'].toDouble()));
+  // Connect ke MQTT Broker
+  void connectClient() async {
+    try {
+      await client.connect('try', 'try');
+    } catch (e) {
+      print('Exception: $e');
+      client.disconnect();
+    }
 
-      // Update pH spots
-      if (phSpots.length >= maxDataPoints) {
-        phSpots.removeAt(0);
-        // Geser semua titik ke kiri
-        for (int i = 0; i < phSpots.length; i++) {
-          phSpots[i] = FlSpot(i.toDouble(), phSpots[i].y);
-        }
-      }
-      phSpots.add(FlSpot(phSpots.length.toDouble(), data['ph'].toDouble()));
+    if (client.connectionStatus?.state == MqttConnectionState.connected) {
+      print('MQTT client connected');
+      subscribeToTopic();
+    } else {
+      print('ERROR: MQTT client connection failed - disconnecting');
+      client.disconnect();
+    }
+  }
+
+  // Subscribe ke topic
+  void subscribeToTopic() {
+    const topic = 'sensor/data';
+    client.subscribe(topic, MqttQos.atMostOnce);
+
+    client.updates?.listen((List<MqttReceivedMessage<MqttMessage>> c) {
+      final MqttPublishMessage message = c[0].payload as MqttPublishMessage;
+      final payload =
+          MqttPublishPayload.bytesToStringAsString(message.payload.message);
+
+      print('Received message: $payload');
+
+      // Parse JSON data
+      Map<String, dynamic> data = jsonDecode(payload);
+
+      setState(() {
+        currentTDS = data['tds']?.toDouble() ?? 0;
+        currentPH = data['ph']?.toDouble() ?? 0;
+        currentTemp = data['temperature']?.toDouble() ?? 0;
+        currentHumidity = data['humidity']?.toDouble() ?? 0;
+        currentLight = data['light']?.toDouble() ?? 0;
+        currentSoilMoisture = data['soil_moisture']?.toInt() ?? 0;
+
+        // Update grafik
+        updateCharts(currentTDS, currentPH);
+      });
     });
   }
 
-  LineChartData _createChartData(List<FlSpot> spots, {double interval = 1.0}) {
-    final minY = spots.isEmpty ? 0.0 : spots.map((spot) => spot.y).reduce(min);
-    final maxY = spots.isEmpty ? 10.0 : spots.map((spot) => spot.y).reduce(max);
-    final padding = (maxY - minY) * 0.1;
+  // Update data grafik
+  void updateCharts(double tdsValue, double phValue) {
+    setState(() {
+      timeCounter++;
 
-    return LineChartData(
-      lineBarsData: [
-        LineChartBarData(
-          spots: spots,
-          isCurved: true,
-          barWidth: 2,
-          color: Colors.black,
-          dotData: const FlDotData(show: true), // Tampilkan titik data
-          belowBarData: BarAreaData(
-            show: true,
-            color: Colors.black.withOpacity(0.1),
+      // Geser data ke kiri dan tambahkan data baru di akhir
+      for (int i = 0; i < maxDataPoints - 1; i++) {
+        chartDataTDS[i] = FlSpot(i.toDouble(), chartDataTDS[i + 1].y);
+        chartDataPH[i] = FlSpot(i.toDouble(), chartDataPH[i + 1].y);
+      }
+
+      // Tambahkan data baru
+      chartDataTDS[maxDataPoints - 1] =
+          FlSpot((maxDataPoints - 1).toDouble(), tdsValue);
+      chartDataPH[maxDataPoints - 1] =
+          FlSpot((maxDataPoints - 1).toDouble(), phValue);
+    });
+  }
+
+  // MQTT Callback functions
+  void onConnected() {
+    print('Connected to MQTT broker');
+  }
+
+  void onDisconnected() {
+    print('Disconnected from MQTT broker');
+  }
+
+  void onSubscribed(String topic) {
+    print('Subscribed to topic: $topic');
+  }
+
+  void onSubscribeFail(String topic) {
+    print('Failed to subscribe to topic: $topic');
+  }
+
+  void pong() {
+    print('Ping response received');
+  }
+
+// Fungsi untuk membangun grafik TDS yang lebih informatif
+  Widget buildTDSChart() {
+    Color determineTDSLineColor(double tdsValue) {
+      if (tdsValue < 300 || tdsValue > 2000) return Colors.red; // Bahaya/Kritis
+      if ((tdsValue >= 500 && tdsValue <= 700) ||
+          (tdsValue >= 1500 && tdsValue <= 2000))
+        return Colors.yellow; // Perlu Penyesuaian
+      if (tdsValue >= 800 && tdsValue <= 1500) return Colors.green; // Optimal
+      return Colors.grey; // Default
+    }
+
+    Color lineColor = determineTDSLineColor(currentTDS);
+
+    return Card(
+      elevation: 4,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(10),
+      ),
+      color: Colors.white,
+      child: Container(
+        margin: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Grafik Total Dissolved Solids (TDS)',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
+              ),
+            ),
+            const SizedBox(height: 16),
+            SizedBox(
+              height: 200,
+              child: LineChart(
+                LineChartData(
+                  lineBarsData: [
+                    LineChartBarData(
+                      spots: chartDataTDS,
+                      isCurved: true,
+                      barWidth: 3,
+                      color: lineColor, // Warna garis berubah sesuai kondisi
+                      dotData: const FlDotData(show: false),
+                    ),
+                  ],
+                  titlesData: FlTitlesData(
+                    bottomTitles: AxisTitles(
+                      sideTitles: SideTitles(
+                        showTitles: true,
+                        getTitlesWidget: (value, titleMeta) {
+                          return Padding(
+                            padding: const EdgeInsets.only(top: 8.0),
+                            child: Text(
+                              value.toInt().toString(),
+                              style: const TextStyle(
+                                  fontSize: 10, color: Colors.black54),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                    leftTitles: AxisTitles(
+                      sideTitles: SideTitles(
+                        showTitles: true,
+                        getTitlesWidget: (value, titleMeta) {
+                          return Text(
+                            value.toInt().toString(),
+                            style: const TextStyle(
+                                fontSize: 10, color: Colors.black54),
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+                  gridData: const FlGridData(show: true),
+                  borderData: FlBorderData(show: true),
+                  minY: 0,
+                  maxY: 2000, // Sesuaikan range TDS
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+// Fungsi untuk membangun grafik pH yang lebih informatif
+  Widget buildPHChart() {
+    Color determinePHLineColor(double phValue) {
+      if (phValue < 4.5 || phValue > 10.5) return Colors.red; // Bahaya/Kritis
+      if ((phValue >= 5.0 && phValue <= 5.5) ||
+          (phValue >= 6.5 && phValue <= 7.0))
+        return Colors.yellow; // Perlu Penyesuaian
+      if (phValue >= 5.5 && phValue <= 6.5) return Colors.green; // Optimal
+      return Colors.grey; // Default
+    }
+
+    Color lineColor = determinePHLineColor(currentPH);
+
+    return Card(
+      elevation: 4,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(10),
+      ),
+      color: Colors.white,
+      child: Container(
+        margin: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Grafik pH (Tingkat Keasaman)',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
+              ),
+            ),
+            const SizedBox(height: 16),
+            SizedBox(
+              height: 200,
+              child: LineChart(
+                LineChartData(
+                  lineBarsData: [
+                    LineChartBarData(
+                      spots: chartDataPH,
+                      isCurved: true,
+                      barWidth: 3,
+                      color: lineColor, // Warna garis berubah sesuai kondisi
+                      dotData: const FlDotData(show: false),
+                    ),
+                  ],
+                  titlesData: FlTitlesData(
+                    bottomTitles: AxisTitles(
+                      sideTitles: SideTitles(
+                        showTitles: true,
+                        getTitlesWidget: (value, titleMeta) {
+                          return Padding(
+                            padding: const EdgeInsets.only(top: 8.0),
+                            child: Text(
+                              value.toInt().toString(),
+                              style: const TextStyle(
+                                  fontSize: 10, color: Colors.black54),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                    leftTitles: AxisTitles(
+                      sideTitles: SideTitles(
+                        showTitles: true,
+                        getTitlesWidget: (value, titleMeta) {
+                          return Text(
+                            value.toInt().toString(),
+                            style: const TextStyle(
+                                fontSize: 10, color: Colors.black54),
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+                  gridData: const FlGridData(show: true),
+                  borderData: FlBorderData(show: true),
+                  minY: 0,
+                  maxY: 14, // Sesuaikan range pH
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+// Widget untuk membuat item legenda
+  Widget _buildLegendItem(String label, Color color) {
+    return Row(
+      children: [
+        Container(
+          width: 12,
+          height: 12,
+          decoration: BoxDecoration(
+            color: color.withOpacity(0.3),
+            border: Border.all(color: color),
+            borderRadius: BorderRadius.circular(3),
           ),
+        ),
+        const SizedBox(width: 4),
+        Text(
+          label,
+          style: const TextStyle(fontSize: 10),
         ),
       ],
-      titlesData: FlTitlesData(
-        show: true,
-        topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-        rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-        bottomTitles: AxisTitles(
-          sideTitles: SideTitles(
-            showTitles: true,
-            getTitlesWidget: (value, titleMeta) {
-              if (value % 5 == 0) {
-                // Tampilkan label setiap 5 detik
-                return Text(
-                  value.toInt().toString(),
-                  style: const TextStyle(
-                    color: Colors.black,
-                    fontSize: 10,
-                  ),
-                );
-              }
-              return const Text('');
-            },
-          ),
-        ),
-        leftTitles: AxisTitles(
-          sideTitles: SideTitles(
-            showTitles: true,
-            getTitlesWidget: (value, titleMeta) {
-              return Text(
-                value.toInt().toString(),
-                style: const TextStyle(
-                  color: Colors.black,
-                  fontSize: 10,
-                ),
-              );
-            },
-            reservedSize: 40,
-          ),
-        ),
-      ),
-      gridData: FlGridData(
-        show: true,
-        horizontalInterval: interval,
-        verticalInterval: 5, // Grid vertikal setiap 5 detik
-        drawVerticalLine: true,
-        getDrawingHorizontalLine: (value) {
-          return FlLine(
-            color: Colors.black12,
-            strokeWidth: 1,
-          );
-        },
-        getDrawingVerticalLine: (value) {
-          return FlLine(
-            color: Colors.black12,
-            strokeWidth: 1,
-          );
-        },
-      ),
-      borderData: FlBorderData(
-        show: true,
-        border: Border.all(color: Colors.black12),
-      ),
-      minY: minY - padding,
-      maxY: maxY + padding,
-      clipData: FlClipData.all(),
     );
   }
 
@@ -200,153 +395,172 @@ class _MonitoringPageState extends State<MonitoringPage> {
       body: SingleChildScrollView(
         child: Column(
           children: [
+            const SizedBox(height: 10.0),
             // Grafik TDS
-            Container(
-              margin: const EdgeInsets.all(12.0),
-              padding: const EdgeInsets.all(5.0),
-              decoration: BoxDecoration(
-                color: const Color(0xFFF2F9FF),
+            Card(
+              elevation: 4,
+              shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  const Text(
-                    'GRAFIK TDS AIR',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 10.0),
-                  SizedBox(
-                    height: 150, // Tinggi grafik ditambah
-                    width: MediaQuery.of(context).size.width * 0.9,
-                    child: LineChart(
-                      LineChartData(
-                        lineBarsData: [
-                          LineChartBarData(
-                            spots: tdsSpots,
-                            isCurved: true,
-                            barWidth: 2,
-                            color: Colors.black,
-                            dotData: const FlDotData(show: false),
-                          ),
-                        ],
-                        titlesData: FlTitlesData(
-                          bottomTitles: AxisTitles(
-                            sideTitles: SideTitles(
-                              showTitles: true,
-                              getTitlesWidget: (value, titleMeta) {
-                                return Text(
-                                  value.toInt().toString(),
-                                  style: const TextStyle(
-                                    color: Colors.black,
-                                    fontSize: 10,
-                                  ),
-                                );
-                              },
-                            ),
-                          ),
-                          leftTitles: AxisTitles(
-                            sideTitles: SideTitles(
-                              showTitles: true,
-                              getTitlesWidget: (value, titleMeta) {
-                                return Text(
-                                  value.toInt().toString(),
-                                  style: const TextStyle(
-                                    color: Colors.black,
-                                    fontSize: 10,
-                                  ),
-                                );
-                              },
-                            ),
-                          ),
-                        ),
-                        gridData: const FlGridData(
-                          show: true,
-                          horizontalInterval: 100,
-                          verticalInterval: 1,
-                        ),
-                        borderData: FlBorderData(show: false),
+              color: Colors.white,
+              child: Container(
+                margin:
+                    const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
+                padding: const EdgeInsets.all(5.0),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    const Text(
+                      'Kadar Nutrisi Dalam Air',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
-                  ),
-                ],
+                    const SizedBox(height: 10.0),
+                    SizedBox(
+                      height: 150,
+                      width: MediaQuery.of(context).size.width * 0.82,
+                      child: LineChart(
+                        LineChartData(
+                          lineBarsData: [
+                            LineChartBarData(
+                              spots: chartDataTDS,
+                              isCurved: true,
+                              barWidth: 2,
+                              color: Colors.green,
+                              dotData: const FlDotData(show: false),
+                            ),
+                          ],
+                          titlesData: FlTitlesData(
+                            bottomTitles: AxisTitles(
+                              sideTitles: SideTitles(
+                                showTitles: true,
+                                getTitlesWidget: (value, titleMeta) {
+                                  return Text(
+                                    value.toInt().toString(),
+                                    style: const TextStyle(
+                                      color: Colors.black,
+                                      fontSize: 10,
+                                    ),
+                                  );
+                                },
+                              ),
+                            ),
+                            leftTitles: AxisTitles(
+                              sideTitles: SideTitles(
+                                showTitles: true,
+                                getTitlesWidget: (value, titleMeta) {
+                                  return Text(
+                                    value.toInt().toString(),
+                                    style: const TextStyle(
+                                      color: Colors.black,
+                                      fontSize: 10,
+                                    ),
+                                  );
+                                },
+                              ),
+                            ),
+                          ),
+                          gridData: const FlGridData(
+                            show: true,
+                            horizontalInterval: 100,
+                            verticalInterval: 1,
+                          ),
+                          borderData: FlBorderData(show: false),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
 
-            // Grafik pH
-            Container(
-              margin: const EdgeInsets.all(12.0),
-              padding: const EdgeInsets.all(5.0),
-              decoration: BoxDecoration(
-                color: const Color(0xFFFFF8E7),
+            const SizedBox(height: 10.0),
+
+// Grafik pH
+            Card(
+              elevation: 4,
+              shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  const Text(
-                    'GRAFIK PH',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 10.0),
-                  SizedBox(
-                    height: 150,
-                    width: MediaQuery.of(context).size.width * 0.9,
-                    child: LineChart(
-                      LineChartData(
-                        lineBarsData: [
-                          LineChartBarData(
-                            spots: phSpots,
-                            isCurved: true,
-                            barWidth: 2,
-                            color: Colors.black,
-                            dotData: const FlDotData(show: false),
-                          ),
-                        ],
-                        titlesData: FlTitlesData(
-                          bottomTitles: AxisTitles(
-                            sideTitles: SideTitles(
-                              showTitles: true,
-                              getTitlesWidget: (value, titleMeta) {
-                                return Text(
-                                  value.toInt().toString(),
-                                  style: const TextStyle(
-                                    color: Colors.black,
-                                    fontSize: 10,
-                                  ),
-                                );
-                              },
-                            ),
-                          ),
-                          leftTitles: AxisTitles(
-                            sideTitles: SideTitles(
-                              showTitles: true,
-                              getTitlesWidget: (value, titleMeta) {
-                                return Text(
-                                  value.toInt().toString(),
-                                  style: const TextStyle(
-                                    color: Colors.black,
-                                    fontSize: 10,
-                                  ),
-                                );
-                              },
-                            ),
-                          ),
-                        ),
-                        gridData: const FlGridData(
-                          show: true,
-                          horizontalInterval: 1,
-                          verticalInterval: 1,
-                        ),
-                        borderData: FlBorderData(show: false),
+              color: Colors.white,
+              child: Container(
+                margin:
+                    const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
+                padding: const EdgeInsets.all(5.0),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    const Text(
+                      'pH',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
-                  ),
-                ],
+                    const SizedBox(height: 10.0),
+                    SizedBox(
+                      height: 150,
+                      width: MediaQuery.of(context).size.width * 0.82,
+                      child: LineChart(
+                        LineChartData(
+                          lineBarsData: [
+                            LineChartBarData(
+                              spots: chartDataPH,
+                              isCurved: true,
+                              barWidth: 2,
+                              color: Colors.green,
+                              dotData: const FlDotData(show: false),
+                            ),
+                          ],
+                          titlesData: FlTitlesData(
+                            bottomTitles: AxisTitles(
+                              sideTitles: SideTitles(
+                                showTitles: true,
+                                getTitlesWidget: (value, titleMeta) {
+                                  return Text(
+                                    value.toInt().toString(),
+                                    style: const TextStyle(
+                                      color: Colors.black,
+                                      fontSize: 10,
+                                    ),
+                                  );
+                                },
+                              ),
+                            ),
+                            leftTitles: AxisTitles(
+                              sideTitles: SideTitles(
+                                showTitles: true,
+                                getTitlesWidget: (value, titleMeta) {
+                                  return Text(
+                                    value.toInt().toString(),
+                                    style: const TextStyle(
+                                      color: Colors.black,
+                                      fontSize: 10,
+                                    ),
+                                  );
+                                },
+                              ),
+                            ),
+                          ),
+                          gridData: const FlGridData(
+                            show: true,
+                            horizontalInterval: 1,
+                            verticalInterval: 1,
+                          ),
+                          borderData: FlBorderData(show: false),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
 
@@ -374,50 +588,46 @@ class _MonitoringPageState extends State<MonitoringPage> {
                     children: [
                       _buildMonitoringCard(
                         icon: Icons.thermostat,
-                        title: 'TDS', // Total Dissolved Solids
-                        value: sensorData['tds']?.toStringAsFixed(1) ?? '0',
-                        unit: 'ppm', // Parts Per Million
+                        title: 'TDS',
+                        value: currentTDS.toStringAsFixed(1),
+                        unit: 'ppm',
                       ),
                       _buildMonitoringCard(
                         icon: Icons.thermostat,
-                        title: 'Suhu', // Temperature
-                        value: sensorData['temperature']?.toStringAsFixed(1) ??
-                            '0',
-                        unit: '°C', // Degrees Celsius
+                        title: 'Suhu',
+                        value: currentTemp.toStringAsFixed(1),
+                        unit: '°C',
                       ),
                       _buildMonitoringCard(
                         icon: Icons.thermostat,
-                        title: 'pH',
-                        value: sensorData['ph']?.toStringAsFixed(1) ?? '0',
-                        unit: '', // pH tidak memerlukan satuan
+                        title: 'PH',
+                        value: currentPH.toStringAsFixed(1),
+                        unit: 'ph',
                       ),
                     ],
                   ),
                   const SizedBox(height: 16.0),
-// Row 2
+                  // Row 2
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceAround,
                     children: [
                       _buildMonitoringCard(
                         icon: Icons.water_drop,
-                        title: 'Kelembaban Tanah', // Soil Moisture
-                        value:
-                            sensorData['soil_moisture']?.toStringAsFixed(1) ??
-                                '0',
-                        unit: '%', // Persentase
+                        title: 'Kelembaban Tanah',
+                        value: currentSoilMoisture.toStringAsFixed(1),
+                        unit: '%',
                       ),
                       _buildMonitoringCard(
                         icon: Icons.water_drop,
-                        title: 'Kelembaban Udara', // Air Humidity
-                        value:
-                            sensorData['humidity']?.toStringAsFixed(1) ?? '0',
-                        unit: '%', // Persentase
+                        title: 'Kelembaban Udara',
+                        value: currentHumidity.toStringAsFixed(1),
+                        unit: '%',
                       ),
                       _buildMonitoringCard(
                         icon: Icons.brightness_high,
-                        title: 'Intensitas Cahaya', // Light Intensity
-                        value: sensorData['light']?.toStringAsFixed(1) ?? '0',
-                        unit: 'lux', // Illuminance
+                        title: 'Intensitas Cahaya',
+                        value: currentLight.toStringAsFixed(1),
+                        unit: 'Lux',
                       ),
                     ],
                   ),
@@ -462,11 +672,57 @@ class _MonitoringPageState extends State<MonitoringPage> {
     required String unit,
     double width = 100,
   }) {
+    Color determineBackgroundColor(String title, double value) {
+      switch (title) {
+        case 'Suhu':
+          if (value < 10 || value > 40) return Colors.red;
+          if ((value >= 15 && value <= 20) || (value >= 30 && value <= 35))
+            return Colors.yellow;
+          if (value >= 19 && value <= 25) return Colors.green;
+          break;
+        case 'TDS':
+          if (value < 300 || value > 2000) return Colors.red;
+          if ((value >= 500 && value <= 700) ||
+              (value >= 1500 && value <= 2000)) return Colors.yellow;
+          if (value >= 800 && value <= 1500) return Colors.green;
+          break;
+        case 'PH':
+          if (value < 4.5 || value > 10.5) return Colors.red;
+          if ((value >= 5.0 && value <= 5.5) || (value >= 6.5 && value <= 7.0))
+            return Colors.yellow;
+          if (value >= 5.5 && value <= 6.5) return Colors.green;
+          break;
+        case 'Kelembaban Tanah':
+          if (value == 0.0) return Colors.red;
+          if (value < 0 || value > 1000) return Colors.red;
+          if ((value >= 300 && value <= 400) || (value >= 70 && value <= 80))
+            return Colors.yellow;
+          if (value >= 500 && value <= 900) return Colors.green;
+          break;
+        case 'Kelembaban Udara':
+          if (value < 30 || value > 90) return Colors.red;
+          if ((value >= 40 && value <= 50) || (value >= 80 && value <= 90))
+            return Colors.yellow;
+          if (value >= 60 && value <= 75) return Colors.green;
+          break;
+        case 'Intensitas Cahaya':
+          if (value < 1000 || value > 50000) return Colors.red;
+          if ((value >= 2000 && value <= 5000) ||
+              (value >= 30000 && value <= 40000)) return Colors.yellow;
+          if (value >= 10000 && value <= 25000) return Colors.green;
+          break;
+      }
+      return Colors.grey; // Default color
+    }
+
+    double numericValue = double.tryParse(value) ?? 0;
+    Color backgroundColor = determineBackgroundColor(title, numericValue);
+
     return Container(
       width: width,
       padding: const EdgeInsets.all(16.0),
       decoration: BoxDecoration(
-        color: const Color(0xFFE0F2F1),
+        color: backgroundColor.withOpacity(0.2),
         borderRadius: BorderRadius.circular(10),
       ),
       child: Column(
@@ -475,7 +731,7 @@ class _MonitoringPageState extends State<MonitoringPage> {
           Icon(
             icon,
             size: 32.0,
-            color: const Color(0xFF24D17E),
+            color: backgroundColor,
           ),
           const SizedBox(height: 8.0),
           Text(
@@ -617,4 +873,11 @@ class _MonitoringPageState extends State<MonitoringPage> {
       ),
     );
   }
+}
+
+// Data class untuk grafik
+class _ChartData {
+  _ChartData(this.x, this.y);
+  final int x;
+  final double y;
 }

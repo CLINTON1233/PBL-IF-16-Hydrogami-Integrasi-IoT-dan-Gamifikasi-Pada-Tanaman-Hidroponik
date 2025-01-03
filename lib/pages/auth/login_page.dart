@@ -9,6 +9,7 @@ import 'package:application_hydrogami/pages/skala%20and%20plant/pilih_page.dart'
 import 'package:application_hydrogami/pages/auth/registrasi_page.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:application_hydrogami/pages/beranda_page.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -42,11 +43,22 @@ class _LoginPageState extends State<LoginPage>
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         final prefs = await SharedPreferences.getInstance();
-        await prefs.setString('token', data['token']); // Simpan token
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => const PilihPage()),
-        );
+        await prefs.setString('token', data['token']);
+        // Cek apakah user sudah memilih tanaman dan skala
+        final hasPlant = prefs.getString('selected_plant') != null;
+        final hasScale =
+            prefs.getString('selected_scale') != null; // Simpan token
+        if (hasPlant && hasScale) {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => const BerandaPage()),
+          );
+        } else {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => const PilihPage()),
+          );
+        }
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -71,12 +83,26 @@ class _LoginPageState extends State<LoginPage>
         Map responseMap = jsonDecode(response.body);
 
         if (response.statusCode == 200) {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (BuildContext context) => const PilihPage(),
-            ),
-          );
+          // Cek apakah user sudah memilih tanaman dan skala
+          final prefs = await SharedPreferences.getInstance();
+          final hasPlant = prefs.getString('selected_plant') != null;
+          final hasScale = prefs.getString('selected_scale') != null;
+
+          if (hasPlant && hasScale) {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder: (BuildContext context) => const BerandaPage(),
+              ),
+            );
+          } else {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder: (BuildContext context) => const PilihPage(),
+              ),
+            );
+          }
         } else {
           if (responseMap.containsKey('email')) {
             errorSnackBar(context, 'Email tidak valid');

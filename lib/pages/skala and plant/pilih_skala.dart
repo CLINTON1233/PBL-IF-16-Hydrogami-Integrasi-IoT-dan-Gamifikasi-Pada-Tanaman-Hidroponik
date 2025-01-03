@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'konfirmasi_skala_page.dart'; // Pastikan Anda mengimpor halaman ini
+import 'package:shared_preferences/shared_preferences.dart';
 
 class PilihSkalaPage extends StatefulWidget {
   const PilihSkalaPage({super.key});
@@ -10,6 +11,11 @@ class PilihSkalaPage extends StatefulWidget {
 }
 
 class _PilihSkalaPageState extends State<PilihSkalaPage> {
+  Future<void> saveScaleChoice(String scale) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('selected_scale', scale);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(

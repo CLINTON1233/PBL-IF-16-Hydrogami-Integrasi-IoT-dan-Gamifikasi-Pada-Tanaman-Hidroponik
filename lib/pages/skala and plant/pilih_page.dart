@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:application_hydrogami/pages/skala%20and%20plant/konfirmasi_pilih_page.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class PilihPage extends StatefulWidget {
   const PilihPage({super.key});
@@ -9,6 +10,11 @@ class PilihPage extends StatefulWidget {
 }
 
 class _PilihPageState extends State<PilihPage> {
+  Future<void> savePlantChoice(String plant) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('selected_plant', plant);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(

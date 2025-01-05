@@ -295,7 +295,7 @@ class RegistrasiPageState extends State<RegistrasiPage> {
         TextFormField(
           controller: controller,
           style: GoogleFonts.poppins(
-            color: const Color(0xFF2ABD77),
+            color: Colors.black,
             fontSize: 12.0,
           ),
           decoration: InputDecoration(
@@ -339,7 +339,7 @@ class RegistrasiPageState extends State<RegistrasiPage> {
         TextFormField(
           controller: controller,
           style: GoogleFonts.poppins(
-            color: const Color(0xFF2ABD77),
+            color: Colors.black,
             fontSize: 12.0,
           ),
           obscureText: !isPasswordVisible,

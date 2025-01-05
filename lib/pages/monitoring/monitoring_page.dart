@@ -18,10 +18,12 @@ class MonitoringPage extends StatefulWidget {
 
 class _MonitoringPageState extends State<MonitoringPage> {
   int _bottomNavCurrentIndex = 0;
+  bool _showingAlert = false;
+  DateTime? _lastAlertTime;
 
   // MQTT Client
   late MqttServerClient client;
-  final String broker = '192.168.113.189';
+  final String broker = '192.168.1.9';
   final String clientIdentifier = 'flutter_client';
 
   // Data sensor real-time
@@ -68,6 +70,61 @@ class _MonitoringPageState extends State<MonitoringPage> {
     client.pongCallback = pong;
     client.keepAlivePeriod = 60;
     client.onBadCertificate = (cert) => true;
+  }
+
+  List<SnackBar> _snackBarQueue = [];
+  bool _isSnackBarShowing = false;
+
+  void _showAlert(
+      BuildContext context, String title, String message, Color color) {
+    final snackBar = SnackBar(
+      content: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: color.withOpacity(0.9),
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              title,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              message,
+              style: const TextStyle(color: Colors.white),
+            ),
+          ],
+        ),
+      ),
+      backgroundColor: Colors.transparent,
+      elevation: 0,
+      duration: const Duration(seconds: 10),
+      behavior: SnackBarBehavior.floating,
+      margin: const EdgeInsets.all(16),
+    );
+
+    _snackBarQueue.add(snackBar);
+    _processSnackBarQueue(context);
+  }
+
+  void _processSnackBarQueue(BuildContext context) {
+    if (!_isSnackBarShowing && _snackBarQueue.isNotEmpty) {
+      _isSnackBarShowing = true;
+      final snackBar = _snackBarQueue.removeAt(0);
+
+      ScaffoldMessenger.of(context).showSnackBar(snackBar).closed.then((_) {
+        _isSnackBarShowing = false;
+        _processSnackBarQueue(context);
+      });
+    }
   }
 
   // Connect ke MQTT Broker
@@ -134,6 +191,90 @@ class _MonitoringPageState extends State<MonitoringPage> {
       chartDataPH[maxDataPoints - 1] =
           FlSpot((maxDataPoints - 1).toDouble(), phValue);
     });
+  }
+
+  // Status untuk melacak apakah alert sudah muncul untuk setiap sensor
+  bool _tdsAlertShown = false;
+  bool _phAlertShown = false;
+  bool _tempAlertShown = false;
+  bool _soilMoistureAlertShown = false;
+  bool _humidityAlertShown = false;
+  bool _lightAlertShown = false;
+
+  void _checkSensorAlerts() {
+    // TDS Alert
+    if ((currentTDS < 300 || currentTDS > 2000) && !_tdsAlertShown) {
+      _showAlert(
+          context,
+          'Peringatan TDS',
+          'TDS berada di level kritis: ${currentTDS.toStringAsFixed(1)} ppm',
+          Colors.red);
+      _tdsAlertShown = true;
+    } else if (currentTDS >= 300 && currentTDS <= 2000) {
+      _tdsAlertShown = false; // Reset jika kondisi kembali normal
+    }
+
+    // pH Alert
+    if ((currentPH < 4.5 || currentPH > 10.5) && !_phAlertShown) {
+      _showAlert(
+          context,
+          'Peringatan pH',
+          'pH berada di level kritis: ${currentPH.toStringAsFixed(1)}',
+          Colors.red);
+      _phAlertShown = true;
+    } else if (currentPH >= 4.5 && currentPH <= 10.5) {
+      _phAlertShown = false;
+    }
+
+    // Suhu Alert
+    if ((currentTemp < 10 || currentTemp > 40) && !_tempAlertShown) {
+      _showAlert(
+          context,
+          'Peringatan Suhu',
+          'Suhu berada di level kritis: ${currentTemp.toStringAsFixed(1)}°C',
+          Colors.red);
+      _tempAlertShown = true;
+    } else if (currentTemp >= 10 && currentTemp <= 40) {
+      _tempAlertShown = false;
+    }
+
+    // Kelembaban Tanah Alert
+    if ((currentSoilMoisture < 300 || currentSoilMoisture > 900) &&
+        !_soilMoistureAlertShown) {
+      _showAlert(
+          context,
+          'Peringatan Kelembaban Tanah',
+          'Kelembaban tanah kritis: ${currentSoilMoisture.toString()}%',
+          Colors.red);
+      _soilMoistureAlertShown = true;
+    } else if (currentSoilMoisture >= 300 && currentSoilMoisture <= 900) {
+      _soilMoistureAlertShown = false;
+    }
+
+    // Kelembaban Udara Alert
+    if ((currentHumidity < 30 || currentHumidity > 90) &&
+        !_humidityAlertShown) {
+      _showAlert(
+          context,
+          'Peringatan Kelembaban Udara',
+          'Kelembaban udara kritis: ${currentHumidity.toStringAsFixed(1)}%',
+          Colors.red);
+      _humidityAlertShown = true;
+    } else if (currentHumidity >= 30 && currentHumidity <= 90) {
+      _humidityAlertShown = false;
+    }
+
+    // Intensitas Cahaya Alert
+    if ((currentLight < 1000 || currentLight > 50000) && !_lightAlertShown) {
+      _showAlert(
+          context,
+          'Peringatan Intensitas Cahaya',
+          'Intensitas cahaya kritis: ${currentLight.toStringAsFixed(1)} Lux',
+          Colors.red);
+      _lightAlertShown = true;
+    } else if (currentLight >= 1000 && currentLight <= 50000) {
+      _lightAlertShown = false;
+    }
   }
 
   // MQTT Callback functions

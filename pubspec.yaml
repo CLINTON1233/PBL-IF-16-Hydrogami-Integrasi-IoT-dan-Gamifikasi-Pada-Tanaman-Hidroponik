@@ -21,8 +21,6 @@ dependencies:
   salomon_bottom_bar: ^3.3.2
   http: ^1.1.0
   shared_preferences: ^2.2.0
-  dependencies:
-  flutter_local_notifications: ^11.0.0
 
 dev_dependencies:
   flutter_test:

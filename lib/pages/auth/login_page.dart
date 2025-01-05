@@ -85,6 +85,10 @@ class _LoginPageState extends State<LoginPage>
         if (response.statusCode == 200) {
           // Cek apakah user sudah memilih tanaman dan skala
           final prefs = await SharedPreferences.getInstance();
+          await prefs.setString(
+              'username', responseMap['user']['username']); // Tambahkan ini
+
+          // Cek apakah user sudah memilih tanaman dan skala
           final hasPlant = prefs.getString('selected_plant') != null;
           final hasScale = prefs.getString('selected_scale') != null;
 
@@ -234,7 +238,7 @@ class _LoginPageState extends State<LoginPage>
                                 controller:
                                     emailController, // Tambahkan controller
                                 style: GoogleFonts.poppins(
-                                  color: const Color(0xFF2ABD77),
+                                  color: Colors.black,
                                   fontSize: 12.0,
                                 ),
                                 decoration: InputDecoration(
@@ -267,7 +271,7 @@ class _LoginPageState extends State<LoginPage>
                                     passwordController, // Tambahkan controller
                                 obscureText: !_isPasswordVisible,
                                 style: GoogleFonts.poppins(
-                                  color: const Color(0xFF2ABD77),
+                                  color: Colors.black,
                                   fontSize: 12.0,
                                 ),
                                 decoration: InputDecoration(

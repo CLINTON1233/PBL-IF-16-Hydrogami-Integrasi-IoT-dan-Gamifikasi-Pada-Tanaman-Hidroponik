@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:application_hydrogami/services/globals.dart';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 
 class AuthServices {
   //Register
@@ -26,6 +27,18 @@ class AuthServices {
   }
 
 //Login
+
+  static Future<bool> saveToken(String token) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('token', token);
+      return true;
+    } catch (e) {
+      print('Error saving token: $e');
+      return false;
+    }
+  }
+
   static Future<http.Response> login(String email, String password) async {
     Map data = {
       "email": email,
@@ -40,6 +53,34 @@ class AuthServices {
       body: body,
     );
     print(response.body);
+    return response;
+  }
+
+  static Future<http.Response> updateProfile(
+      String token, String username, String email,
+      {String? currentPassword, String? newPassword}) async {
+    Map<String, dynamic> data = {
+      "username": username,
+      "email": email,
+    };
+
+    if (newPassword != null && newPassword.isNotEmpty) {
+      data["current_password"] = currentPassword;
+      data["password"] = newPassword;
+    }
+
+    var body = json.encode(data);
+    var url = Uri.parse('${baseURL}auth/update-profile');
+
+    http.Response response = await http.put(
+      url,
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'Authorization': 'Bearer $token'
+      },
+      body: body,
+    );
     return response;
   }
 }

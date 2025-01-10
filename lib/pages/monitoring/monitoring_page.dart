@@ -5,6 +5,7 @@ import 'package:application_hydrogami/pages/profil_page.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:application_hydrogami/services/notifikasi_services.dart';
 import 'dart:convert';
 import 'package:mqtt_client/mqtt_client.dart';
 import 'package:mqtt_client/mqtt_server_client.dart';
@@ -18,12 +19,12 @@ class MonitoringPage extends StatefulWidget {
 
 class _MonitoringPageState extends State<MonitoringPage> {
   int _bottomNavCurrentIndex = 0;
-  bool _showingAlert = false;
+
   DateTime? _lastAlertTime;
 
   // MQTT Client
   late MqttServerClient client;
-  final String broker = '192.168.1.9';
+  final String broker = '192.168.113.189';
   final String clientIdentifier = 'flutter_client';
 
   // Data sensor real-time
@@ -191,90 +192,6 @@ class _MonitoringPageState extends State<MonitoringPage> {
       chartDataPH[maxDataPoints - 1] =
           FlSpot((maxDataPoints - 1).toDouble(), phValue);
     });
-  }
-
-  // Status untuk melacak apakah alert sudah muncul untuk setiap sensor
-  bool _tdsAlertShown = false;
-  bool _phAlertShown = false;
-  bool _tempAlertShown = false;
-  bool _soilMoistureAlertShown = false;
-  bool _humidityAlertShown = false;
-  bool _lightAlertShown = false;
-
-  void _checkSensorAlerts() {
-    // TDS Alert
-    if ((currentTDS < 300 || currentTDS > 2000) && !_tdsAlertShown) {
-      _showAlert(
-          context,
-          'Peringatan TDS',
-          'TDS berada di level kritis: ${currentTDS.toStringAsFixed(1)} ppm',
-          Colors.red);
-      _tdsAlertShown = true;
-    } else if (currentTDS >= 300 && currentTDS <= 2000) {
-      _tdsAlertShown = false; // Reset jika kondisi kembali normal
-    }
-
-    // pH Alert
-    if ((currentPH < 4.5 || currentPH > 10.5) && !_phAlertShown) {
-      _showAlert(
-          context,
-          'Peringatan pH',
-          'pH berada di level kritis: ${currentPH.toStringAsFixed(1)}',
-          Colors.red);
-      _phAlertShown = true;
-    } else if (currentPH >= 4.5 && currentPH <= 10.5) {
-      _phAlertShown = false;
-    }
-
-    // Suhu Alert
-    if ((currentTemp < 10 || currentTemp > 40) && !_tempAlertShown) {
-      _showAlert(
-          context,
-          'Peringatan Suhu',
-          'Suhu berada di level kritis: ${currentTemp.toStringAsFixed(1)}°C',
-          Colors.red);
-      _tempAlertShown = true;
-    } else if (currentTemp >= 10 && currentTemp <= 40) {
-      _tempAlertShown = false;
-    }
-
-    // Kelembaban Tanah Alert
-    if ((currentSoilMoisture < 300 || currentSoilMoisture > 900) &&
-        !_soilMoistureAlertShown) {
-      _showAlert(
-          context,
-          'Peringatan Kelembaban Tanah',
-          'Kelembaban tanah kritis: ${currentSoilMoisture.toString()}%',
-          Colors.red);
-      _soilMoistureAlertShown = true;
-    } else if (currentSoilMoisture >= 300 && currentSoilMoisture <= 900) {
-      _soilMoistureAlertShown = false;
-    }
-
-    // Kelembaban Udara Alert
-    if ((currentHumidity < 30 || currentHumidity > 90) &&
-        !_humidityAlertShown) {
-      _showAlert(
-          context,
-          'Peringatan Kelembaban Udara',
-          'Kelembaban udara kritis: ${currentHumidity.toStringAsFixed(1)}%',
-          Colors.red);
-      _humidityAlertShown = true;
-    } else if (currentHumidity >= 30 && currentHumidity <= 90) {
-      _humidityAlertShown = false;
-    }
-
-    // Intensitas Cahaya Alert
-    if ((currentLight < 1000 || currentLight > 50000) && !_lightAlertShown) {
-      _showAlert(
-          context,
-          'Peringatan Intensitas Cahaya',
-          'Intensitas cahaya kritis: ${currentLight.toStringAsFixed(1)} Lux',
-          Colors.red);
-      _lightAlertShown = true;
-    } else if (currentLight >= 1000 && currentLight <= 50000) {
-      _lightAlertShown = false;
-    }
   }
 
   // MQTT Callback functions
@@ -556,7 +473,7 @@ class _MonitoringPageState extends State<MonitoringPage> {
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     const Text(
-                      'Kadar Nutrisi Dalam Air',
+                      'Total Padatan Terlarut (TDS)',
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
                       ),
@@ -805,7 +722,6 @@ class _MonitoringPageState extends State<MonitoringPage> {
     );
   }
 
-  // Fungsi untuk membuat card monitoring
   Widget _buildMonitoringCard({
     required IconData icon,
     required String title,
@@ -813,51 +729,233 @@ class _MonitoringPageState extends State<MonitoringPage> {
     required String unit,
     double width = 100,
   }) {
-    Color determineBackgroundColor(String title, double value) {
+    Color determineBackgroundColor(
+        BuildContext context, String title, double value) {
+      // Function to show alert based on sensor conditions
+      void jadwalkanAlertSensor(
+          String pesan, Color warna, String jenisSensor, String status) {
+        // Cek apakah sudah cukup waktu berlalu sejak alert terakhir
+        final sekarang = DateTime.now();
+        if (_lastAlertTime == null ||
+            sekarang.difference(_lastAlertTime!) > const Duration(minutes: 5)) {
+          _lastAlertTime = sekarang;
+
+          // Kirim notifikasi ke backend
+          LayananNotifikasi.kirimNotifikasi(
+            idSensor: '1', // Ganti dengan ID sensor yang sebenarnya
+            jenisSensor: jenisSensor,
+            pesan: pesan,
+            status: status,
+          ).then((berhasil) {
+            if (berhasil) {
+              debugPrint('Notifikasi berhasil disimpan ke database');
+            } else {
+              debugPrint('Gagal menyimpan notifikasi ke database');
+            }
+          });
+
+          // Tampilkan alert lokal
+          if (context.mounted) {
+            // Gunakan post frame callback untuk menunda pemanggilan showSnackBar
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              _showAlert(
+                context,
+                'Peringatan Sensor $title',
+                pesan,
+                warna,
+              );
+            });
+          }
+        }
+      }
+
       switch (title) {
         case 'Suhu':
-          if (value < 10 || value > 40) return Colors.red;
-          if ((value >= 15 && value <= 20) || (value >= 30 && value <= 35))
+          if (value < 10) {
+            jadwalkanAlertSensor(
+              'Suhu terlalu rendah ($value°C). Suhu optimal adalah 19-27°C',
+              Colors.red,
+              'Suhu',
+              'Kritis',
+            );
+            return Colors.red;
+          }
+          if (value > 40) {
+            jadwalkanAlertSensor(
+              'Suhu terlalu tinggi ($value°C). Suhu optimal adalah 19-27°C',
+              Colors.red,
+              'Suhu',
+              'Kritis',
+            );
+            return Colors.red;
+          }
+          if ((value >= 15 && value <= 20) || (value >= 30 && value <= 35)) {
+            jadwalkanAlertSensor(
+              'Suhu mendekati batas ($value°C). Pertahankan suhu antara 19-27°C',
+              Colors.orange,
+              'Suhu',
+              'Peringatan',
+            );
             return Colors.yellow;
-          if (value >= 19 && value <= 25) return Colors.green;
+          }
+          if (value >= 19 && value <= 27) return Colors.green;
           break;
+
         case 'TDS':
-          if (value < 300 || value > 2000) return Colors.red;
+          if (value < 300) {
+            jadwalkanAlertSensor(
+              'Kadar nutrisi terlalu rendah ($value ppm). Level optimal adalah 800-1500 ppm',
+              Colors.red,
+              'TDS',
+              'Kritis',
+            );
+            return Colors.red;
+          }
+          if (value > 2000) {
+            jadwalkanAlertSensor(
+              'Kadar nutrisi terlalu tinggi ($value ppm). Level optimal adalah 800-1500 ppm',
+              Colors.red,
+              'TDS',
+              'Kritis',
+            );
+            return Colors.red;
+          }
           if ((value >= 500 && value <= 700) ||
-              (value >= 1500 && value <= 2000)) return Colors.yellow;
+              (value >= 1500 && value <= 2000)) {
+            jadwalkanAlertSensor(
+              'Kadar nutrisi mendekati batas ($value ppm). Pertahankan level antara 800-1500 ppm',
+              Colors.orange,
+              'TDS',
+              'Peringatan',
+            );
+            return Colors.yellow;
+          }
           if (value >= 800 && value <= 1500) return Colors.green;
           break;
+
         case 'PH':
-          if (value < 4.5 || value > 10.5) return Colors.red;
-          if ((value >= 5.0 && value <= 5.5) || (value >= 6.5 && value <= 7.0))
+          if (value < 4.0) {
+            jadwalkanAlertSensor(
+              'pH terlalu asam ($value). Level optimal adalah 5.5-6.5',
+              Colors.red,
+              'PH',
+              'Kritis',
+            );
+            return Colors.red;
+          }
+          if (value > 6.5) {
+            jadwalkanAlertSensor(
+              'pH terlalu basa ($value). Level optimal adalah 5.5-6.5',
+              Colors.red,
+              'PH',
+              'Kritis',
+            );
+            return Colors.red;
+          }
+          if ((value >= 5.0 && value <= 5.5) ||
+              (value >= 6.7 && value <= 7.0)) {
+            jadwalkanAlertSensor(
+              'pH mendekati batas ($value). Pertahankan pH antara 5.5-6.5',
+              Colors.orange,
+              'PH',
+              'Peringatan',
+            );
             return Colors.yellow;
+          }
           if (value >= 5.5 && value <= 6.5) return Colors.green;
           break;
+
         case 'Kelembaban Tanah':
-          if (value == 0.0) return Colors.red;
-          if (value < 0 || value > 1000) return Colors.red;
-          if ((value >= 300 && value <= 400) || (value >= 70 && value <= 80))
+          if (value == 0.0 || value < 0 || value > 1000) {
+            jadwalkanAlertSensor(
+              'Kelembaban tanah tidak normal ($value%). Level optimal adalah 500-900%',
+              Colors.red,
+              'Kelembaban Tanah',
+              'Kritis',
+            );
+            return Colors.red;
+          }
+          if ((value >= 300 && value <= 400) || (value >= 70 && value <= 80)) {
+            jadwalkanAlertSensor(
+              'Kelembaban tanah mendekati batas ($value%). Pertahankan level antara 500-900%',
+              Colors.orange,
+              'Kelembaban Tanah',
+              'Peringatan',
+            );
             return Colors.yellow;
+          }
           if (value >= 500 && value <= 900) return Colors.green;
           break;
+
         case 'Kelembaban Udara':
-          if (value < 30 || value > 90) return Colors.red;
-          if ((value >= 40 && value <= 50) || (value >= 80 && value <= 90))
+          if (value < 30) {
+            jadwalkanAlertSensor(
+              'Kelembaban udara terlalu rendah ($value%). Level optimal adalah 60-75%',
+              Colors.red,
+              'Kelembaban Udara',
+              'Kritis',
+            );
+            return Colors.red;
+          }
+          if (value > 90) {
+            jadwalkanAlertSensor(
+              'Kelembaban udara terlalu tinggi ($value%). Level optimal adalah 60-75%',
+              Colors.red,
+              'Kelembaban Udara',
+              'Kritis',
+            );
+            return Colors.red;
+          }
+          if ((value >= 40 && value <= 50) || (value >= 80 && value <= 90)) {
+            jadwalkanAlertSensor(
+              'Kelembaban udara mendekati batas ($value%). Pertahankan level antara 60-75%',
+              Colors.orange,
+              'Kelembaban Udara',
+              'Peringatan',
+            );
             return Colors.yellow;
+          }
           if (value >= 60 && value <= 75) return Colors.green;
           break;
+
         case 'Intensitas Cahaya':
-          if (value < 1000 || value > 50000) return Colors.red;
+          if (value < 1000) {
+            jadwalkanAlertSensor(
+              'Intensitas cahaya terlalu rendah ($value Lux). Level optimal adalah 10000-25000 Lux',
+              Colors.red,
+              'Intensitas Cahaya',
+              'Kritis',
+            );
+            return Colors.red;
+          }
+          if (value > 50000) {
+            jadwalkanAlertSensor(
+              'Intensitas cahaya terlalu tinggi ($value Lux). Level optimal adalah 10000-25000 Lux',
+              Colors.red,
+              'Intensitas Cahaya',
+              'Kritis',
+            );
+            return Colors.red;
+          }
           if ((value >= 2000 && value <= 5000) ||
-              (value >= 30000 && value <= 40000)) return Colors.yellow;
+              (value >= 30000 && value <= 40000)) {
+            jadwalkanAlertSensor(
+              'Intensitas cahaya mendekati batas ($value Lux). Pertahankan level antara 10000-25000 Lux',
+              Colors.orange,
+              'Intensitas Cahaya',
+              'Peringatan',
+            );
+            return Colors.yellow;
+          }
           if (value >= 10000 && value <= 25000) return Colors.green;
           break;
       }
-      return Colors.grey; // Default color
+      return Colors.grey;
     }
 
     double numericValue = double.tryParse(value) ?? 0;
-    Color backgroundColor = determineBackgroundColor(title, numericValue);
+    Color backgroundColor =
+        determineBackgroundColor(context, title, numericValue);
 
     return Container(
       width: width,

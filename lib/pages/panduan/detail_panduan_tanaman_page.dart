@@ -200,7 +200,7 @@ class _DetailPanduanTanamanPageState extends State<DetailPanduanTanamanPage> {
               color: Colors.black,
             ),
             icon: Icon(
-              Icons.notification_add,
+              Icons.notifications,
               color: Colors.white,
             ),
             label: 'Notifikasi',

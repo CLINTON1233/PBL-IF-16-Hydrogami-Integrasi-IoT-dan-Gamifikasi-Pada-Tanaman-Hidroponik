@@ -1,5 +1,4 @@
 import 'dart:convert';
-
 import 'package:application_hydrogami/pages/widgets/rounded_button.dart';
 import 'package:application_hydrogami/services/auth_services.dart';
 import 'package:application_hydrogami/services/globals.dart';

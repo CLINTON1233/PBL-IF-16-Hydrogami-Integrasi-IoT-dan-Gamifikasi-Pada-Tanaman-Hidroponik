@@ -196,7 +196,7 @@ class _DetailPanduanHidroponikPageState extends State<DetailPanduanSensorPage> {
           ),
           BottomNavigationBarItem(
             activeIcon: Icon(
-              Icons.notification_add,
+              Icons.notifications,
               color: Colors.black,
             ),
             icon: Icon(

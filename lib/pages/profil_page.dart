@@ -3,11 +3,9 @@ import 'package:application_hydrogami/pages/monitoring/notifikasi_page.dart';
 import 'package:application_hydrogami/pages/panduan/panduan_page.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'dart:convert';
-import 'package:http/http.dart' as http;
 import 'package:application_hydrogami/services/auth_services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:application_hydrogami/services/globals.dart'; // Tambahkan ini untuk baseURL
+import 'dart:convert';
 
 class ProfilPage extends StatefulWidget {
   const ProfilPage({super.key});
@@ -18,14 +16,12 @@ class ProfilPage extends StatefulWidget {
 
 class _ProfilPageState extends State<ProfilPage> {
   final _formKey = GlobalKey<FormState>();
-  final TextEditingController _usernameController = TextEditingController();
-  final TextEditingController _emailController = TextEditingController();
-  final TextEditingController _currentPasswordController =
-      TextEditingController();
-  final TextEditingController _newPasswordController = TextEditingController();
-  String? _token;
-  Map<String, dynamic>? _userData;
+  final _usernameController = TextEditingController();
+  final _emailController = TextEditingController();
+  final _currentPasswordController = TextEditingController();
+  final _newPasswordController = TextEditingController();
   bool _isLoading = false;
+
   int _bottomNavCurrentIndex = 3;
 
   @override
@@ -35,105 +31,108 @@ class _ProfilPageState extends State<ProfilPage> {
   }
 
   Future<void> _loadUserData() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      _token = prefs.getString('token');
-
-      if (_token != null) {
-        final response = await http.get(
-          Uri.parse('${baseURL}user'),
-          headers: {
-            'Authorization': 'Bearer $_token',
-            'Accept': 'application/json'
-          },
-        );
-
-        if (response.statusCode == 200) {
-          setState(() {
-            _userData = json.decode(response.body);
-            _usernameController.text = _userData?['username'] ?? '';
-            _emailController.text = _userData?['email'] ?? '';
-          });
-        }
-      }
-    } catch (e) {
-      print('Error loading user data: $e');
-      if (mounted) {
-        // Tambahkan pengecekan mounted
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Gagal memuat data profil')),
-        );
-      }
-    }
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _usernameController.text = prefs.getString('username') ?? '';
+      _emailController.text = prefs.getString('email') ?? '';
+    });
   }
 
   Future<void> _updateProfile() async {
     if (_formKey.currentState!.validate()) {
-      if (_token == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Silakan login kembali')),
-        );
-        return;
-      }
-
       setState(() {
         _isLoading = true;
       });
 
       try {
-        // Only include password if new password is provided
+        final prefs = await SharedPreferences.getInstance();
+        final token = prefs.getString('token');
+
+        if (token == null || token.isEmpty) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Please login again')),
+          );
+          return;
+        }
+
+        // Tentukan field mana yang akan diupdate
+        Map<String, dynamic> updates = {};
+
+        // Check apakah username berubah
+        final storedUsername = prefs.getString('username') ?? '';
+        if (_usernameController.text != storedUsername) {
+          updates['username'] = _usernameController.text;
+        }
+
+        // Check apakah email berubah
+        final storedEmail = prefs.getString('email') ?? '';
+        if (_emailController.text != storedEmail) {
+          updates['email'] = _emailController.text;
+        }
+
+        // Check apakah ada password baru
+        String? newPassword;
+        if (_newPasswordController.text.isNotEmpty) {
+          if (_currentPasswordController.text.isEmpty) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                  content:
+                      Text('Current password is required to update password')),
+            );
+            return;
+          }
+          newPassword = _newPasswordController.text;
+        }
+
         final response = await AuthServices.updateProfile(
-          _token!,
-          _usernameController.text,
-          _emailController.text,
+          token,
+          username: updates['username'],
+          email: updates['email'],
           currentPassword: _currentPasswordController.text.isNotEmpty
               ? _currentPasswordController.text
               : null,
-          newPassword: _newPasswordController.text.isNotEmpty
-              ? _newPasswordController.text
-              : null,
+          password: newPassword,
         );
 
-        final responseData = json.decode(response.body);
+        var responseBody = json.decode(response.body);
 
         if (response.statusCode == 200) {
-          if (!mounted) return;
-
-          // Update local storage token if provided in response
-          if (responseData['token'] != null) {
-            await AuthServices.saveToken(responseData['token']);
+          // Update local storage jika berhasil
+          if (updates['username'] != null) {
+            await prefs.setString('username', updates['username']);
+          }
+          if (updates['email'] != null) {
+            await prefs.setString('email', updates['email']);
           }
 
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Profile berhasil diperbarui')),
+            const SnackBar(content: Text('Profile updated successfully')),
           );
 
-          // Clear password fields
+          // Clear password fields after successful update
           _currentPasswordController.clear();
           _newPasswordController.clear();
-
-          // Refresh data user
-          await _loadUserData();
+          // Tambahkan navigasi ke BerandaPage
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => const BerandaPage()),
+          );
         } else {
-          if (!mounted) return;
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
                 content: Text(
-                    responseData['message'] ?? 'Gagal memperbarui profile')),
+                    'Failed to update profile: ${responseBody['message']}')),
           );
         }
       } catch (e) {
-        if (!mounted) return;
+        print('Error updating profile: $e');
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-              content: Text('Terjadi kesalahan saat memperbarui profile')),
+          SnackBar(content: Text('Error: $e')),
         );
       } finally {
-        if (mounted) {
-          setState(() {
-            _isLoading = false;
-          });
-        }
+        setState(() {
+          _isLoading = false;
+        });
       }
     }
   }
@@ -172,17 +171,58 @@ class _ProfilPageState extends State<ProfilPage> {
                   backgroundImage: AssetImage('assets/profile.jpg'),
                 ),
                 const SizedBox(height: 20),
-                buildTextField('Nama', 'Masukkan Nama Anda',
-                    controller: _usernameController),
+                buildTextFieldWithValidation(
+                  'Nama',
+                  'Masukkan Nama Anda',
+                  _usernameController,
+                  (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Please enter your name';
+                    }
+                    return null;
+                  },
+                ),
                 const SizedBox(height: 10),
-                buildTextField('Email', 'Masukkan Email Anda',
-                    controller: _emailController),
+                buildTextFieldWithValidation(
+                  'Email',
+                  'Masukkan Email Anda',
+                  _emailController,
+                  (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Please enter your email';
+                    }
+                    if (!value.contains('@')) {
+                      return 'Please enter a valid email';
+                    }
+                    return null;
+                  },
+                ),
                 const SizedBox(height: 10),
-                buildTextField('Password Saat Ini', 'Masukkan Password Anda',
-                    obscureText: true, controller: _currentPasswordController),
-                const SizedBox(height: 10),
-                buildTextField('Password Baru', 'Masukkan Password Baru',
-                    obscureText: true, controller: _newPasswordController),
+                buildTextFieldWithValidation(
+                  'Password Saat Ini',
+                  'Masukkan Password Saat Ini',
+                  _currentPasswordController,
+                  (value) {
+                    if (_newPasswordController.text.isNotEmpty &&
+                        (value == null || value.isEmpty)) {
+                      return 'Current password is required to set new password';
+                    }
+                    return null;
+                  },
+                  obscureText: true,
+                ),
+                buildTextFieldWithValidation(
+                  'Password Baru',
+                  'Masukkan Password Baru',
+                  _newPasswordController,
+                  (value) {
+                    if (value != null && value.isNotEmpty && value.length < 6) {
+                      return 'Password must be at least 6 characters';
+                    }
+                    return null;
+                  },
+                  obscureText: true,
+                ),
                 const SizedBox(height: 20),
                 ElevatedButton(
                   onPressed: _isLoading ? null : _updateProfile,
@@ -199,9 +239,10 @@ class _ProfilPageState extends State<ProfilPage> {
                       : const Text(
                           'Simpan',
                           style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white),
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
                         ),
                 ),
               ],
@@ -214,8 +255,13 @@ class _ProfilPageState extends State<ProfilPage> {
   }
 
   // Build Text Field
-  Widget buildTextField(String labelText, String placeholder,
-      {bool obscureText = false, required TextEditingController controller}) {
+  Widget buildTextFieldWithValidation(
+    String labelText,
+    String placeholder,
+    TextEditingController controller,
+    String? Function(String?) validator, {
+    bool obscureText = false,
+  }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -236,14 +282,15 @@ class _ProfilPageState extends State<ProfilPage> {
           elevation: 3,
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16.0),
-            child: TextField(
+            child: TextFormField(
               controller: controller,
               obscureText: obscureText,
+              validator: validator,
               style: GoogleFonts.poppins(fontSize: 12),
               decoration: InputDecoration(
                 hintText: placeholder,
                 hintStyle: GoogleFonts.poppins(
-                  color: Colors.black,
+                  color: const Color(0xFF24D17E),
                   fontSize: 12,
                 ),
                 contentPadding:

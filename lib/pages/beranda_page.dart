@@ -18,6 +18,7 @@ class BerandaPage extends StatefulWidget {
 }
 
 class _BerandaPageState extends State<BerandaPage> {
+  int _notificationCount = 0;
   bool _showLogoutText = false;
   int _bottomNavCurrentIndex = 0;
   String _location = "Batam";
@@ -30,6 +31,16 @@ class _BerandaPageState extends State<BerandaPage> {
     super.initState();
     _loadUsername();
     _fetchWeather();
+    _loadNotificationCount();
+  }
+
+  // Fungsi untuk mengambil jumlah notifikasi dari SharedPreferences atau API
+  Future<void> _loadNotificationCount() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      // Ambil jumlah notifikasi yang belum dibaca dari SharedPreferences
+      _notificationCount = prefs.getInt('unread_notifications') ?? 0;
+    });
   }
 
 // Tambahkan fungsi ini
@@ -195,7 +206,7 @@ class _BerandaPageState extends State<BerandaPage> {
                     Row(
                       children: [
                         IconButton(
-                          icon: const Icon(Icons.notification_add,
+                          icon: const Icon(Icons.notifications,
                               color: Colors.black),
                           onPressed: () {
                             Navigator.push(
@@ -205,6 +216,24 @@ class _BerandaPageState extends State<BerandaPage> {
                             );
                           },
                         ),
+                        // Menampilkan jumlah notifikasi jika ada
+                        if (_notificationCount > 0)
+                          Positioned(
+                            right: 0,
+                            child: CircleAvatar(
+                              radius: 10,
+                              backgroundColor: Colors.red,
+                              child: Text(
+                                _notificationCount.toString(),
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ),
+
                         Column(
                           children: [
                             IconButton(
@@ -429,7 +458,7 @@ class _BerandaPageState extends State<BerandaPage> {
               color: Colors.black,
             ),
             icon: Icon(
-              Icons.notification_add,
+              Icons.notifications,
               color: Colors.white,
             ),
             label: 'Notifikasi',

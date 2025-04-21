@@ -6,6 +6,8 @@ import 'package:application_hydrogami/pages/monitoring/notifikasi_page.dart';
 import 'package:application_hydrogami/pages/panduan/panduan_page.dart';
 import 'package:application_hydrogami/pages/profil_page.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:mqtt_client/mqtt_client.dart';
+import 'package:mqtt_client/mqtt_server_client.dart';
 
 class GamifikasiPage extends StatefulWidget {
   const GamifikasiPage({super.key});
@@ -31,6 +33,56 @@ class _GamifikasiPageState extends State<GamifikasiPage> {
     "PH UP": const Color(0xFFFBBB00),
     "PH DOWN": Colors.red,
   };
+  // MQTT Client
+  late MqttServerClient client;
+  final String broker = '10.170.0.114';
+  final String topic = 'pompa/control'; // Ganti sesuai topik kamu
+
+  @override
+  void initState() {
+    super.initState();
+    connectMQTT(); // MQTT
+  }
+
+  Future<void> connectMQTT() async {
+    client = MqttServerClient(broker, '');
+    client.port = 1883;
+    client.keepAlivePeriod = 20;
+    client.logging(on: false);
+    client.onDisconnected = onDisconnected;
+
+    try {
+      await client.connect();
+      debugPrint('MQTT Connected');
+    } catch (e) {
+      debugPrint('MQTT Connection failed: $e');
+      client.disconnect();
+    }
+  }
+
+  void onDisconnected() {
+    debugPrint('⚠️ MQTT Disconnected');
+  }
+
+  // Perbaikan pada fungsi publishControl:
+  void publishControl(String device, bool isActive) {
+    if (client.connectionStatus == null ||
+        client.connectionStatus!.state != MqttConnectionState.connected) {
+      debugPrint('MQTT not connected, trying to reconnect...');
+      connectMQTT();
+      return;
+    }
+
+    final builder = MqttClientPayloadBuilder();
+    // Format pesan MQTT agar bisa dipahami ESP32
+    String message = isActive ? "ON" : "OFF";
+    // Kirim topik spesifik untuk setiap device
+    String specificTopic = "$topic/$device";
+
+    builder.addString(message);
+    client.publishMessage(specificTopic, MqttQos.atLeastOnce, builder.payload!);
+    debugPrint('📤 Published to $specificTopic: $message');
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -91,6 +143,7 @@ class _GamifikasiPageState extends State<GamifikasiPage> {
                       setState(() {
                         isAutomaticControl = !isAutomaticControl;
                       });
+                      publishControl("AUTO", isAutomaticControl); // MQTT
                     },
                     child: Icon(
                       isAutomaticControl ? Icons.toggle_on : Icons.toggle_off,
@@ -123,6 +176,8 @@ class _GamifikasiPageState extends State<GamifikasiPage> {
                       setState(() {
                         controls[controlName] = !controls[controlName]!;
                       });
+                      publishControl(
+                          controlName, controls[controlName]!); // MQTT
                     },
                   );
                 },

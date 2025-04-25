@@ -20,23 +20,23 @@ class _GamifikasiPageState extends State<GamifikasiPage> {
   int _bottomNavCurrentIndex = 0;
   bool isAutomaticControl = false;
   Map<String, bool> controls = {
-    "AB MIX": false,
     "WATER": false,
+    "AB MIX": false,
     "PH UP": false,
     "PH DOWN": false,
   };
 
   // Peta untuk warna aktif setiap kontrol
   final Map<String, Color> activeColors = {
-    "AB MIX": const Color(0xFF2AD5B6),
     "WATER": const Color(0xFF50B7F2),
+    "AB MIX": const Color(0xFF2AD5B6),
     "PH UP": const Color(0xFFFBBB00),
     "PH DOWN": Colors.red,
   };
   // MQTT Client
   late MqttServerClient client;
-  final String broker = '10.170.0.114';
-  final String topic = 'pompa/control'; // Ganti sesuai topik kamu
+  final String broker = '192.168.205.189';
+  final String topic = 'gamifikasi/control'; // Ganti sesuai topik kamu
 
   @override
   void initState() {
@@ -358,8 +358,8 @@ class _GamifikasiPageState extends State<GamifikasiPage> {
 
   // Tambahkan peta untuk mencocokkan kontrol dengan ikon
   final Map<String, IconData> controlIcons = {
-    "AB MIX": Icons.water_drop,
     "WATER": Icons.invert_colors,
+    "AB MIX": Icons.water_drop,
     "PH UP": Icons.arrow_upward,
     "PH DOWN": Icons.arrow_downward,
   };

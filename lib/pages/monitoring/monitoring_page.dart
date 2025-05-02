@@ -421,13 +421,23 @@ class _MonitoringPageState extends State<MonitoringPage> {
         backgroundColor: const Color(0xFF24D17E),
         elevation: 2,
         centerTitle: false,
-        title: Text(
-          'Monitoring Real-Time',
-          style: GoogleFonts.poppins(
-            fontSize: 20,
-            fontWeight: FontWeight.w600,
-            color: Colors.black,
-          ),
+        title: Row(
+          children: [
+            Image.asset(
+              'assets/logo.png',
+              width: 40,
+              height: 40,
+            ),
+            const SizedBox(width: 10),
+            Text(
+              'Monitoring Real-Time',
+              style: GoogleFonts.poppins(
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+                color: Colors.black,
+              ),
+            ),
+          ],
         ),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_sharp),
@@ -439,16 +449,6 @@ class _MonitoringPageState extends State<MonitoringPage> {
             );
           },
         ),
-        actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 16.0),
-            child: Image.asset(
-              'assets/hydrogami_logo2.png',
-              width: 30,
-              height: 30,
-            ),
-          ),
-        ],
       ),
       body: SingleChildScrollView(
         child: Column(
@@ -789,7 +789,7 @@ class _MonitoringPageState extends State<MonitoringPage> {
             );
             return Colors.red;
           }
-          if ((value >= 15 && value <= 20) || (value >= 30 && value <= 35)) {
+          if ((value >= 15 && value <= 20) || (value >= 31 && value <= 35)) {
             jadwalkanAlertSensor(
               'Suhu mendekati batas ($value°C). Pertahankan suhu antara 19-27°C',
               Colors.orange,
@@ -798,7 +798,7 @@ class _MonitoringPageState extends State<MonitoringPage> {
             );
             return Colors.yellow;
           }
-          if (value >= 19 && value <= 27) return Colors.green;
+          if (value >= 19 && value <= 30) return Colors.green;
           break;
 
         case 'TDS':

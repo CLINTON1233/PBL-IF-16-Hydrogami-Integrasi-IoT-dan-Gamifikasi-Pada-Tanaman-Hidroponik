@@ -171,7 +171,7 @@ class RegistrasiPageState extends State<RegistrasiPage> {
                       ),
                       const SizedBox(height: 10),
                       Image.asset(
-                        'assets/hydrogami_logo.png',
+                        'assets/logo.png',
                         height: 120.0,
                       ),
                       const SizedBox(height: 5),
@@ -301,7 +301,7 @@ class RegistrasiPageState extends State<RegistrasiPage> {
           decoration: InputDecoration(
             hintText: hint,
             hintStyle: GoogleFonts.poppins(
-              color: const Color(0xFF2ABD77),
+              color: Colors.black,
               fontSize: 12.0,
             ),
             filled: true,
@@ -346,7 +346,7 @@ class RegistrasiPageState extends State<RegistrasiPage> {
           decoration: InputDecoration(
             hintText: hint,
             hintStyle: GoogleFonts.poppins(
-              color: const Color(0xFF2ABD77),
+              color: Colors.black,
               fontSize: 12.0,
             ),
             filled: true,
@@ -360,7 +360,7 @@ class RegistrasiPageState extends State<RegistrasiPage> {
             suffixIcon: IconButton(
               icon: Icon(
                 isPasswordVisible ? Icons.visibility : Icons.visibility_off,
-                color: const Color(0xFF2ABD77),
+                color: Colors.black,
               ),
               onPressed: toggleVisibility,
             ),

@@ -211,7 +211,7 @@ class _LoginPageState extends State<LoginPage>
                         ),
                       ),
                       const SizedBox(height: 10),
-                      Image.asset('assets/hydrogami_logo.png', height: 120.0),
+                      Image.asset('assets/logo.png', height: 120.0),
                       const SizedBox(height: 5),
                       Expanded(
                         child: Container(
@@ -243,7 +243,7 @@ class _LoginPageState extends State<LoginPage>
                                 decoration: InputDecoration(
                                   hintText: 'Masukkan Email Anda',
                                   hintStyle: GoogleFonts.poppins(
-                                    color: const Color(0xFF2ABD77),
+                                    color: Colors.black,
                                     fontSize: 12.0,
                                   ),
                                   filled: true,
@@ -276,7 +276,7 @@ class _LoginPageState extends State<LoginPage>
                                 decoration: InputDecoration(
                                   hintText: 'Masukkan Kata Sandi',
                                   hintStyle: GoogleFonts.poppins(
-                                    color: const Color(0xFF2ABD77),
+                                    color: Colors.black,
                                     fontSize: 12.0,
                                   ),
                                   filled: true,
@@ -292,7 +292,7 @@ class _LoginPageState extends State<LoginPage>
                                       _isPasswordVisible
                                           ? Icons.visibility
                                           : Icons.visibility_off,
-                                      color: const Color(0xFF2ABD77),
+                                      color: Colors.black,
                                     ),
                                     onPressed: () {
                                       setState(() {

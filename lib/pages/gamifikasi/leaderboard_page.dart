@@ -1,4 +1,5 @@
 import 'package:application_hydrogami/pages/beranda_page.dart';
+import 'package:application_hydrogami/pages/gamifikasi/gamifikasi_page.dart';
 import 'package:application_hydrogami/pages/monitoring/notifikasi_page.dart';
 import 'package:application_hydrogami/pages/panduan/panduan_page.dart';
 import 'package:application_hydrogami/pages/profil_page.dart';
@@ -31,14 +32,35 @@ class _LeaderboardPageState extends State<LeaderboardPage> {
       backgroundColor: Colors.white,
       appBar: AppBar(
         backgroundColor: const Color(0xFF24D17E),
+        elevation: 2,
         centerTitle: false,
-        title: Text(
-          'Leaderboard',
-          style: GoogleFonts.poppins(
-            fontSize: 20,
-            fontWeight: FontWeight.w600,
-            color: Colors.black,
-          ),
+        title: Row(
+          children: [
+            Image.asset(
+              'assets/logo.png',
+              width: 40,
+              height: 40,
+            ),
+            const SizedBox(width: 10),
+            Text(
+              'Leaderboard',
+              style: GoogleFonts.poppins(
+                fontSize: 20,
+                fontWeight: FontWeight.w600,
+                color: Colors.black,
+              ),
+            ),
+          ],
+        ),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_sharp),
+          iconSize: 20.0,
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const GamifikasiPage()),
+            );
+          },
         ),
       ),
       body: Column(

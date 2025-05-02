@@ -188,13 +188,13 @@ class _BerandaPageState extends State<BerandaPage> {
                     Row(
                       children: [
                         Image.asset(
-                          'assets/hydrogami_logo.png',
+                          'assets/logo.png',
                           width: 87,
                           height: 87,
                         ),
                         const SizedBox(width: 10),
                         Text(
-                          'Hi $_username!',
+                          'Hi, $_username!',
                           style: GoogleFonts.roboto(
                             fontSize: 20,
                             fontWeight: FontWeight.bold,
@@ -226,7 +226,7 @@ class _BerandaPageState extends State<BerandaPage> {
                               child: Text(
                                 _notificationCount.toString(),
                                 style: const TextStyle(
-                                  fontSize: 12,
+                                  fontSize: 15,
                                   color: Colors.white,
                                   fontWeight: FontWeight.bold,
                                 ),

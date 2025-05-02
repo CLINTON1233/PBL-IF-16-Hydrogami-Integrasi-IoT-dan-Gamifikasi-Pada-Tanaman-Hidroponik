@@ -22,7 +22,7 @@ class Awal2Page extends StatelessWidget {
           Column(
             children: [
               Image.asset(
-                'assets/hydrogami_logo.png',
+                'assets/logo.png',
                 width: 300,
                 height: 200,
               ),
@@ -31,7 +31,7 @@ class Awal2Page extends StatelessWidget {
                 'Solusi Cerdas Hidroponik Di Era Modren.',
                 textAlign: TextAlign.center,
                 style: GoogleFonts.kurale(
-                  color: const Color.fromARGB(255, 9, 195, 77),
+                  color: const Color.fromARGB(246, 11, 142, 59),
                   fontSize: 16,
                   fontWeight: FontWeight.normal,
                 ),

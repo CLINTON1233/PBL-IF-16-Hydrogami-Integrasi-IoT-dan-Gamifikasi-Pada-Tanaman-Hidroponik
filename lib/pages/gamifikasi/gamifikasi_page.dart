@@ -1,3 +1,4 @@
+import 'package:application_hydrogami/pages/gamifikasi/gamifikasi_progres_page.dart';
 import 'package:application_hydrogami/pages/gamifikasi/leaderboard_page.dart';
 import 'package:application_hydrogami/pages/gamifikasi/reward_page.dart';
 import 'package:flutter/material.dart';
@@ -89,14 +90,35 @@ class _GamifikasiPageState extends State<GamifikasiPage> {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: const Color(0xFF24D17E),
+        elevation: 2,
         centerTitle: false,
-        title: Text(
-          'Gamifikasi',
-          style: GoogleFonts.poppins(
-            fontSize: 20,
-            fontWeight: FontWeight.w600,
-            color: Colors.black,
-          ),
+        title: Row(
+          children: [
+            Image.asset(
+              'assets/logo.png',
+              width: 40,
+              height: 40,
+            ),
+            const SizedBox(width: 10),
+            Text(
+              'Gamifikasi',
+              style: GoogleFonts.poppins(
+                fontSize: 20,
+                fontWeight: FontWeight.w600,
+                color: Colors.black,
+              ),
+            ),
+          ],
+        ),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_sharp),
+          iconSize: 20.0,
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const BerandaPage()),
+            );
+          },
         ),
       ),
       body: Padding(
@@ -118,13 +140,49 @@ class _GamifikasiPageState extends State<GamifikasiPage> {
 
               // Gamification Graphic
               Center(
-                child: Image.asset(
-                  'assets/skala_easy.png',
-                  width: 400,
-                  height: 400,
-                  fit: BoxFit.cover,
+                child: Stack(
+                  children: [
+                    Image.asset(
+                      'assets/skala_easy.png',
+                      width: 400,
+                      height: 400,
+                      fit: BoxFit.cover,
+                    ),
+                    Positioned(
+                      right: 0,
+                      top: 20,
+                      child: Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF24D17E),
+                          borderRadius: BorderRadius.circular(10),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.2),
+                              blurRadius: 4,
+                              offset: const Offset(2, 2),
+                            ),
+                          ],
+                        ),
+                        child: IconButton(
+                          icon: const Icon(Icons.menu,
+                              color: Colors.white, size: 20),
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) =>
+                                      const GamifikasiProgresPage()),
+                            );
+                          },
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
+
               const SizedBox(height: 1),
 
               // Control Automatic Switch
@@ -184,36 +242,7 @@ class _GamifikasiPageState extends State<GamifikasiPage> {
               ),
 
               // Bagian Misi
-              const SizedBox(height: 20), // Spasi sebelum misi
-              const Text(
-                "Misi",
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 10),
-              ListView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: 10,
-                itemBuilder: (context, index) {
-                  return Card(
-                    margin: const EdgeInsets.symmetric(vertical: 8),
-                    color: const Color(0xFFe9e9e9),
-                    child: ListTile(
-                      leading:
-                          Icon(Icons.task_alt, color: Colors.green.shade600),
-                      title: Text(
-                        "Misi ${index + 1}",
-                        style: const TextStyle(color: Colors.black),
-                      ),
-                      subtitle: Text(
-                        "Detail misi ke-${index + 1}",
-                        style: TextStyle(color: Colors.grey.shade600),
-                      ),
-                      trailing: const Icon(Icons.arrow_forward_ios),
-                    ),
-                  );
-                },
-              ),
+              const SizedBox(height: 10), // Spasi sebelum misi
             ],
           ),
         ),

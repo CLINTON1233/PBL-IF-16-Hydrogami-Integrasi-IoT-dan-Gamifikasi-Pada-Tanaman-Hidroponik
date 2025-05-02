@@ -1,8 +1,10 @@
 import 'package:application_hydrogami/pages/beranda_page.dart';
+import 'package:application_hydrogami/pages/gamifikasi/gamifikasi_page.dart';
 import 'package:application_hydrogami/pages/monitoring/notifikasi_page.dart';
 import 'package:application_hydrogami/pages/panduan/panduan_page.dart';
 import 'package:application_hydrogami/pages/profil_page.dart';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class RewardPage extends StatefulWidget {
   const RewardPage({super.key});
@@ -20,20 +22,35 @@ class _RewardPageState extends State<RewardPage> {
       backgroundColor: Colors.grey[100],
       appBar: AppBar(
         backgroundColor: const Color(0xFF24D17E),
-        elevation: 0,
-        toolbarHeight: 60,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
-          onPressed: () {
-            Navigator.pop(context);
-          },
+        elevation: 2,
+        centerTitle: false,
+        title: Row(
+          children: [
+            Image.asset(
+              'assets/logo.png',
+              width: 40,
+              height: 40,
+            ),
+            const SizedBox(width: 10),
+            Text(
+              'Reward',
+              style: GoogleFonts.poppins(
+                fontSize: 20,
+                fontWeight: FontWeight.w600,
+                color: Colors.black,
+              ),
+            ),
+          ],
         ),
-        title: const Text(
-          'Reward',
-          style: TextStyle(
-            color: Colors.black,
-            fontWeight: FontWeight.bold,
-          ),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_sharp),
+          iconSize: 20.0,
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const GamifikasiPage()),
+            );
+          },
         ),
       ),
       body: Padding(

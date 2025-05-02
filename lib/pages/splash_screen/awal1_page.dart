@@ -61,7 +61,7 @@ class _Awal1PageState extends State<Awal1Page>
           children: [
             const Spacer(),
             Image.asset(
-              'assets/hydrogami_logo.png',
+              'assets/logo.png',
               width: 400,
               height: 200,
             ),

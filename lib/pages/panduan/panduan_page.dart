@@ -25,13 +25,23 @@ class _PanduanPageState extends State<PanduanPage> {
         backgroundColor: const Color(0xFF24D17E),
         elevation: 2,
         centerTitle: false,
-        title: Text(
-          'Panduan',
-          style: GoogleFonts.poppins(
-            fontSize: 20,
-            fontWeight: FontWeight.w600,
-            color: Colors.black,
-          ),
+        title: Row(
+          children: [
+            Image.asset(
+              'assets/logo.png',
+              width: 45,
+              height: 45,
+            ),
+            const SizedBox(width: 10),
+            Text(
+              'Panduan',
+              style: GoogleFonts.poppins(
+                fontSize: 20,
+                fontWeight: FontWeight.w600,
+                color: Colors.black,
+              ),
+            ),
+          ],
         ),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_sharp),
@@ -43,16 +53,6 @@ class _PanduanPageState extends State<PanduanPage> {
             );
           },
         ),
-        actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 16.0),
-            child: Image.asset(
-              'assets/hydrogami_logo2.png',
-              width: 30,
-              height: 30,
-            ),
-          ),
-        ],
       ),
       body: SingleChildScrollView(
         child: Padding(

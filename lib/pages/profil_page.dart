@@ -106,7 +106,7 @@ class _ProfilPageState extends State<ProfilPage> {
           }
 
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Profile updated successfully')),
+            const SnackBar(content: Text('Profil berhasil diperbarui')),
           );
 
           // Clear password fields after successful update

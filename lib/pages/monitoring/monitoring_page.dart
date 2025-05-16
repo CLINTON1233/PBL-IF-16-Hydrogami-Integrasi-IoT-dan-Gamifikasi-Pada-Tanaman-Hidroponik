@@ -24,7 +24,7 @@ class _MonitoringPageState extends State<MonitoringPage> {
 
   // MQTT Client
   late MqttServerClient client;
-  final String broker = '192.168.205.189';
+  final String broker = '192.168.114.189';
   final String clientIdentifier = 'flutter_client';
 
   // Data sensor real-time

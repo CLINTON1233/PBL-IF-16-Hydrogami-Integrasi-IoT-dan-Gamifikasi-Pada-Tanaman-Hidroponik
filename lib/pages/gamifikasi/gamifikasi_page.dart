@@ -36,7 +36,7 @@ class _GamifikasiPageState extends State<GamifikasiPage> {
   };
   // MQTT Client
   late MqttServerClient client;
-  final String broker = '192.168.205.189';
+  final String broker = '192.168.114.189';
   final String topic = 'gamifikasi/control'; // Ganti sesuai topik kamu
 
   @override

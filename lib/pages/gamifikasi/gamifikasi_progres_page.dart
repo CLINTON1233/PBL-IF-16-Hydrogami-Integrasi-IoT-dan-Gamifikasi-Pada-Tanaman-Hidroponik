@@ -1,3 +1,4 @@
+import 'package:application_hydrogami/pages/gamifikasi/reward_page.dart';
 import 'package:application_hydrogami/pages/monitoring/notifikasi_page.dart';
 import 'package:application_hydrogami/pages/panduan/panduan_page.dart';
 import 'package:flutter/material.dart';
@@ -334,6 +335,13 @@ class _GamifikasiProgresPageState extends State<GamifikasiProgresPage> {
 
   Widget _buildRewardWidget({required int coins}) {
     return InkWell(
+      onTap: () {
+        // Navigasi ke halaman RewardPage
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const RewardPage()),
+        );
+      },
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(
@@ -451,11 +459,13 @@ class _GamifikasiProgresPageState extends State<GamifikasiProgresPage> {
                       Positioned.fill(
                         child: Center(
                           child: Text(
-                            '$progress' == '$total' ? 'Claim the Reward!!' :'$progress / $total',
+                            '$progress' == '$total'
+                                ? 'Claim the Reward!!'
+                                : '$progress / $total',
                             style: const TextStyle(
                               fontSize: 12,
-                              color:
-                                  Color.fromARGB(255, 80, 80, 80), // Atur agar kontras dengan bar
+                              color: Color.fromARGB(255, 80, 80,
+                                  80), // Atur agar kontras dengan bar
                               fontWeight: FontWeight.bold,
                             ),
                           ),
@@ -463,8 +473,6 @@ class _GamifikasiProgresPageState extends State<GamifikasiProgresPage> {
                       ),
                     ],
                   ),
-
-                  
                 ],
               ),
             ),
@@ -475,12 +483,17 @@ class _GamifikasiProgresPageState extends State<GamifikasiProgresPage> {
             Container(
               padding: const EdgeInsets.all(1),
               decoration: BoxDecoration(
-                color: '$progress' == '$total' ? Colors.green[400] :  Colors.grey[300] ,
+                color: '$progress' == '$total'
+                    ? Colors.green[400]
+                    : Colors.grey[300],
                 borderRadius: BorderRadius.circular(8),
               ),
               child: IconButton(
                 icon: Icon(
-                  '$progress' == '$total' ? Icons.card_giftcard : Icons.arrow_forward, color: Colors.white),
+                    '$progress' == '$total'
+                        ? Icons.card_giftcard
+                        : Icons.arrow_forward,
+                    color: Colors.white),
                 iconSize: 25,
                 onPressed: () {
                   //? link untuk kehlmn gamifikasi

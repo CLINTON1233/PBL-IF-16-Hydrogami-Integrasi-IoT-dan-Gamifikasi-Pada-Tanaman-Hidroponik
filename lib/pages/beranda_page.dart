@@ -10,6 +10,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:percent_indicator/percent_indicator.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:geocoding/geocoding.dart';
+import 'dart:async';
 
 class BerandaPage extends StatefulWidget {
   const BerandaPage({super.key});
@@ -22,47 +25,235 @@ class _BerandaPageState extends State<BerandaPage> {
   int _notificationCount = 0;
   bool _showLogoutText = false;
   int _bottomNavCurrentIndex = 0;
-  String _location = "Batam";
-  String _weatherDescription = "Cerah, Berawan";
-  String _temperature = "35°C";
   String _username = "User";
 
-  // Data hidroponik untuk tampilan baru
-  double _nutrientLevel = 78.3; // dalam persen
-  double _waterConsumption = 11.87; // dalam liter
-  double _targetHarvest = 20.0; // dalam kg
-  double _growthPercentage = 0.30; // persentase pertumbuhan tanaman
-  double _harvestLastWeek = 4.0; // dalam kg
-  double _waterLastWeek = 10.0; // dalam liter
+  double _nutrientLevel = 78.3;
+  double _waterConsumption = 11.87;
+  double _targetHarvest = 20.0;
+  double _growthPercentage = 0.30;
+  double _harvestLastWeek = 4.0;
+  double _waterLastWeek = 10.0;
 
-  // Tambahkan variabel yang kurang
   List<Map<String, dynamic>> _plantActivities = [];
-  double _revenueLastWeek = 150.0; // Default revenue value
-  double _foodLastWeek = 75.0; // Default food expense value
+  double _revenueLastWeek = 150.0;
+  double _foodLastWeek = 75.0;
 
-  // Data transaksi
   List<Map<String, dynamic>> _transactions = [];
   String _selectedTimeFrame = "Monthly";
+
+  // Tambahan untuk fitur lokasi
+  String _currentLocation = "Memuat lokasi...";
+  bool _isLoadingLocation = true;
+  String _currentWeather = "Memuat cuaca...";
+  IconData _weatherIcon = Icons.cloud_queue;
+  Color _weatherColor = Colors.grey;
+  bool _isLoadingWeather = true;
+  double? _latitude;
+  double? _longitude;
 
   @override
   void initState() {
     super.initState();
     _loadUsername();
-    _fetchWeather();
     _loadNotificationCount();
     _loadTransactions();
+    _getCurrentLocation();
   }
 
-  // Fungsi untuk mengambil jumlah notifikasi dari SharedPreferences atau API
+  // Fungsi untuk mendapatkan data cuaca berdasarkan koordinat
+  Future<void> _getWeatherData(double latitude, double longitude) async {
+    setState(() {
+      _isLoadingWeather = true;
+    });
+
+    try {
+      final String apiKey = "YOUR_API_KEY";
+      final url =
+          'https://api.openweathermap.org/data/2.5/weather?lat=$latitude&lon=$longitude&appid=$apiKey&units=metric';
+
+      final response = await http.get(Uri.parse(url));
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        final weather = data['weather'][0]['main'];
+        final description = data['weather'][0]['description'];
+
+        setState(() {
+          _currentWeather = _getIndonesianWeather(weather);
+          _weatherIcon = _getWeatherIcon(weather);
+          _weatherColor = _getWeatherColor(weather);
+          _isLoadingWeather = false;
+        });
+      } else {
+        setState(() {
+          _currentWeather = "Cerah"; // Default fallback
+          _weatherIcon = Icons.wb_sunny;
+          _weatherColor = Colors.orange;
+          _isLoadingWeather = false;
+        });
+      }
+    } catch (e) {
+      print("Error mendapatkan data cuaca: $e");
+      setState(() {
+        _currentWeather = "Cerah"; // Default fallback
+        _weatherIcon = Icons.wb_sunny;
+        _weatherColor = Colors.orange;
+        _isLoadingWeather = false;
+      });
+    }
+  }
+
+  String _getIndonesianWeather(String englishWeather) {
+    switch (englishWeather.toLowerCase()) {
+      case 'clear':
+        return 'Cerah';
+      case 'clouds':
+        return 'Berawan';
+      case 'rain':
+        return 'Hujan';
+      case 'drizzle':
+        return 'Gerimis';
+      case 'thunderstorm':
+        return 'Badai Petir';
+      case 'snow':
+        return 'Salju';
+      case 'mist':
+      case 'fog':
+      case 'haze':
+        return 'Berkabut';
+      default:
+        return englishWeather;
+    }
+  }
+
+  // Mendapatkan ikon yang sesuai dengan kondisi cuaca
+  IconData _getWeatherIcon(String weather) {
+    switch (weather.toLowerCase()) {
+      case 'clear':
+        return Icons.wb_sunny;
+      case 'clouds':
+        return Icons.cloud;
+      case 'rain':
+        return Icons.water_drop;
+      case 'drizzle':
+        return Icons.grain;
+      case 'thunderstorm':
+        return Icons.flash_on;
+      case 'snow':
+        return Icons.ac_unit;
+      case 'mist':
+      case 'fog':
+      case 'haze':
+        return Icons.cloud_queue;
+      default:
+        return Icons.cloud_queue;
+    }
+  }
+
+// Mendapatkan warna yang sesuai dengan kondisi cuaca
+  Color _getWeatherColor(String weather) {
+    switch (weather.toLowerCase()) {
+      case 'clear':
+        return Colors.orange;
+      case 'clouds':
+        return Colors.blueGrey;
+      case 'rain':
+        return Colors.blue;
+      case 'drizzle':
+        return Colors.lightBlue;
+      case 'thunderstorm':
+        return Colors.deepPurple;
+      case 'snow':
+        return Colors.lightBlue;
+      case 'mist':
+      case 'fog':
+      case 'haze':
+        return Colors.grey;
+      default:
+        return Colors.grey;
+    }
+  }
+
+  // Fungsi untuk mendapatkan lokasi pengguna
+  Future<void> _getCurrentLocation() async {
+    setState(() {
+      _isLoadingLocation = true;
+      _isLoadingWeather = true;
+    });
+
+    try {
+      // Cek permission lokasi
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.denied) {
+          setState(() {
+            _currentLocation = "Akses lokasi ditolak";
+            _isLoadingLocation = false;
+            _currentWeather = "Tidak dapat memuat cuaca";
+            _isLoadingWeather = false;
+          });
+          return;
+        }
+      }
+
+      if (permission == LocationPermission.deniedForever) {
+        setState(() {
+          _currentLocation = "Akses lokasi ditolak permanen";
+          _isLoadingLocation = false;
+          _currentWeather = "Tidak dapat memuat cuaca";
+          _isLoadingWeather = false;
+        });
+        return;
+      }
+
+      // Mendapatkan posisi
+      Position position = await Geolocator.getCurrentPosition(
+          desiredAccuracy: LocationAccuracy.high);
+
+      // Simpan koordinat untuk mendapatkan data cuaca
+      _latitude = position.latitude;
+      _longitude = position.longitude;
+
+      // Mendapatkan alamat dari koordinat
+      List<Placemark> placemarks =
+          await placemarkFromCoordinates(position.latitude, position.longitude);
+
+      if (placemarks.isNotEmpty) {
+        Placemark place = placemarks[0];
+        setState(() {
+          _currentLocation = "${place.subLocality}, ${place.locality}";
+          _isLoadingLocation = false;
+        });
+
+        // Dapatkan data cuaca setelah mendapatkan lokasi
+        await _getWeatherData(position.latitude, position.longitude);
+      } else {
+        setState(() {
+          _currentLocation = "Lokasi tidak ditemukan";
+          _isLoadingLocation = false;
+        });
+      }
+    } catch (e) {
+      setState(() {
+        _currentLocation = "Batam";
+        _isLoadingLocation = false;
+        _currentWeather = "Cerah";
+        _weatherIcon = Icons.wb_sunny;
+        _weatherColor = Colors.orange;
+        _isLoadingWeather = false;
+      });
+      print("Error mendapatkan lokasi: $e");
+    }
+  }
+
   Future<void> _loadNotificationCount() async {
     final prefs = await SharedPreferences.getInstance();
     setState(() {
-      // Ambil jumlah notifikasi yang belum dibaca dari SharedPreferences
       _notificationCount = prefs.getInt('unread_notifications') ?? 0;
     });
   }
 
-  // Tambahkan fungsi ini
   Future<void> _loadUsername() async {
     final prefs = await SharedPreferences.getInstance();
     setState(() {
@@ -70,29 +261,6 @@ class _BerandaPageState extends State<BerandaPage> {
     });
   }
 
-  Future<void> _fetchWeather() async {
-    const apiKey = "ffd2fbe25253293c332f670ca067a7ea";
-    const city = "Batam";
-    final url =
-        "https://api.openweathermap.org/data/2.5/weather?q=$city&appid=$apiKey&units=metric";
-
-    try {
-      final response = await http.get(Uri.parse(url));
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        setState(() {
-          _weatherDescription = data['weather'][0]['description'];
-          _temperature = "${data['main']['temp'].toStringAsFixed(1)}°C";
-        });
-      } else {
-        print("Failed to load weather data");
-      }
-    } catch (e) {
-      print("Error fetching weather: $e");
-    }
-  }
-
-  // Mock data untuk transaksi
   void _loadTransactions() {
     setState(() {
       _plantActivities = [
@@ -125,12 +293,10 @@ class _BerandaPageState extends State<BerandaPage> {
         },
       ];
 
-      // Assign plant activities to transactions
       _transactions = _plantActivities;
     });
   }
 
-  // Fungsi untuk menampilkan dialog konfirmasi logout
   void _showLogoutConfirmationDialog() {
     showDialog(
       context: context,
@@ -151,7 +317,7 @@ class _BerandaPageState extends State<BerandaPage> {
                     child: const Text("Tidak, Batalkan!",
                         style: TextStyle(color: Colors.red)),
                     onPressed: () {
-                      Navigator.of(context).pop(); // Tutup dialog
+                      Navigator.of(context).pop();
                     },
                   ),
                 ),
@@ -162,8 +328,7 @@ class _BerandaPageState extends State<BerandaPage> {
                         const Text("Ya", style: TextStyle(color: Colors.green)),
                     onPressed: () async {
                       final prefs = await SharedPreferences.getInstance();
-                      await prefs
-                          .remove('username'); // Hapus username saat logout
+                      await prefs.remove('username');
 
                       Navigator.of(context).pop();
                       Navigator.pushReplacement(
@@ -270,17 +435,17 @@ class _BerandaPageState extends State<BerandaPage> {
                       Stack(
                         children: [
                           Container(
-                            width: 36, // Ukuran latar belakang lebih kecil
+                            width: 36,
                             height: 36,
                             decoration: const BoxDecoration(
                               shape: BoxShape.circle,
-                              color: Colors.white, // Latar putih
+                              color: Colors.white,
                             ),
                             child: IconButton(
                               icon: const Icon(
                                 Icons.notifications_outlined,
                                 color: Colors.black,
-                                size: 20, // Ukuran ikon lebih kecil
+                                size: 20,
                               ),
                               onPressed: () {
                                 Navigator.push(
@@ -291,10 +456,8 @@ class _BerandaPageState extends State<BerandaPage> {
                                   ),
                                 );
                               },
-                              padding: EdgeInsets
-                                  .zero, // Hapus padding default agar pas di tengah
-                              constraints:
-                                  const BoxConstraints(), // Hilangkan batas default
+                              padding: EdgeInsets.zero,
+                              constraints: const BoxConstraints(),
                             ),
                           ),
                           if (_notificationCount > 0)
@@ -326,8 +489,10 @@ class _BerandaPageState extends State<BerandaPage> {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 20),
-                  // Balance and Expense Sections
+                  const SizedBox(height: 15),
+                  _buildLocationWeatherWidget(),
+
+                  const SizedBox(height: 15),
                   Row(
                     children: [
                       _buildInfoColumn(
@@ -393,7 +558,6 @@ class _BerandaPageState extends State<BerandaPage> {
 
             // Main Content Area (White Background)
             Container(
-              // Beri tinggi minimal supaya konten tidak terlalu kecil
               constraints: BoxConstraints(
                 minHeight: MediaQuery.of(context).size.height * 0.7,
               ),
@@ -406,7 +570,6 @@ class _BerandaPageState extends State<BerandaPage> {
               ),
               child: Column(
                 children: [
-                  // Judul MENU (di luar padding Container menu)
                   const Padding(
                     padding: EdgeInsets.fromLTRB(20, 20, 20, 5),
                     child: Align(
@@ -437,7 +600,7 @@ class _BerandaPageState extends State<BerandaPage> {
                                 );
                               },
                               child: _buildCircleMenuWithLabel(
-                                  Icons.monitor_heart, 'Monitoring'),
+                                  Icons.show_chart, 'Monitoring'),
                             ),
                             const SizedBox(width: 20),
                             GestureDetector(
@@ -449,7 +612,7 @@ class _BerandaPageState extends State<BerandaPage> {
                                 );
                               },
                               child: _buildCircleMenuWithLabel(
-                                  Icons.emoji_events, 'Gamifikasi'),
+                                  Icons.military_tech, 'Gamifikasi'),
                             ),
                             const SizedBox(width: 20),
                             GestureDetector(
@@ -461,7 +624,7 @@ class _BerandaPageState extends State<BerandaPage> {
                                 );
                               },
                               child: _buildCircleMenuWithLabel(
-                                  Icons.menu_book, 'Panduan'),
+                                  Icons.assignment, 'Panduan'),
                             ),
                             const SizedBox(width: 20),
                             GestureDetector(
@@ -475,12 +638,18 @@ class _BerandaPageState extends State<BerandaPage> {
                               child: _buildCircleMenuWithLabel(
                                   Icons.person, 'Kelola Profile'),
                             ),
+                            const SizedBox(width: 20),
+                            GestureDetector(
+                              onTap: _showLogoutConfirmationDialog,
+                              child: _buildCircleMenuWithLabel(
+                                  Icons.logout, 'Logout'),
+                            ),
                           ],
                         ),
                       ),
                     ),
                   ),
-
+                  const SizedBox(height: 0),
                   // Summary Cards
                   Padding(
                     padding: const EdgeInsets.fromLTRB(20, 20, 20, 10),
@@ -530,15 +699,13 @@ class _BerandaPageState extends State<BerandaPage> {
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       children: [
-                        _buildTimeFilterButton('Daily'),
-                        _buildTimeFilterButton('Weekly'),
-                        _buildTimeFilterButton('Monthly'),
+                        _buildTimeFilterButton('Harian'),
+                        _buildTimeFilterButton('Mingguan'),
+                        _buildTimeFilterButton('Bulanan'),
                       ],
                     ),
                   ),
 
-                  // Transactions List
-                  // NOTE: Gunakan shrinkWrap dan physics supaya list ikut scroll SingleChildScrollView
                   ListView.builder(
                     padding: const EdgeInsets.all(20),
                     shrinkWrap: true,
@@ -556,6 +723,163 @@ class _BerandaPageState extends State<BerandaPage> {
         ),
       ),
       bottomNavigationBar: _buildBottomNavigation(),
+    );
+  }
+
+  // Widget untuk menampilkan lokasi dan cuaca
+  Widget _buildLocationWeatherWidget() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.2),
+        borderRadius: BorderRadius.circular(15),
+      ),
+      child: Row(
+        children: [
+          // Column untuk lokasi
+          Expanded(
+            flex: 3,
+            child: Row(
+              children: [
+                const Icon(
+                  Icons.location_on,
+                  color: Colors.white,
+                  size: 24,
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Lokasi Anda',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w500,
+                          fontSize: 12,
+                        ),
+                      ),
+                      _isLoadingLocation
+                          ? Row(
+                              children: [
+                                const SizedBox(
+                                  width: 12,
+                                  height: 12,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    valueColor: AlwaysStoppedAnimation<Color>(
+                                        Colors.white),
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Text(
+                                  'Memuat lokasi...',
+                                  style: TextStyle(
+                                    color: Colors.white.withOpacity(0.9),
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 14,
+                                  ),
+                                ),
+                              ],
+                            )
+                          : Text(
+                              _currentLocation,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 14,
+                              ),
+                            ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          // Divider vertical
+          Container(
+            height: 30,
+            width: 1,
+            color: Colors.white.withOpacity(0.5),
+            margin: const EdgeInsets.symmetric(horizontal: 10),
+          ),
+
+          // Column untuk cuaca
+          Expanded(
+            flex: 2,
+            child: Row(
+              children: [
+                Icon(
+                  _weatherIcon,
+                  color: _weatherColor,
+                  size: 24,
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Cuaca',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w500,
+                          fontSize: 12,
+                        ),
+                      ),
+                      _isLoadingWeather
+                          ? Row(
+                              children: [
+                                const SizedBox(
+                                  width: 12,
+                                  height: 12,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    valueColor: AlwaysStoppedAnimation<Color>(
+                                        Colors.white),
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Text(
+                                  'Memuat...',
+                                  style: TextStyle(
+                                    color: Colors.white.withOpacity(0.9),
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 14,
+                                  ),
+                                ),
+                              ],
+                            )
+                          : Text(
+                              _currentWeather,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 14,
+                              ),
+                            ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          // Tombol refresh
+          IconButton(
+            icon: const Icon(
+              Icons.refresh,
+              color: Colors.white,
+              size: 20,
+            ),
+            onPressed: _getCurrentLocation,
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(),
+          ),
+        ],
+      ),
     );
   }
 

@@ -84,8 +84,12 @@ class _LoginPageState extends State<LoginPage>
         if (response.statusCode == 200) {
           // Cek apakah user sudah memilih tanaman dan skala
           final prefs = await SharedPreferences.getInstance();
-          await prefs.setString(
-              'username', responseMap['user']['username']); // Tambahkan ini
+
+          await prefs.setString('username', responseMap['user']['username']);
+
+          //cek tokennya ada atau ngga
+          String? savedToken = prefs.getString('token');
+          print('Token from AuthServices: $savedToken');
 
           // Cek apakah user sudah memilih tanaman dan skala
           final hasPlant = prefs.getString('selected_plant') != null;

@@ -327,15 +327,46 @@ class _BerandaPageState extends State<BerandaPage> {
                     child:
                         const Text("Ya", style: TextStyle(color: Colors.green)),
                     onPressed: () async {
-                      final prefs = await SharedPreferences.getInstance();
-                      await prefs.remove('username');
+                      try {
+                        final prefs = await SharedPreferences.getInstance();
+                        await prefs.remove('token');
+                        await prefs.remove('username');
 
-                      Navigator.of(context).pop();
-                      Navigator.pushReplacement(
-                        context,
-                        MaterialPageRoute(
-                            builder: (context) => const LoginPage()),
-                      );
+                        // debug logging
+                        print('Logout successful - all data cleared');
+
+                        // verifikasi token sudah terhapus
+                        String? remainingToken = prefs.getString('token');
+                        print('Remaining token after logout: $remainingToken');
+
+                        Navigator.of(context).pop(); // Close dialog first
+
+                        // Navigate to login and clear all routes
+                        Navigator.pushReplacement(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) => const LoginPage()),
+                        );
+
+                        // Show success message
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Logout Berhasil'),
+                            backgroundColor: Colors.green,
+                          ),
+                        );
+                      } catch (e) {
+                        print('Error during logout: $e');
+                        Navigator.of(context).pop(); // Close dialog
+
+                        // Show error message
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Gagal logout, coba lagi'),
+                            backgroundColor: Colors.red,
+                          ),
+                        );
+                      }
                     },
                   ),
                 ),

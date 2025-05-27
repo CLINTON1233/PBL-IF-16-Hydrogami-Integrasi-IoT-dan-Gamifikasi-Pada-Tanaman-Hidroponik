@@ -1,7 +1,11 @@
+//import 'dart:nativewrappers/_internal/vm_shared/lib/collection_patch.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart'; // Tambahkan ini
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:application_hydrogami/pages/splash_screen/awal2_page.dart';
+import 'package:application_hydrogami/pages/auth/login_page.dart';
+import 'package:application_hydrogami/pages/beranda_page.dart';
 
 class Awal1Page extends StatefulWidget {
   const Awal1Page({super.key});
@@ -24,20 +28,38 @@ class _Awal1PageState extends State<Awal1Page>
       ),
     );
 
-    // Animasi titik-titik
     _controller = AnimationController(
       duration: const Duration(seconds: 1),
       vsync: this,
     )..repeat();
 
-    Future.delayed(const Duration(seconds: 15), () {
-      if (mounted) {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => const Awal2Page()),
-        );
-      }
-    });
+    // Cek token di SharedPreferences
+    _checkLoginStatus();
+  }
+
+  Future<void> _checkLoginStatus() async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('token');
+
+    await Future.delayed(const Duration(seconds: 3));
+
+    if (token != null && token.isNotEmpty) {
+      // Auto redirect ke homepage kalo udah login
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const BerandaPage()),
+      );
+    } else {
+      // Kalo belum login, lanjut splash screen dulu
+      Future.delayed(const Duration(seconds: 5), () {
+        if (mounted) {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => const Awal2Page()),
+          );
+        }
+      });
+    }
   }
 
   @override
@@ -65,8 +87,6 @@ class _Awal1PageState extends State<Awal1Page>
               width: 400,
               height: 200,
             ),
-
-            // Animasi loading titik-titik tepat di bawah teks
             AnimatedBuilder(
               animation: _controller,
               builder: (context, child) {

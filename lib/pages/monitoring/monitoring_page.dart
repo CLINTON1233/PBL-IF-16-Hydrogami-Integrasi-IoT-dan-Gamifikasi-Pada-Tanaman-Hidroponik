@@ -224,22 +224,29 @@ class _MonitoringPageState extends State<MonitoringPage> {
       backgroundColor: const Color(0xFFF5F7FA),
       appBar: AppBar(
         backgroundColor: const Color(0xFF24D17E),
-        elevation: 0,
-        centerTitle: true,
-        title: Text(
-          'Monitoring Real-Time',
-          style: GoogleFonts.poppins(
-            fontSize: 18,
-            fontWeight: FontWeight.w600,
-            color: Colors.black,
-          ),
+        elevation: 2,
+        centerTitle: false,
+        title: Row(
+          children: [
+            Image.asset(
+              'assets/logo.png',
+              width: 45,
+              height: 45,
+            ),
+            const SizedBox(width: 10),
+            Text(
+              'Monitoring Real-Time',
+              style: GoogleFonts.poppins(
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+                color: Colors.black,
+              ),
+            ),
+          ],
         ),
         leading: IconButton(
-          icon: const Icon(
-            Icons.arrow_back_ios,
-            color: Colors.black,
-            size: 20,
-          ),
+          icon: const Icon(Icons.arrow_back_sharp),
+          iconSize: 20.0,
           onPressed: () {
             Navigator.push(
               context,

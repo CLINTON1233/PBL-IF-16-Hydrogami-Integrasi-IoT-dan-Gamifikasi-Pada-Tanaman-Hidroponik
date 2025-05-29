@@ -50,7 +50,11 @@ class _PilihSkalaPageState extends State<PilihSkalaPage> {
                 'Lebih tinggi, perlu sistem pengelolaan nutrisi dan irigasi yang teratur',
                 'Memerlukan pemantauan dan perawatan yang lebih intensif',
                 const Color.fromARGB(255, 16, 199, 101),
-                () {
+                () async {
+                  // Simpan pilihan skala terlebih dahulu
+                  await saveScaleChoice('High');
+
+                  // Kemudian navigasi ke halaman konfirmasi
                   Navigator.push(
                     context,
                     MaterialPageRoute(
@@ -70,7 +74,11 @@ class _PilihSkalaPageState extends State<PilihSkalaPage> {
                 'Sedang, bisa dikelola dengan perawatan mingguan',
                 'Pengelolaan yang lebih ringan namun tetap butuh pemantauan rutin',
                 const Color.fromARGB(255, 16, 199, 101),
-                () {
+                () async {
+                  // Simpan pilihan skala terlebih dahulu
+                  await saveScaleChoice('Medium');
+
+                  // Kemudian navigasi ke halaman konfirmasi
                   Navigator.push(
                     context,
                     MaterialPageRoute(
@@ -90,7 +98,11 @@ class _PilihSkalaPageState extends State<PilihSkalaPage> {
                 'Rendah, cukup dengan perawatan mingguan atau dua kali seminggu',
                 'Sangat mudah, bisa dikelola dengan perawatan minim',
                 const Color.fromARGB(255, 16, 199, 101),
-                () {
+                () async {
+                  // Simpan pilihan skala terlebih dahulu
+                  await saveScaleChoice('Easy');
+
+                  // Kemudian navigasi ke halaman konfirmasi
                   Navigator.push(
                     context,
                     MaterialPageRoute(

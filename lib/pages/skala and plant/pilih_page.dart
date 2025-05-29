@@ -94,8 +94,12 @@ class _PilihPageState extends State<PilihPage> {
         const SizedBox(height: 10),
         // Tombol untuk nama tanaman
         ElevatedButton(
-          onPressed: () {
+          onPressed: () async {
             if (title == 'Pakcoy') {
+              // Simpan pilihan tanaman terlebih dahulu
+              await savePlantChoice(title);
+
+              // Kemudian navigasi ke halaman selanjutnya
               Navigator.push(
                 context,
                 MaterialPageRoute(

@@ -20,6 +20,8 @@ class DetailPanduanNutrisiPage extends StatefulWidget {
 class _DetailPanduanNutrisiPageState extends State<DetailPanduanNutrisiPage> {
   late Future<Panduan?> panduanDetail;
   int _bottomNavCurrentIndex = 2;
+  bool _isPlayButtonPressed = false;
+
 
   @override
   void initState() {
@@ -105,7 +107,7 @@ class _DetailPanduanNutrisiPageState extends State<DetailPanduanNutrisiPage> {
           final panduan = snapshot.data!;
           return CustomScrollView(
             slivers: [
-              // Hero Image Section with fixed image display
+              // Hero Image 
               SliverAppBar(
                 expandedHeight: 280,
                 pinned: true,
@@ -147,7 +149,7 @@ class _DetailPanduanNutrisiPageState extends State<DetailPanduanNutrisiPage> {
                   background: Stack(
                     fit: StackFit.expand,
                     children: [
-                      // Main Hero Image with proper scaling
+                      // Main Hero Image
                       Container(
                         decoration: BoxDecoration(
                           gradient: LinearGradient(
@@ -162,7 +164,7 @@ class _DetailPanduanNutrisiPageState extends State<DetailPanduanNutrisiPage> {
                         child: panduan.gambar != null
                             ? ClipRect(
                                 child: Transform.scale(
-                                  scale: 1.0, // Normal scale, no zoom
+                                  scale: 1.0, 
                                   child: Image.asset(
                                     'assets/panduanNutrisi.jpg',
                                     fit: BoxFit.cover,
@@ -193,7 +195,7 @@ class _DetailPanduanNutrisiPageState extends State<DetailPanduanNutrisiPage> {
                               ),
                       ),
 
-                      // Subtle gradient overlay for better readability
+                      // gradient overlay 
                       Container(
                         decoration: BoxDecoration(
                           gradient: LinearGradient(
@@ -223,13 +225,13 @@ class _DetailPanduanNutrisiPageState extends State<DetailPanduanNutrisiPage> {
                   ),
                   child: Column(
                     children: [
-                      // Title Section with elegant design
+                      // Title Section
                       Container(
                         padding: const EdgeInsets.fromLTRB(28, 36, 28, 28),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            // Category badge with modern styling
+                            // Category badge
                             Container(
                               padding: const EdgeInsets.symmetric(
                                   horizontal: 16, vertical: 8),
@@ -279,7 +281,7 @@ class _DetailPanduanNutrisiPageState extends State<DetailPanduanNutrisiPage> {
 
                             const SizedBox(height: 20),
 
-                            // Main Title with enhanced typography
+                            // Main Title 
                             Text(
                               panduan.judul ?? 'Judul tidak tersedia.',
                               style: GoogleFonts.poppins(
@@ -293,7 +295,7 @@ class _DetailPanduanNutrisiPageState extends State<DetailPanduanNutrisiPage> {
 
                             const SizedBox(height: 20),
 
-                            // Reading time with elegant design
+                            // Reading time 
                             Container(
                               padding: const EdgeInsets.symmetric(
                                   horizontal: 16, vertical: 10),
@@ -346,7 +348,7 @@ class _DetailPanduanNutrisiPageState extends State<DetailPanduanNutrisiPage> {
                         ),
                       ),
 
-                      // Main Content Card with premium design
+                      // Main Content Card 
                       Container(
                         margin: const EdgeInsets.symmetric(horizontal: 28),
                         padding: const EdgeInsets.all(32),
@@ -433,7 +435,7 @@ class _DetailPanduanNutrisiPageState extends State<DetailPanduanNutrisiPage> {
                                       ),
                                     ),
 
-                                    // Dark overlay for better button visibility
+                                    // Dark overlay 
                                     Container(
                                       decoration: BoxDecoration(
                                         gradient: LinearGradient(
@@ -450,9 +452,24 @@ class _DetailPanduanNutrisiPageState extends State<DetailPanduanNutrisiPage> {
                                     // Play Button and Video Info
                                     Center(
                                       child: GestureDetector(
+                                        onTapDown: (_) {
+                                          setState(() {
+                                            _isPlayButtonPressed = true;
+                                          });
+                                        },
+                                        onTapUp: (_) {
+                                          setState(() {
+                                            _isPlayButtonPressed = false;
+                                          });
+                                        },
+                                        onTapCancel: () {
+                                          setState(() {
+                                            _isPlayButtonPressed = false;
+                                          });
+                                        },
                                         onTap: () async {
                                           final Uri url = Uri.parse(
-                                              'https://www.youtube.com/watch?v=mcNSnsWAS5A');
+                                              'https://www.youtube.com/watch?v=Y6G3eJPI69k');
 
                                           if (await launcher
                                               .canLaunchUrl(url)) {
@@ -463,7 +480,13 @@ class _DetailPanduanNutrisiPageState extends State<DetailPanduanNutrisiPage> {
                                             );
                                           }
                                         },
-                                        child: Container(
+                                        child: AnimatedContainer(
+                                          duration:
+                                              const Duration(milliseconds: 150),
+                                          transform: Matrix4.identity()
+                                            ..scale(_isPlayButtonPressed
+                                                ? 0.9
+                                                : 1.0),
                                           padding: const EdgeInsets.all(16),
                                           decoration: BoxDecoration(
                                             color:
@@ -472,10 +495,18 @@ class _DetailPanduanNutrisiPageState extends State<DetailPanduanNutrisiPage> {
                                                 BorderRadius.circular(50),
                                             boxShadow: [
                                               BoxShadow(
-                                                color: Colors.black
-                                                    .withOpacity(0.2),
-                                                blurRadius: 12,
-                                                offset: const Offset(0, 4),
+                                                color: Colors.black.withOpacity(
+                                                    _isPlayButtonPressed
+                                                        ? 0.3
+                                                        : 0.2),
+                                                blurRadius: _isPlayButtonPressed
+                                                    ? 8
+                                                    : 12,
+                                                offset: Offset(
+                                                    0,
+                                                    _isPlayButtonPressed
+                                                        ? 2
+                                                        : 4),
                                               ),
                                             ],
                                           ),
@@ -522,7 +553,7 @@ class _DetailPanduanNutrisiPageState extends State<DetailPanduanNutrisiPage> {
                                       ),
                                     ),
 
-                                    // Video duration badge (optional)
+                                    // Video duration badge 
                                     Positioned(
                                       bottom: 12,
                                       right: 12,
@@ -574,7 +605,7 @@ class _DetailPanduanNutrisiPageState extends State<DetailPanduanNutrisiPage> {
 
                             const SizedBox(height: 32),
 
-                            // Content header with sophisticated styling
+                            // Content header 
                             Row(
                               children: [
                                 Container(
@@ -609,7 +640,7 @@ class _DetailPanduanNutrisiPageState extends State<DetailPanduanNutrisiPage> {
 
                             const SizedBox(height: 28),
 
-                            // Main content text with premium typography
+                            // Main content text 
                             Container(
                               padding: const EdgeInsets.symmetric(vertical: 8),
                               child: Text(
@@ -629,8 +660,8 @@ class _DetailPanduanNutrisiPageState extends State<DetailPanduanNutrisiPage> {
                         ),
                       ),
 
-                      // Bottom spacing for navigation
-                      const SizedBox(height: 140),
+                      // Space
+                      const SizedBox(height: 25),
                     ],
                   ),
                 ),
@@ -644,124 +675,95 @@ class _DetailPanduanNutrisiPageState extends State<DetailPanduanNutrisiPage> {
   }
 
   Widget _buildBottomNavigation() {
-    return Container(
-      decoration: BoxDecoration(
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 20,
-            offset: const Offset(0, -5),
+    return ClipRRect(
+      borderRadius: const BorderRadius.only(
+        topLeft: Radius.circular(10),
+        topRight: Radius.circular(10),
+      ),
+      child: BottomNavigationBar(
+        type: BottomNavigationBarType.fixed,
+        backgroundColor: const Color(0xFF24D17E),
+        onTap: (index) {
+          setState(() {
+            _bottomNavCurrentIndex = index;
+          });
+
+          switch (index) {
+            case 0:
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (context) => const BerandaPage()),
+              );
+              break;
+            case 1:
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (context) => const NotifikasiPage()),
+              );
+              break;
+            case 2:
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (context) => const PanduanPage()),
+              );
+              break;
+            case 3:
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (context) => const ProfilPage()),
+              );
+              break;
+          }
+        },
+        currentIndex: _bottomNavCurrentIndex,
+        items: const [
+          BottomNavigationBarItem(
+            activeIcon: Icon(
+              Icons.home,
+              color: Colors.black,
+            ),
+            icon: Icon(
+              Icons.home,
+              color: Colors.white,
+            ),
+            label: 'Beranda',
+          ),
+          BottomNavigationBarItem(
+            activeIcon: Icon(
+              Icons.notification_add,
+              color: Colors.black,
+            ),
+            icon: Icon(
+              Icons.notifications,
+              color: Colors.white,
+            ),
+            label: 'Notifikasi',
+          ),
+          BottomNavigationBarItem(
+            activeIcon: Icon(
+              Icons.assignment,
+              color: Colors.black,
+            ),
+            icon: Icon(
+              Icons.assignment,
+              color: Colors.white,
+            ),
+            label: 'Panduan',
+          ),
+          BottomNavigationBarItem(
+            activeIcon: Icon(
+              Icons.person,
+              color: Colors.black,
+            ),
+            icon: Icon(
+              Icons.person,
+              color: Colors.white,
+            ),
+            label: 'Akun',
           ),
         ],
-      ),
-      child: ClipRRect(
-        borderRadius: const BorderRadius.only(
-          topLeft: Radius.circular(20),
-          topRight: Radius.circular(20),
-        ),
-        child: BottomNavigationBar(
-          type: BottomNavigationBarType.fixed,
-          backgroundColor: const Color(0xFF24D17E),
-          onTap: (index) {
-            setState(() {
-              _bottomNavCurrentIndex = index;
-            });
-
-            switch (index) {
-              case 0:
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(builder: (context) => const BerandaPage()),
-                );
-                break;
-              case 1:
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(
-                      builder: (context) => const NotifikasiPage()),
-                );
-                break;
-              case 2:
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(builder: (context) => const PanduanPage()),
-                );
-                break;
-              case 3:
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(builder: (context) => const ProfilPage()),
-                );
-                break;
-            }
-          },
-          currentIndex: _bottomNavCurrentIndex,
-          elevation: 0,
-          selectedLabelStyle: GoogleFonts.poppins(
-            fontSize: 12,
-            fontWeight: FontWeight.w600,
-          ),
-          unselectedLabelStyle: GoogleFonts.poppins(
-            fontSize: 11,
-            fontWeight: FontWeight.w500,
-          ),
-          items: const [
-            BottomNavigationBarItem(
-              activeIcon: Icon(
-                Icons.home_rounded,
-                color: Colors.black87,
-                size: 26,
-              ),
-              icon: Icon(
-                Icons.home_outlined,
-                color: Colors.white,
-                size: 24,
-              ),
-              label: 'Beranda',
-            ),
-            BottomNavigationBarItem(
-              activeIcon: Icon(
-                Icons.notifications_rounded,
-                color: Colors.black87,
-                size: 26,
-              ),
-              icon: Icon(
-                Icons.notifications_outlined,
-                color: Colors.white,
-                size: 24,
-              ),
-              label: 'Notifikasi',
-            ),
-            BottomNavigationBarItem(
-              activeIcon: Icon(
-                Icons.menu_book_rounded,
-                color: Colors.black87,
-                size: 26,
-              ),
-              icon: Icon(
-                Icons.menu_book_outlined,
-                color: Colors.white,
-                size: 24,
-              ),
-              label: 'Panduan',
-            ),
-            BottomNavigationBarItem(
-              activeIcon: Icon(
-                Icons.person_rounded,
-                color: Colors.black87,
-                size: 26,
-              ),
-              icon: Icon(
-                Icons.person_outline_rounded,
-                color: Colors.white,
-                size: 24,
-              ),
-              label: 'Akun',
-            ),
-          ],
-          selectedItemColor: Colors.black87,
-          unselectedItemColor: Colors.white,
-        ),
+        selectedItemColor: Colors.black,
+        unselectedItemColor: Colors.white,
       ),
     );
   }

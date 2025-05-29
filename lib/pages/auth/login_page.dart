@@ -71,7 +71,7 @@ class _LoginPageState extends State<LoginPage>
     }
   }
 
-  LoginPressed() async {
+  loginPressed() async {
     // Mengambil nilai email dan password dari controller
     email = emailController.text;
     password = passwordController.text;
@@ -310,7 +310,7 @@ class _LoginPageState extends State<LoginPage>
                               const SizedBox(height: 20),
                               RoundedButton(
                                 btnText: 'Login',
-                                onBtnPressed: () => LoginPressed(),
+                                onBtnPressed: () => loginPressed(),
                               ),
                               const SizedBox(height: 10),
                               Center(

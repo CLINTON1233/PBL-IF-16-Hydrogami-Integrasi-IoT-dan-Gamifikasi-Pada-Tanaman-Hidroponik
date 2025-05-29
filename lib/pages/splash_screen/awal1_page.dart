@@ -40,17 +40,19 @@ class _Awal1PageState extends State<Awal1Page>
   Future<void> _checkLoginStatus() async {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('token');
+    final hasPlant = prefs.getString('selected_plant') != null;
+    final hasScale = prefs.getString('selected_scale') != null;
 
     await Future.delayed(const Duration(seconds: 3));
 
-    if (token != null && token.isNotEmpty) {
-      // Auto redirect ke homepage kalo udah login
+    if (token != null && token.isNotEmpty && hasPlant && hasScale) {
+      // Auto redirect to homepage only if user is logged in AND has selected both plant and scale
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (context) => const BerandaPage()),
       );
     } else {
-      // Kalo belum login, lanjut splash screen dulu
+      // If not logged in OR missing plant/scale selection, go to initial page
       Future.delayed(const Duration(seconds: 5), () {
         if (mounted) {
           Navigator.pushReplacement(

@@ -2,6 +2,7 @@ import 'package:application_hydrogami/pages/gamifikasi/gamifikasi_page.dart';
 import 'package:application_hydrogami/pages/monitoring/monitoring_page.dart';
 import 'package:application_hydrogami/pages/panduan/panduan_page.dart';
 import 'package:application_hydrogami/pages/profil_page.dart';
+import 'package:application_hydrogami/pages/about_us_page.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:application_hydrogami/pages/auth/login_page.dart';
@@ -643,7 +644,7 @@ class _BerandaPageState extends State<BerandaPage> {
                                 );
                               },
                               child: _buildCircleMenuWithLabel(
-                                  Icons.military_tech, 'Gamifikasi'),
+                                  Icons.sports_esports, 'Gamifikasi'),
                             ),
                             const SizedBox(width: 20),
                             GestureDetector(
@@ -668,6 +669,18 @@ class _BerandaPageState extends State<BerandaPage> {
                               },
                               child: _buildCircleMenuWithLabel(
                                   Icons.person, 'Kelola Profile'),
+                            ),
+                            const SizedBox(width: 20),
+                            GestureDetector(
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                      builder: (context) => AboutUsPage()),
+                                );
+                              },
+                              child: _buildCircleMenuWithLabel(
+                                  Icons.info, 'About Us'),
                             ),
                             const SizedBox(width: 20),
                             GestureDetector(
@@ -1252,6 +1265,8 @@ class _BerandaPageState extends State<BerandaPage> {
       ),
     );
   }
+}
+
 
 // Fungsi item navigasi khusus (opsional jika dipakai)
-}
+

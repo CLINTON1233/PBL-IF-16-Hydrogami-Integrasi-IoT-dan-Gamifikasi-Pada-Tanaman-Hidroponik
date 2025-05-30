@@ -286,9 +286,9 @@ class _AboutUsPageState extends State<AboutUsPage>
                       ),
                       const SizedBox(width: 15),
                       Text(
-                        'About Us',
+                        'Tentang Kami',
                         style: GoogleFonts.poppins(
-                          fontSize: 20,
+                          fontSize: 18,
                           fontWeight: FontWeight.w600,
                           color: Colors.black,
                         ),
@@ -329,7 +329,7 @@ class _AboutUsPageState extends State<AboutUsPage>
                         delay: 800,
                         child: _buildTeamShowcase(),
                       ),
-                      const SizedBox(height: 25),
+                      const SizedBox(height: 10),
                     ],
                   ),
                 ),
@@ -1025,7 +1025,7 @@ aplikasi HydroGami.''',
             );
           }).toList(),
 
-          const SizedBox(height: 24),
+          const SizedBox(height: 20),
 
           // Footer
           Row(

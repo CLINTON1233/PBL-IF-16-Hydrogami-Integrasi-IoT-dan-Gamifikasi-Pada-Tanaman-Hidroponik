@@ -680,7 +680,7 @@ class _BerandaPageState extends State<BerandaPage> {
                                 );
                               },
                               child: _buildCircleMenuWithLabel(
-                                  Icons.info, 'About Us'),
+                                  Icons.info, 'Tentang Kami'),
                             ),
                             const SizedBox(width: 20),
                             GestureDetector(

@@ -87,7 +87,7 @@ class _AboutUsPageState extends State<AboutUsPage>
       CurvedAnimation(parent: _floatingController, curve: Curves.easeInOut),
     );
 
-    // Start animations 
+    // Start animations
     _fadeController.forward();
     Future.delayed(const Duration(milliseconds: 300), () {
       _slideController.forward();
@@ -141,7 +141,7 @@ class _AboutUsPageState extends State<AboutUsPage>
                       (index) =>
                           _buildFloatingShape(index, screenWidth, screenHeight),
                     ),
-                    // Hero Content 
+                    // Hero Content
                     Positioned(
                       top: 120,
                       left: 0,
@@ -269,13 +269,11 @@ class _AboutUsPageState extends State<AboutUsPage>
                         width: 45,
                         height: 45,
                       ),
-                      const SizedBox(
-                          width: 10), 
+                      const SizedBox(width: 10),
                       Text(
                         'Tentang Kami',
                         style: GoogleFonts.poppins(
-                          fontSize:
-                              20, 
+                          fontSize: 20,
                           fontWeight: FontWeight.w600,
                           color: Colors.black,
                         ),

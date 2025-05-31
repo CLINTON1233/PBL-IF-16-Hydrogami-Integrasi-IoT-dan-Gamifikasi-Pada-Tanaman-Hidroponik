@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:application_hydrogami/pages/beranda_page.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class KonfirmasiSkalaPage extends StatefulWidget {
   const KonfirmasiSkalaPage({super.key});
@@ -93,10 +94,22 @@ class _KonfirmasiSkalaPageState extends State<KonfirmasiSkalaPage> {
                     ),
                   ),
                   // Tombol Ya dengan ikon di sebelah kanan
+                  // Ubah bagian onPressed tombol "Ya" di KonfirmasiSkalaPage
+
                   ElevatedButton(
-                    onPressed: () {
-                      // Navigasi ke halaman berikutnya
-                      Navigator.push(
+                    onPressed: () async {
+                      // Simpan flag bahwa user sudah menyelesaikan setup
+                      final prefs = await SharedPreferences.getInstance();
+                      String? username = prefs.getString('username');
+
+                      if (username != null) {
+                        // Tandai bahwa user sudah menyelesaikan setup
+                        String userKey = '${username}_has_completed_setup';
+                        await prefs.setBool(userKey, true);
+                      }
+
+                      // Navigasi ke halaman beranda
+                      Navigator.pushReplacement(
                         context,
                         MaterialPageRoute(
                           builder: (context) => const BerandaPage(),
@@ -124,8 +137,7 @@ class _KonfirmasiSkalaPageState extends State<KonfirmasiSkalaPage> {
                             fontWeight: FontWeight.bold,
                           ),
                         ),
-                        const SizedBox(width: 10), // Jarak antara teks dan ikon
-
+                        const SizedBox(width: 10),
                         Image.asset(
                           'assets/ic_next.png',
                           width: 20,

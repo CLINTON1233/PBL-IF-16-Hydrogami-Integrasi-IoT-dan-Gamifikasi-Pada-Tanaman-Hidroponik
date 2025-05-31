@@ -87,7 +87,7 @@ class _AboutUsPageState extends State<AboutUsPage>
       CurvedAnimation(parent: _floatingController, curve: Curves.easeInOut),
     );
 
-    // Start animations with delays for staggered effect
+    // Start animations 
     _fadeController.forward();
     Future.delayed(const Duration(milliseconds: 300), () {
       _slideController.forward();
@@ -114,9 +114,8 @@ class _AboutUsPageState extends State<AboutUsPage>
       body: CustomScrollView(
         physics: const BouncingScrollPhysics(),
         slivers: [
-          // Dynamic Hero Section
           SliverAppBar(
-            expandedHeight: screenHeight * 0.4, // Responsive height
+            expandedHeight: screenHeight * 0.4,
             pinned: true,
             elevation: 0,
             backgroundColor: const Color(0xFF24D17E),
@@ -142,108 +141,100 @@ class _AboutUsPageState extends State<AboutUsPage>
                       (index) =>
                           _buildFloatingShape(index, screenWidth, screenHeight),
                     ),
-
-                    // Hero Content
-                    SafeArea(
+                    // Hero Content 
+                    Positioned(
+                      top: 120,
+                      left: 0,
+                      right: 0,
                       child: Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 20),
                         child: FadeTransition(
                           opacity: _fadeAnimation,
                           child: SlideTransition(
                             position: _slideAnimation,
-                            child: Center(
-                              // Center the content
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment
-                                    .center, // Center vertically
-                                crossAxisAlignment: CrossAxisAlignment.center,
-                                children: [
-                                  const SizedBox(
-                                      height: 15), // Space above the logo
-                                  // Animated logo
-                                  AnimatedBuilder(
-                                    animation: Listenable.merge([
-                                      _pulseController,
-                                      _floatingController
-                                    ]),
-                                    builder: (context, child) {
-                                      return Transform.translate(
-                                        offset:
-                                            Offset(0, _floatingAnimation.value),
-                                        child: Transform.scale(
-                                          scale: _pulseAnimation.value,
-                                          child: Container(
-                                            padding: const EdgeInsets.all(20),
-                                            decoration: BoxDecoration(
-                                              shape: BoxShape.circle,
-                                              boxShadow: [
-                                                BoxShadow(
-                                                  color: Colors.white
-                                                      .withOpacity(0.4),
-                                                  blurRadius: 30,
-                                                  spreadRadius: 8,
-                                                ),
-                                                BoxShadow(
-                                                  color: const Color(0xFF1FB56D)
+                            child: Column(
+                              children: [
+                                // Animated logo
+                                AnimatedBuilder(
+                                  animation: Listenable.merge(
+                                      [_pulseController, _floatingController]),
+                                  builder: (context, child) {
+                                    return Transform.translate(
+                                      offset:
+                                          Offset(0, _floatingAnimation.value),
+                                      child: Transform.scale(
+                                        scale: _pulseAnimation.value,
+                                        child: Container(
+                                          padding: const EdgeInsets.all(20),
+                                          decoration: BoxDecoration(
+                                            shape: BoxShape.circle,
+                                            boxShadow: [
+                                              BoxShadow(
+                                                color: Colors.white
+                                                    .withOpacity(0.4),
+                                                blurRadius: 30,
+                                                spreadRadius: 8,
+                                              ),
+                                              BoxShadow(
+                                                color: const Color(0xFF1FB56D)
+                                                    .withOpacity(0.3),
+                                                blurRadius: 45,
+                                                spreadRadius: 15,
+                                              ),
+                                            ],
+                                          ),
+                                          child: Image.asset(
+                                            'assets/logo.png',
+                                            width: 150,
+                                            height: 150,
+                                          ),
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                ),
+                                // Animated Text
+                                AnimatedBuilder(
+                                  animation: _fadeController,
+                                  builder: (context, child) {
+                                    return Opacity(
+                                      opacity: _fadeAnimation.value,
+                                      child: Column(
+                                        children: [
+                                          Text(
+                                            'HydroGami',
+                                            style: GoogleFonts.poppins(
+                                              fontSize: 28,
+                                              fontWeight: FontWeight.bold,
+                                              color: Colors.white,
+                                              letterSpacing: 2.0,
+                                              shadows: [
+                                                Shadow(
+                                                  color: Colors.black
                                                       .withOpacity(0.3),
-                                                  blurRadius: 45,
-                                                  spreadRadius: 15,
+                                                  offset: const Offset(2, 2),
+                                                  blurRadius: 4,
                                                 ),
                                               ],
                                             ),
-                                            child: Image.asset(
-                                              'assets/logo.png',
-                                              width: 150,
-                                              height: 150,
+                                          ),
+                                          const SizedBox(height: 8),
+                                          Text(
+                                            'Solusi Cerdas Hidroponik di Era Modern',
+                                            style: GoogleFonts.poppins(
+                                              fontSize: 14,
+                                              color: Colors.white
+                                                  .withOpacity(0.95),
+                                              fontWeight: FontWeight.w500,
+                                              letterSpacing: 0.5,
                                             ),
                                           ),
-                                        ),
-                                      );
-                                    },
-                                  ),
-                                  // Animated Text
-                                  AnimatedBuilder(
-                                    animation: _fadeController,
-                                    builder: (context, child) {
-                                      return Opacity(
-                                        opacity: _fadeAnimation.value,
-                                        child: Column(
-                                          children: [
-                                            Text(
-                                              'HydroGami',
-                                              style: GoogleFonts.poppins(
-                                                fontSize: 28,
-                                                fontWeight: FontWeight.bold,
-                                                color: Colors.white,
-                                                letterSpacing: 2.0,
-                                                shadows: [
-                                                  Shadow(
-                                                    color: Colors.black
-                                                        .withOpacity(0.3),
-                                                    offset: const Offset(2, 2),
-                                                    blurRadius: 4,
-                                                  ),
-                                                ],
-                                              ),
-                                            ),
-                                            const SizedBox(height: 8),
-                                            Text(
-                                              'Smart Hydroponic Solution',
-                                              style: GoogleFonts.poppins(
-                                                fontSize: 14,
-                                                color: Colors.white
-                                                    .withOpacity(0.95),
-                                                fontWeight: FontWeight.w500,
-                                                letterSpacing: 0.5,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      );
-                                    },
-                                  ),
-                                ],
-                              ),
+                                        ],
+                                      ),
+                                    );
+                                  },
+                                ),
+                              ],
                             ),
                           ),
                         ),
@@ -254,13 +245,10 @@ class _AboutUsPageState extends State<AboutUsPage>
               ),
             ),
             leading: IconButton(
-              icon: Container(
-                padding: const EdgeInsets.all(8),
-                child: const Icon(
-                  Icons.arrow_back_sharp,
-                  color: Colors.black,
-                  size: 24,
-                ),
+              icon: const Icon(
+                Icons.arrow_back,
+                color: Colors.black,
+                size: 24,
               ),
               onPressed: () {
                 Navigator.push(
@@ -276,19 +264,18 @@ class _AboutUsPageState extends State<AboutUsPage>
                   opacity: _fadeAnimation.value,
                   child: Row(
                     children: [
-                      Container(
-                        padding: const EdgeInsets.all(8),
-                        child: Image.asset(
-                          'assets/logo.png',
-                          width: 45,
-                          height: 45,
-                        ),
+                      Image.asset(
+                        'assets/logo.png',
+                        width: 45,
+                        height: 45,
                       ),
-                      const SizedBox(width: 15),
+                      const SizedBox(
+                          width: 10), 
                       Text(
                         'Tentang Kami',
                         style: GoogleFonts.poppins(
-                          fontSize: 18,
+                          fontSize:
+                              20, 
                           fontWeight: FontWeight.w600,
                           color: Colors.black,
                         ),
@@ -770,12 +757,13 @@ class _AboutUsPageState extends State<AboutUsPage>
       },
       {
         'name': 'Citra Miranda P.S',
-        'position': 'Web Developer',
+        'position': 'Website Developer',
         'avatar': 'assets/citra.jpg',
         'bgColor': 0xFFF59E0B,
         'skills': [
           'Anggota',
           'Website',
+          'IoT',
           'Design',
         ],
         'isLead': false,
@@ -785,7 +773,7 @@ class _AboutUsPageState extends State<AboutUsPage>
         'position': 'Mobile Developer',
         'avatar': 'assets/yurisha.jpg',
         'bgColor': 0xFFEF4444,
-        'skills': ['Anggota', 'Mobile', 'Design'],
+        'skills': ['Anggota', 'Mobile', 'IoT', 'Design'],
         'isLead': false,
       },
       {
@@ -793,7 +781,7 @@ class _AboutUsPageState extends State<AboutUsPage>
         'position': 'Mobile Developer',
         'avatar': 'assets/nania.jpg',
         'bgColor': 0xFF8B5CF6,
-        'skills': ['Anggota', 'Mobile', 'Design'],
+        'skills': ['Anggota', 'Mobile', 'IoT', 'Design'],
         'isLead': false,
       },
     ];
@@ -842,7 +830,7 @@ class _AboutUsPageState extends State<AboutUsPage>
                         borderRadius: BorderRadius.circular(20),
                         boxShadow: [
                           BoxShadow(
-                            color: const Color(0xFF6366F1).withOpacity(0.3),
+                            color: const Color(0xFF24D17E).withOpacity(0.3),
                             blurRadius: 20,
                             offset: const Offset(0, 8),
                           ),
@@ -858,32 +846,28 @@ class _AboutUsPageState extends State<AboutUsPage>
                 },
               ),
               const SizedBox(width: 20),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Anggota Tim',
-                    style: GoogleFonts.inter(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                      color: const Color(0xFF1E293B),
-                    ),
+              Expanded(
+                child: Text(
+                  'Anggota Tim',
+                  style: GoogleFonts.poppins(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.grey.shade800,
                   ),
-                  const SizedBox(height: 4),
-                  Text(
-                    '''Tim dibalik pembuatan  
-aplikasi HydroGami.''',
-                    style: GoogleFonts.inter(
-                      fontSize: 15,
-                      color: const Color(0xFF64748B),
-                    ),
-                  ),
-                ],
+                ),
               ),
             ],
           ),
+          const SizedBox(height: 20),
+          Text(
+            'Tim di balik pembuatan aplikasi HydroGami.',
+            style: GoogleFonts.poppins(
+              fontSize: 14,
+              color: Colors.grey.shade600,
+            ),
+          ),
 
-          const SizedBox(height: 32),
+          const SizedBox(height: 20),
 
           // Team Cards
           ...teamData.map((member) {
@@ -1095,7 +1079,7 @@ aplikasi HydroGami.''',
           BottomNavigationBarItem(
             activeIcon: Icon(
               Icons.home,
-              color: Colors.white,
+              color: Colors.black,
             ),
             icon: Icon(
               Icons.home,
@@ -1137,7 +1121,7 @@ aplikasi HydroGami.''',
             label: 'Akun',
           ),
         ],
-        selectedItemColor: Colors.white,
+        selectedItemColor: Colors.black,
         unselectedItemColor: Colors.white,
       ),
     );

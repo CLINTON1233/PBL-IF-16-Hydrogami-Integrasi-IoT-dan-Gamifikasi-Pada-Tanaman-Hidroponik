@@ -28,7 +28,7 @@ class Awal2Page extends StatelessWidget {
               ),
               const SizedBox(height: 2),
               Text(
-                'Solusi Cerdas Hidroponik Di Era Modren.',
+                'Solusi Cerdas Hidroponik di Era Modern.',
                 textAlign: TextAlign.center,
                 style: GoogleFonts.kurale(
                   color: const Color.fromARGB(246, 11, 142, 59),

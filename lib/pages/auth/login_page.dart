@@ -82,12 +82,10 @@ class _LoginPageState extends State<LoginPage>
         Map responseMap = jsonDecode(response.body);
 
         if (response.statusCode == 200) {
-          // Cek apakah user sudah memilih tanaman dan skala
           final prefs = await SharedPreferences.getInstance();
-
           await prefs.setString('username', responseMap['user']['username']);
 
-          //cek tokennya ada atau ngga
+          // Cek tokennya ada atau ngga
           String? savedToken = prefs.getString('token');
           print('Token from AuthServices: $savedToken');
 
@@ -95,7 +93,13 @@ class _LoginPageState extends State<LoginPage>
           final hasPlant = prefs.getString('selected_plant') != null;
           final hasScale = prefs.getString('selected_scale') != null;
 
-          if (hasPlant && hasScale) {
+          // Cek apakah ini first time login untuk user ini
+          String userKey =
+              '${responseMap['user']['username']}_has_completed_setup';
+          bool hasCompletedSetup = prefs.getBool(userKey) ?? false;
+
+          if (hasPlant && hasScale && hasCompletedSetup) {
+            // User sudah pernah setup sebelumnya, langsung ke beranda
             Navigator.pushReplacement(
               context,
               MaterialPageRoute(
@@ -103,6 +107,7 @@ class _LoginPageState extends State<LoginPage>
               ),
             );
           } else {
+            // User belum setup atau user baru, ke halaman pilih
             Navigator.pushReplacement(
               context,
               MaterialPageRoute(

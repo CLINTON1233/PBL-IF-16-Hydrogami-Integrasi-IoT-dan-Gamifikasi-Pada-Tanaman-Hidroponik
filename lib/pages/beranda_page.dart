@@ -353,6 +353,7 @@ class _BerandaPageState extends State<BerandaPage> {
   }
 
   // Fungsi untuk mendapatkan data cuaca berdasarkan koordinat
+// Perbaikan logika penentuan kondisi cuaca
   Future<void> _getWeatherData(double latitude, double longitude) async {
     setState(() {
       _isLoadingWeather = true;
@@ -367,12 +368,18 @@ class _BerandaPageState extends State<BerandaPage> {
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
-        print("Raw API Response: $data"); // Debug
+        print("Raw API Response: $data"); // Debug log
 
+        // Extract weather data
         final weatherMain = data['weather'][0]['main'];
         final weatherDescription = data['weather'][0]['description'];
         final weatherId = data['weather'][0]['id'];
 
+        print("Weather ID: $weatherId"); // Debug log
+        print("Weather Main: $weatherMain"); // Debug log
+        print("Weather Description: $weatherDescription"); // Debug log
+
+        // PERBAIKAN: Logika penentuan cuaca yang lebih akurat
         String weatherCondition;
         if (weatherId >= 200 && weatherId < 300) {
           weatherCondition = 'Thunderstorm';
@@ -384,11 +391,15 @@ class _BerandaPageState extends State<BerandaPage> {
           weatherCondition = 'Mist';
         } else if (weatherId == 800) {
           weatherCondition = 'Clear';
-        } else if (weatherId > 800) {
+        } else if (weatherId >= 801 && weatherId <= 804) {
+          // PERBAIKAN: ID 801-804 adalah berbagai tingkat awan
           weatherCondition = 'Clouds';
         } else {
+          // Fallback ke weatherMain jika ID tidak dikenali
           weatherCondition = weatherMain;
         }
+
+        print("Determined Weather Condition: $weatherCondition"); // Debug log
 
         setState(() {
           _currentWeather = _getIndonesianWeather(weatherCondition);
@@ -396,6 +407,9 @@ class _BerandaPageState extends State<BerandaPage> {
           _weatherColor = _getWeatherColor(weatherCondition);
           _isLoadingWeather = false;
         });
+
+        // Debug log final result
+        print("Indonesian Weather: $_currentWeather");
       } else {
         print("API Error: ${response.statusCode}");
         _setDefaultWeather();
@@ -406,6 +420,7 @@ class _BerandaPageState extends State<BerandaPage> {
     }
   }
 
+// Fungsi untuk set default weather ketika error
   void _setDefaultWeather() {
     setState(() {
       _currentWeather = "Tidak dapat memuat data";
@@ -415,14 +430,20 @@ class _BerandaPageState extends State<BerandaPage> {
     });
   }
 
-// Fungsi untuk menerjemahkan cuaca ke bahasa Indonesia
+// Fungsi penerjemahan yang diperbaiki
   String _getIndonesianWeather(String englishWeather) {
     switch (englishWeather.toLowerCase()) {
       case 'clear':
         return 'Cerah';
       case 'clouds':
         return 'Berawan';
-      case 'overcast clouds': 
+      case 'few clouds':
+        return 'Sedikit Berawan';
+      case 'scattered clouds':
+        return 'Berawan Tersebar';
+      case 'broken clouds':
+        return 'Berawan Sebagian';
+      case 'overcast clouds':
         return 'Mendung';
       case 'rain':
         return 'Hujan';
@@ -493,7 +514,7 @@ class _BerandaPageState extends State<BerandaPage> {
     }
   }
 
-  //fungsi unntuk mendapatkan lokasi
+// Fungsi untuk mendapatkan lokasi 
   Future<void> _getCurrentLocation() async {
     setState(() {
       _isLoadingLocation = true;
@@ -517,48 +538,69 @@ class _BerandaPageState extends State<BerandaPage> {
         return;
       }
 
-      // Dapatkan posisi
+      //Timeout
       Position position = await Geolocator.getCurrentPosition(
-          desiredAccuracy: LocationAccuracy.best);
+        desiredAccuracy: LocationAccuracy.high,
+        timeLimit: Duration(seconds: 10), 
+      );
 
-      // Override manual untuk batam
+      print(
+          "Current Position: ${position.latitude}, ${position.longitude}"); // DEBUG
+
+      // cek apakah di batam
       if (_isInBatam(position.latitude, position.longitude)) {
+        print("Location detected: Batam region"); 
         _setBatamLocation(position);
         return;
       }
 
-      // Lokal Indonesia
+      // jika tidak di batam, gunakan koordinat sesuai yang dideteksi
+      print(
+          "Location detected: Outside Batam, using actual coordinates"); // DEBUG
+
+      // Coba geocoding untuk nama lokasi
       try {
         List<Placemark> placemarks = await placemarkFromCoordinates(
             position.latitude, position.longitude,
-            localeIdentifier: "id_ID" 
-            );
+            localeIdentifier: "id_ID");
 
         if (placemarks.isNotEmpty) {
           _processPlacemark(placemarks.first, position);
         } else {
-          _setBatamLocation(position);
+          setState(() {
+            _currentLocation =
+                "Lat: ${position.latitude.toStringAsFixed(4)}, Lon: ${position.longitude.toStringAsFixed(4)}";
+            _isLoadingLocation = false;
+          });
+          _getWeatherData(position.latitude, position.longitude);
         }
-      }
-      // Geocoding tanpa lokal
-      catch (_) {
-        List<Placemark> placemarks = await placemarkFromCoordinates(
-            position.latitude, position.longitude);
-        placemarks.isNotEmpty
-            ? _processPlacemark(placemarks.first, position)
-            : _setBatamLocation(position);
+      } catch (geocodingError) {
+        print("Geocoding failed: $geocodingError"); // DEBUG
+        // Gunakan koordinat mentah jika geocoding gagal
+        setState(() {
+          _currentLocation =
+              "Lat: ${position.latitude.toStringAsFixed(4)}, Lon: ${position.longitude.toStringAsFixed(4)}";
+          _isLoadingLocation = false;
+        });
+        _getWeatherData(position.latitude, position.longitude);
       }
     } catch (e) {
+      print("Location Error: $e"); // DEBUG
       _handleLocationError("Error sistem", e);
     }
   }
 
-// Fungsi helper
+// Helper Functions
   bool _isInBatam(double lat, double lon) {
-    return lat > 1.0 && lat < 1.2 && lon > 103.9 && lon < 104.1;
+    bool inBatam = lat >= 0.9 && lat <= 1.3 && lon >= 103.8 && lon <= 104.3;
+    print(
+        "Checking Batam coordinates: lat=$lat, lon=$lon, inBatam=$inBatam"); // DEBUG
+    return inBatam;
   }
 
   void _setBatamLocation(Position position) {
+    print(
+        "Setting Batam location with coordinates: ${position.latitude}, ${position.longitude}"); // DEBUG
     setState(() {
       _currentLocation = "Batam";
       _isLoadingLocation = false;
@@ -569,6 +611,7 @@ class _BerandaPageState extends State<BerandaPage> {
   void _processPlacemark(Placemark place, Position position) {
     String locationName;
 
+    print("Placemark data: ${place.toString()}"); // DEBUG
     if (place.locality?.isNotEmpty == true) {
       locationName = place.locality!;
     } else if (place.subLocality?.isNotEmpty == true) {
@@ -576,32 +619,40 @@ class _BerandaPageState extends State<BerandaPage> {
     } else if (place.administrativeArea?.isNotEmpty == true) {
       locationName = place.administrativeArea!;
     } else {
-      locationName = "Batam";
+      locationName = "Unknown Location";
     }
 
-    // Force Batam jika terdeteksi Mountain View
-    if (locationName.contains("Mountain View")) {
+    // Override jika Mountain View terdeteksi 
+    if (locationName.contains("Mountain View") ||
+        position.latitude > 35 &&
+            position.latitude < 40 &&
+            position.longitude < -120) {
+      print("Mountain View detected, overriding to Batam"); // DEBUG
       locationName = "Batam";
+      // Gunakan koordinat Batam yang sebenarnya
+      _getWeatherData(1.0456, 104.0305);
+    } else {
+      _getWeatherData(position.latitude, position.longitude);
     }
 
     setState(() {
       _currentLocation = locationName;
       _isLoadingLocation = false;
     });
-    _getWeatherData(position.latitude, position.longitude);
   }
 
   void _handleLocationError(String message, [dynamic error]) {
+    print("Location error: $message, $error"); // DEBUG
     setState(() {
       _currentLocation = "Batam"; // Default ke Batam
-      _currentWeather = "Tidak dapat memuat cuaca";
       _isLoadingLocation = false;
-      _isLoadingWeather = false;
     });
-    _getWeatherData(1.0456, 104.0305); // Koordinat Batam
-    if (error != null) print("Error: $error");
+    // Gunakan koordinat Batam sebagai fallback
+    _getWeatherData(1.0456, 104.0305);
+    if (error != null) print("Error details: $error");
   }
 
+  //fungsi untuk notifikasi
   Future<void> _loadNotificationCount() async {
     final prefs = await SharedPreferences.getInstance();
     setState(() {
@@ -609,6 +660,7 @@ class _BerandaPageState extends State<BerandaPage> {
     });
   }
 
+  //fungsi untuk load username
   Future<void> _loadUsername() async {
     final prefs = await SharedPreferences.getInstance();
     setState(() {
@@ -652,8 +704,7 @@ class _BerandaPageState extends State<BerandaPage> {
     });
   }
 
-
- //fungsi mulai menanam
+  //fungsi mulai menanam
   Future<void> _startPlanting() async {
     setState(() {
       _hasStartedPlanting = true;

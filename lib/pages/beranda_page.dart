@@ -1,6 +1,14 @@
+import 'dart:collection';
+
 import 'package:application_hydrogami/pages/gamifikasi/gamifikasi_page.dart';
 import 'package:application_hydrogami/pages/monitoring/monitoring_page.dart';
 import 'package:application_hydrogami/pages/panduan/panduan_page.dart';
+import 'package:application_hydrogami/pages/panduan/detail_panduan_hidroponik_page.dart';
+import 'package:application_hydrogami/pages/panduan/detail_panduan_nutrisi_page.dart';
+import 'package:application_hydrogami/pages/panduan/detail_panduan_panen_page.dart';
+import 'package:application_hydrogami/pages/panduan/detail_panduan_phupdown_page.dart';
+import 'package:application_hydrogami/pages/panduan/detail_panduan_sensor_page.dart';
+import 'package:application_hydrogami/pages/panduan/detail_panduan_tanaman_page.dart';
 import 'package:application_hydrogami/pages/profil_page.dart';
 import 'package:application_hydrogami/pages/about_us_page.dart';
 import 'package:flutter/material.dart';
@@ -14,6 +22,7 @@ import 'package:percent_indicator/percent_indicator.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart';
 import 'dart:async';
+import 'dart:math';
 
 class BerandaPage extends StatefulWidget {
   const BerandaPage({super.key});
@@ -27,6 +36,17 @@ class _BerandaPageState extends State<BerandaPage> {
   bool _showLogoutText = false;
   int _bottomNavCurrentIndex = 0;
   String _username = "User";
+  int _plantAge = 0;
+  DateTime? _plantStartDate;
+  int _totalHarvests = 0;
+  bool _isHarvestDialogShown = false;
+  Timer? _plantTimer;
+  bool _isDataLoaded = false;
+  bool _hasStartedPlanting = false;
+  bool _hasCompletedSetup = false;
+  int _currentSlide = 0;
+  final PageController _pageController = PageController();
+  Timer? _carouselTimer;
 
   double _nutrientLevel = 78.3;
   double _waterConsumption = 11.87;
@@ -52,6 +72,62 @@ class _BerandaPageState extends State<BerandaPage> {
   double? _latitude;
   double? _longitude;
 
+  // Fungsi untuk mendapatkan sapaan berdasarkan waktu
+  String _getGreeting() {
+    final now = DateTime.now();
+    final hour = now.hour;
+
+    if (hour >= 5 && hour < 12) {
+      return 'Selamat Pagi';
+    } else if (hour >= 12 && hour < 15) {
+      return 'Selamat Siang';
+    } else if (hour >= 15 && hour < 18) {
+      return 'Selamat Sore';
+    } else {
+      return 'Selamat Malam';
+    }
+  }
+
+  // Data panduan
+  final List<Map<String, dynamic>> _panduanData = [
+    {
+      'image': 'assets/panduan_hidroponik.png',
+      'title': 'Panduan Merakit Sistem Hidroponik',
+      'subtitle': 'Pelajari cara merakit sistem hidroponik',
+      'page': const DetailPanduanHidroponikPage(idPanduan: 1),
+    },
+    {
+      'image': 'assets/panduan_sensor.png',
+      'title': 'Panduan Pemasangan Sensor IoT',
+      'subtitle': 'Cara memasang dan konfigurasi sensor',
+      'page': const DetailPanduanSensorPage(idPanduan: 2),
+    },
+    {
+      'image': 'assets/tanaman_panduan.png',
+      'title': 'Panduan Pengelolaan Tanaman',
+      'subtitle': 'Tips mengelola tanaman hidroponik',
+      'page': const DetailPanduanTanamanPage(idPanduan: 3),
+    },
+    {
+      'image': 'assets/panduanNutrisi.jpg',
+      'title': 'Panduan Pemberian Nutrisi',
+      'subtitle': 'Cara memberikan nutrisi yang tepat',
+      'page': const DetailPanduanNutrisiPage(idPanduan: 4),
+    },
+    {
+      'image': 'assets/phupdown.png',
+      'title': 'Panduan pH Up dan pH Down',
+      'subtitle': 'Mengatur pH tanaman hidroponik',
+      'page': const DetailPanduanPhUpDownPage(idPanduan: 5),
+    },
+    {
+      'image': 'assets/panenPakcoy.jpg',
+      'title': 'Panduan Memanen Pakcoy',
+      'subtitle': 'Tips memanen pakcoy dengan benar',
+      'page': const DetailPanduanPanenPage(idPanduan: 6),
+    },
+  ];
+
   @override
   void initState() {
     super.initState();
@@ -59,6 +135,221 @@ class _BerandaPageState extends State<BerandaPage> {
     _loadNotificationCount();
     _loadTransactions();
     _getCurrentLocation();
+    _initializePlant();
+    _checkSetupStatus();
+    _loadPlantData();
+
+    //carousel
+    _carouselTimer = Timer.periodic(const Duration(seconds: 4), (timer) {
+      if (_currentSlide < _panduanData.length - 1) {
+        _currentSlide++;
+      } else {
+        _currentSlide = 0;
+      }
+
+      if (_pageController.hasClients) {
+        _pageController.animateToPage(
+          _currentSlide,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeInOut,
+        );
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _plantTimer?.cancel();
+    _carouselTimer?.cancel();
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  //Fungsi inisialisasi tanaman
+  Future<void> _initializePlant() async {
+    await _loadPlantData();
+
+    if (_plantStartDate == null) {
+      _plantStartDate = DateTime.now();
+      _plantAge = 1;
+      _savePlantData();
+    } else {
+      await _calculatePlantAge();
+    }
+
+    _isDataLoaded = true;
+    _startPlantTimer();
+  }
+
+  //Fungsi untuk memulai timer
+  void _startPlantTimer() {
+    _plantTimer?.cancel();
+
+    _plantTimer = Timer.periodic(const Duration(hours: 1), (timer) {
+      if (mounted && _isDataLoaded) {
+        _calculatePlantAge();
+      }
+    });
+  }
+
+  //Fungsi menyimpan data tanaman ke shared preference
+  Future<void> _savePlantData() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      String? username = prefs.getString('username');
+
+      if (username == null) {
+        print('Username not found, cannot save plant data');
+        return;
+      }
+
+      // Gunakan user-specific keys yang sama
+      String userSetupKey = '${username}_has_completed_setup';
+      String userPlantStartKey = '${username}_plant_start_date';
+      String userHarvestsKey = '${username}_total_harvests';
+      String userAgeKey = '${username}_plant_age';
+      String userPlantingStatusKey = '${username}_has_started_planting';
+
+      await prefs.setInt(userHarvestsKey, _totalHarvests);
+      await prefs.setInt(userAgeKey, _plantAge);
+      await prefs.setBool(userPlantingStatusKey, _hasStartedPlanting);
+      await prefs.setBool(userSetupKey, _hasCompletedSetup);
+
+      if (_plantStartDate != null) {
+        await prefs.setString(
+            userPlantStartKey, _plantStartDate!.toIso8601String());
+      } else {
+        await prefs.remove(userPlantStartKey);
+      }
+
+      print('Plant data saved successfully for user: $username');
+    } catch (e) {
+      print('Error saving plant data: $e');
+    }
+  }
+
+  //Fungsi memuat data tanaman dari shared preference
+  Future<void> _loadPlantData() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      String? username = prefs.getString('username');
+
+      if (username == null) {
+        print('Username not found in preferences');
+        setState(() {
+          _hasStartedPlanting = false;
+          _hasCompletedSetup = false;
+          _plantAge = 0;
+          _totalHarvests = 0;
+        });
+        return;
+      }
+
+      // Gunakan user-specific keys yang sama seperti saat menyimpan
+      String userSetupKey = '${username}_has_completed_setup';
+      String userPlantStartKey = '${username}_plant_start_date';
+      String userHarvestsKey = '${username}_total_harvests';
+      String userAgeKey = '${username}_plant_age';
+      String userPlantingStatusKey = '${username}_has_started_planting';
+
+      // Load data dengan user-specific keys
+      final startDateString = prefs.getString(userPlantStartKey);
+      final savedHarvests = prefs.getInt(userHarvestsKey) ?? 0;
+      final savedAge = prefs.getInt(userAgeKey) ?? 0;
+      final savedPlantingStatus = prefs.getBool(userPlantingStatusKey) ?? false;
+      final savedSetupStatus = prefs.getBool(userSetupKey) ?? false;
+
+      print('Loading data for user: $username');
+      print('Setup completed: $savedSetupStatus');
+      print('Started planting: $savedPlantingStatus');
+      print('Plant age: $savedAge');
+
+      if (mounted) {
+        setState(() {
+          _totalHarvests = savedHarvests;
+          _plantAge = savedAge;
+          _hasStartedPlanting = savedPlantingStatus;
+          _hasCompletedSetup = savedSetupStatus;
+
+          if (startDateString != null) {
+            _plantStartDate = DateTime.parse(startDateString);
+          }
+        });
+      }
+
+      // Recalculate age after loading
+      if (_hasStartedPlanting && _plantStartDate != null) {
+        await _calculatePlantAge();
+      }
+
+      print('Plant data loaded successfully');
+    } catch (e) {
+      print('Error loading plant data: $e');
+      // Set safe default values
+      if (mounted) {
+        setState(() {
+          _plantStartDate = null;
+          _plantAge = 0;
+          _totalHarvests = 0;
+          _hasStartedPlanting = false;
+          _hasCompletedSetup = false;
+        });
+      }
+    }
+  }
+
+  // Fungsi untuk memastikan setup status terload dengan benar
+  Future<void> _checkSetupStatus() async {
+    final prefs = await SharedPreferences.getInstance();
+    String? username = prefs.getString('username');
+
+    if (username != null) {
+      String userSetupKey = '${username}_has_completed_setup';
+      bool setupCompleted = prefs.getBool(userSetupKey) ?? false;
+
+      print('Checking setup status for $username: $setupCompleted');
+
+      setState(() {
+        _hasCompletedSetup = setupCompleted;
+      });
+    }
+  }
+
+  // Fungsi untuk melakukan panen
+  Future<void> _harvestPlant() async {
+    _isHarvestDialogShown = false;
+
+    final newTotalHarvests = _totalHarvests + 1;
+    final newStartDate = DateTime.now();
+
+    setState(() {
+      _totalHarvests = newTotalHarvests;
+      _plantStartDate = newStartDate;
+      _plantAge = 1; // Reset ke hari ke-1
+    });
+
+    // Simpan data setelah setState
+    await _savePlantData();
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              Icon(Icons.agriculture, color: Colors.white),
+              SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  'Selamat! Panen ke-$newTotalHarvests berhasil! Tanaman baru dimulai',
+                ),
+              ),
+            ],
+          ),
+          backgroundColor: Colors.green,
+          duration: Duration(seconds: 3),
+        ),
+      );
+    }
   }
 
   // Fungsi untuk mendapatkan data cuaca berdasarkan koordinat
@@ -298,6 +589,202 @@ class _BerandaPageState extends State<BerandaPage> {
     });
   }
 
+  Future<void> _startPlanting() async {
+    setState(() {
+      _hasStartedPlanting = true;
+      _plantStartDate = DateTime.now();
+      _plantAge = 1;
+    });
+
+    // Save the data after starting planting
+    await _savePlantData();
+
+    // Show success message
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              Icon(Icons.grass, color: Colors.white),
+              SizedBox(width: 10),
+              Text('Penanaman dimulai!'),
+            ],
+          ),
+          backgroundColor: Colors.green,
+          duration: Duration(seconds: 3),
+        ),
+      );
+    }
+  }
+
+// menghitung umur tanaman
+  Future<void> _calculatePlantAge() async {
+    if (_plantStartDate != null) {
+      final now = DateTime.now();
+      final difference = now.difference(_plantStartDate!).inDays;
+      final newAge = difference == 0 ? 1 : difference + 1;
+
+      // Hanya update state jika umur berubah
+      if (_plantAge != newAge) {
+        setState(() {
+          _plantAge = newAge;
+        });
+      }
+
+      // Auto show harvest dialog ketika umur mencapai 60 hari
+      if (_plantAge >= 60 && !_isHarvestDialogShown) {
+        _isHarvestDialogShown = true;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            _showHarvestDialog();
+          }
+        });
+      }
+    }
+  }
+
+//Fungsi menampilkan dialog ketika saat panen
+  void _showHarvestDialog() {
+    if (_isHarvestDialogShown && !mounted) return;
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return Stack(
+          children: [
+            // Confetti effect
+            ...List.generate(50, (index) => _buildConfetti(index)),
+            // Dialog
+            AlertDialog(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+              ),
+              title: Column(
+                children: [
+                  Icon(
+                    Icons.celebration,
+                    color: Colors.orange,
+                    size: 50,
+                  ),
+                  SizedBox(height: 10),
+                  Text(
+                    'Selamat! 🎉',
+                    style: TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.green,
+                    ),
+                  ),
+                ],
+              ),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'Tanaman pakcoy Anda sudah siap dipanen!',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(fontSize: 16),
+                  ),
+                  SizedBox(height: 10),
+                  Text(
+                    'Umur tanaman: $_plantAge hari',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.green[600],
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  SizedBox(height: 10),
+                  Text(
+                    'Apakah Anda ingin menanam lagi?',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.grey[600],
+                    ),
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    _isHarvestDialogShown = false;
+                    Navigator.of(context).pop();
+                    _showPostponeMessage();
+                  },
+                  child: Text(
+                    'Nanti Saja',
+                    style: TextStyle(color: Colors.grey),
+                  ),
+                ),
+                ElevatedButton(
+                  onPressed: () async {
+                    await _harvestPlant();
+                    Navigator.of(context).pop();
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.green,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                  child: Text(
+                    'Ya, Tanam!',
+                    style: TextStyle(color: Colors.white),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+// Fungsi untuk menampilkan pesan ketika memilih Nanti Saja
+  void _showPostponeMessage() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            Icon(Icons.schedule, color: Colors.white),
+            SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                'Tekan tombol panen sebelum menanam kembali.',
+              ),
+            ),
+          ],
+        ),
+        backgroundColor: Colors.orange,
+        duration: Duration(seconds: 4),
+        action: SnackBarAction(
+          label: 'Panen',
+          textColor: Colors.white,
+          onPressed: () {
+            _harvestPlant();
+          },
+        ),
+      ),
+    );
+  }
+
+//reset umur tanaman
+  Future<void> _resetPlant() async {
+    final newStartDate = DateTime.now();
+
+    setState(() {
+      _plantStartDate = newStartDate;
+      _plantAge = 1; // Mulai dari hari ke-1
+      _isHarvestDialogShown = false;
+    });
+
+    // Simpan data tanpa await di setState
+    _savePlantData();
+  }
+
   void _showLogoutConfirmationDialog() {
     showDialog(
       context: context,
@@ -446,6 +933,7 @@ class _BerandaPageState extends State<BerandaPage> {
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
+                          const SizedBox(height: 10),
                           Text(
                             'Hi, Selamat Datang',
                             style: GoogleFonts.poppins(
@@ -455,7 +943,7 @@ class _BerandaPageState extends State<BerandaPage> {
                             ),
                           ),
                           Text(
-                            'Selamat Pagi, $_username!',
+                            '${_getGreeting()}, $_username!',
                             style: GoogleFonts.poppins(
                               fontSize: 14,
                               fontWeight: FontWeight.w400,
@@ -603,16 +1091,18 @@ class _BerandaPageState extends State<BerandaPage> {
               child: Column(
                 children: [
                   const Padding(
-                    padding: EdgeInsets.fromLTRB(20, 20, 20, 5),
+                    padding: EdgeInsets.fromLTRB(20, 10, 20, 5),
                     child: Align(
                       alignment: Alignment.centerLeft,
                       // Jika ingin judul, bisa isi di sini
                     ),
                   ),
 
+                  _buildCarouselPanduan(),
+
                   // Menu Container (horizontal scroll)
                   Padding(
-                    padding: const EdgeInsets.fromLTRB(20, 0, 20, 10),
+                    padding: const EdgeInsets.fromLTRB(20, 10, 20, 10),
                     child: Container(
                       padding: const EdgeInsets.all(15),
                       decoration: BoxDecoration(
@@ -693,10 +1183,9 @@ class _BerandaPageState extends State<BerandaPage> {
                       ),
                     ),
                   ),
-                  const SizedBox(height: 0),
                   // Summary Cards
                   Padding(
-                    padding: const EdgeInsets.fromLTRB(20, 20, 20, 10),
+                    padding: const EdgeInsets.fromLTRB(20, 10, 20, 10),
                     child: Container(
                       padding: const EdgeInsets.all(15),
                       decoration: BoxDecoration(
@@ -716,11 +1205,7 @@ class _BerandaPageState extends State<BerandaPage> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  _buildSummaryItem(
-                                    'Panen Minggu Lalu',
-                                    '${_harvestLastWeek.toStringAsFixed(1)} kg',
-                                    Icons.eco,
-                                  ),
+                                  _buildPlantAgeItem(),
                                   const SizedBox(height: 10),
                                   _buildSummaryItem(
                                     'Air Terpakai Minggu Lalu',
@@ -736,6 +1221,8 @@ class _BerandaPageState extends State<BerandaPage> {
                       ),
                     ),
                   ),
+
+                  const SizedBox(height: 10),
 
                   // Time Filter
                   Padding(
@@ -1024,6 +1511,264 @@ class _BerandaPageState extends State<BerandaPage> {
     );
   }
 
+  // Widget untuk menampilkan umur tanaman
+  Widget _buildPlantAgeItem() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: !_hasStartedPlanting
+                    ? Colors.grey.withOpacity(0.2)
+                    : _plantAge >= 60
+                        ? Colors.green.withOpacity(0.2)
+                        : Colors.blue.withOpacity(0.2),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Icon(
+                !_hasStartedPlanting
+                    ? Icons.grass
+                    : _plantAge >= 60
+                        ? Icons.agriculture
+                        : Icons.eco,
+                color: !_hasStartedPlanting
+                    ? Colors.grey
+                    : _plantAge >= 60
+                        ? Colors.green
+                        : Colors.blue,
+                size: 16,
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    !_hasStartedPlanting
+                        ? 'Tanaman Pakcoy'
+                        : _plantAge >= 60
+                            ? 'Status Tanaman'
+                            : 'Umur Pakcoy',
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: Colors.black54,
+                    ),
+                  ),
+                  Text(
+                    !_hasStartedPlanting
+                        ? 'Belum ditanam'
+                        : _plantAge >= 60
+                            ? 'Siap dipanen!'
+                            : '$_plantAge hari',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      color: !_hasStartedPlanting
+                          ? Colors.grey
+                          : _plantAge >= 60
+                              ? Colors.green
+                              : Colors.blue,
+                    ),
+                  ),
+                  if (_totalHarvests > 0) ...[
+                    Text(
+                      'Total panen: $_totalHarvests kali',
+                      style: TextStyle(
+                        fontSize: 10,
+                        color: Colors.grey[600],
+                      ),
+                    ),
+                  ],
+                  if (_hasStartedPlanting &&
+                      _plantAge > 0 &&
+                      _plantAge < 60) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      '${60 - _plantAge} hari lagi sampai panen',
+                      style: TextStyle(
+                        fontSize: 10,
+                        color: Colors.grey[600],
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    LinearProgressIndicator(
+                      value: _plantAge / 60,
+                      backgroundColor: Colors.grey[300],
+                      valueColor: AlwaysStoppedAnimation<Color>(
+                        _plantAge >= 45 ? Colors.orange : Colors.blue,
+                      ),
+                      minHeight: 2,
+                    ),
+                  ],
+
+                  // Tombol tanam sekarang
+                  if (!_hasStartedPlanting && _hasCompletedSetup) ...[
+                    const SizedBox(height: 8),
+                    ElevatedButton(
+                      onPressed: () {
+                        _startPlanting();
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.blue,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        padding:
+                            EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        minimumSize: Size(0, 0),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.grass, size: 16, color: Colors.white),
+                          SizedBox(width: 6),
+                          Text(
+                            'Tanam',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ] else if (_hasStartedPlanting && _plantAge >= 60) ...[
+                    const SizedBox(height: 8),
+                    ElevatedButton(
+                      onPressed: () {
+                        _showHarvestDialog();
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.green,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        padding:
+                            EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        minimumSize: Size(0, 0),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.agriculture,
+                              size: 16, color: Colors.white),
+                          SizedBox(width: 6),
+                          Text(
+                            'Panen',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            // Tombol Reset, muncul jika sudah menanam
+            if (_hasStartedPlanting) ...[
+              IconButton(
+                onPressed: () {
+                  showDialog(
+                    context: context,
+                    builder: (BuildContext context) {
+                      return AlertDialog(
+                        title: const Text('Reset Tanaman'),
+                        content: const Text(
+                          'Apakah Anda yakin ingin memulai penanaman baru? '
+                          'Umur tanaman akan direset ke hari ke-1.',
+                        ),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.of(context).pop(),
+                            child: const Text('Batal'),
+                          ),
+                          ElevatedButton(
+                            onPressed: () async {
+                              await _resetPlant();
+                              Navigator.of(context).pop();
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Tanaman baru dimulai!'),
+                                  backgroundColor: Colors.green,
+                                ),
+                              );
+                            },
+                            child: const Text('Reset'),
+                          ),
+                        ],
+                      );
+                    },
+                  );
+                },
+                icon: const Icon(Icons.refresh, size: 18),
+                tooltip: 'Reset Tanaman',
+                constraints: const BoxConstraints(
+                  minWidth: 32,
+                  minHeight: 32,
+                ),
+              ),
+            ],
+          ],
+        ),
+      ],
+    );
+  }
+
+  // Widget untuk membuat efek confetti
+  Widget _buildConfetti(int index) {
+    final random = Random(index);
+    final colors = [
+      Colors.red,
+      Colors.blue,
+      Colors.green,
+      Colors.yellow,
+      Colors.purple,
+      Colors.orange
+    ];
+
+    return Positioned(
+      left: random.nextDouble() * 300,
+      top: random.nextDouble() * 500,
+      child: TweenAnimationBuilder<double>(
+        duration: Duration(milliseconds: 1500 + random.nextInt(1000)),
+        tween: Tween(begin: 0, end: 1),
+        builder: (context, value, child) {
+          return Transform.translate(
+            offset: Offset(
+              (random.nextDouble() - 0.5) * 100 * value, // Horizontal movement
+              value * 400, // Vertical fall
+            ),
+            child: Transform.rotate(
+              angle: value * 6.28 * 3, // 3 rotations
+              child: Opacity(
+                opacity: 1 - (value * 0.8), // Fade out effect
+                child: Container(
+                  width: random.nextDouble() * 6 + 4, // Random size 4-10
+                  height: random.nextDouble() * 6 + 4,
+                  decoration: BoxDecoration(
+                    color: colors[random.nextInt(colors.length)],
+                    shape: random.nextBool()
+                        ? BoxShape.circle
+                        : BoxShape.rectangle,
+                  ),
+                ),
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
   // Widget for Panen/Air Terpakai items
   Widget _buildSummaryItem(String title, String amount, IconData icon,
       {bool isConsumption = false}) {
@@ -1068,6 +1813,26 @@ class _BerandaPageState extends State<BerandaPage> {
     );
   }
 
+  // Implementasi dalam widget utama
+  Widget buildPlantSection() {
+    return Container(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Menggunakan _buildPlantAgeItem dengan tombol panen
+          _buildPlantAgeItem(),
+          const SizedBox(height: 10),
+          _buildSummaryItem(
+            'Air Terpakai Minggu Lalu',
+            '${_waterLastWeek.toStringAsFixed(1)} L',
+            Icons.water,
+            isConsumption: true,
+          ),
+        ],
+      ),
+    );
+  }
+
   // Time Filter Button Widget
   Widget _buildTimeFilterButton(String title) {
     final isSelected = _selectedTimeFrame == title;
@@ -1093,6 +1858,137 @@ class _BerandaPageState extends State<BerandaPage> {
             fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
           ),
         ),
+      ),
+    );
+  }
+
+  // Widget Carousel 
+  Widget _buildCarouselPanduan() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 10, 20, 15),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Carousel Container
+          Container(
+            height: 180,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.1),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(20),
+              child: PageView.builder(
+                controller: _pageController,
+                onPageChanged: (index) {
+                  setState(() {
+                    _currentSlide = index;
+                  });
+                },
+                itemCount: _panduanData.length,
+                itemBuilder: (context, index) {
+                  final panduan = _panduanData[index];
+                  return GestureDetector(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => panduan['page'],
+                        ),
+                      );
+                    },
+                    child: Stack(
+                      children: [
+                        // Background Image
+                        Container(
+                          width: double.infinity,
+                          height: 180,
+                          decoration: BoxDecoration(
+                            image: DecorationImage(
+                              image: AssetImage(panduan['image']),
+                              fit: BoxFit.cover,
+                            ),
+                          ),
+                        ),
+
+                        // Gradient Overlay
+                        Container(
+                          width: double.infinity,
+                          height: 180,
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.topCenter,
+                              end: Alignment.bottomCenter,
+                              colors: [
+                                Colors.transparent,
+                                Colors.black.withOpacity(0.8),
+                              ],
+                            ),
+                          ),
+                        ),
+
+                        // Content
+                        Positioned(
+                          bottom: 20,
+                          left: 20,
+                          right: 20,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                panduan['title'],
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              const SizedBox(height: 5),
+                              Text(
+                                panduan['subtitle'],
+                                style: const TextStyle(
+                                  color: Colors.white70,
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 10),
+
+          // Dots Indicator
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: List.generate(
+              _panduanData.length,
+              (index) => Container(
+                margin: const EdgeInsets.symmetric(horizontal: 3),
+                width: _currentSlide == index ? 20 : 8,
+                height: 8,
+                decoration: BoxDecoration(
+                  color: _currentSlide == index
+                      ? const Color(0xFF24D17E)
+                      : Colors.grey.withOpacity(0.4),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

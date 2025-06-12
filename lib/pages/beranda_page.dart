@@ -63,9 +63,9 @@ class _BerandaPageState extends State<BerandaPage> {
   String _selectedTimeFrame = "Monthly";
 
   // Tambahan untuk fitur lokasi
-  String _currentLocation = "Memuat lokasi...";
+  String _currentLocation = "Memuat...";
   bool _isLoadingLocation = true;
-  String _currentWeather = "Memuat cuaca...";
+  String _currentWeather = "Memuat...";
   IconData _weatherIcon = Icons.cloud_queue;
   Color _weatherColor = Colors.grey;
   bool _isLoadingWeather = true;
@@ -277,7 +277,7 @@ class _BerandaPageState extends State<BerandaPage> {
         });
       }
 
-      // Recalculate age after loading
+      // Hitung ulang setelah loading
       if (_hasStartedPlanting && _plantStartDate != null) {
         await _calculatePlantAge();
       }
@@ -359,7 +359,7 @@ class _BerandaPageState extends State<BerandaPage> {
     });
 
     try {
-      final String apiKey = "YOUR_API_KEY";
+      final String apiKey = "868b1df1cdabcdaea216dc9b27717ac0";
       final url =
           'https://api.openweathermap.org/data/2.5/weather?lat=$latitude&lon=$longitude&appid=$apiKey&units=metric';
 
@@ -367,40 +367,63 @@ class _BerandaPageState extends State<BerandaPage> {
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
-        final weather = data['weather'][0]['main'];
-        final description = data['weather'][0]['description'];
+        print("Raw API Response: $data"); // Debug
+
+        final weatherMain = data['weather'][0]['main'];
+        final weatherDescription = data['weather'][0]['description'];
+        final weatherId = data['weather'][0]['id'];
+
+        String weatherCondition;
+        if (weatherId >= 200 && weatherId < 300) {
+          weatherCondition = 'Thunderstorm';
+        } else if (weatherId >= 300 && weatherId < 600) {
+          weatherCondition = 'Rain';
+        } else if (weatherId >= 600 && weatherId < 700) {
+          weatherCondition = 'Snow';
+        } else if (weatherId >= 700 && weatherId < 800) {
+          weatherCondition = 'Mist';
+        } else if (weatherId == 800) {
+          weatherCondition = 'Clear';
+        } else if (weatherId > 800) {
+          weatherCondition = 'Clouds';
+        } else {
+          weatherCondition = weatherMain;
+        }
 
         setState(() {
-          _currentWeather = _getIndonesianWeather(weather);
-          _weatherIcon = _getWeatherIcon(weather);
-          _weatherColor = _getWeatherColor(weather);
+          _currentWeather = _getIndonesianWeather(weatherCondition);
+          _weatherIcon = _getWeatherIcon(weatherCondition);
+          _weatherColor = _getWeatherColor(weatherCondition);
           _isLoadingWeather = false;
         });
       } else {
-        setState(() {
-          _currentWeather = "Cerah"; // Default fallback
-          _weatherIcon = Icons.wb_sunny;
-          _weatherColor = Colors.orange;
-          _isLoadingWeather = false;
-        });
+        print("API Error: ${response.statusCode}");
+        _setDefaultWeather();
       }
     } catch (e) {
-      print("Error mendapatkan data cuaca: $e");
-      setState(() {
-        _currentWeather = "Cerah"; // Default fallback
-        _weatherIcon = Icons.wb_sunny;
-        _weatherColor = Colors.orange;
-        _isLoadingWeather = false;
-      });
+      print("Weather Error: $e");
+      _setDefaultWeather();
     }
   }
 
+  void _setDefaultWeather() {
+    setState(() {
+      _currentWeather = "Tidak dapat memuat data";
+      _weatherIcon = Icons.error;
+      _weatherColor = Colors.grey;
+      _isLoadingWeather = false;
+    });
+  }
+
+// Fungsi untuk menerjemahkan cuaca ke bahasa Indonesia
   String _getIndonesianWeather(String englishWeather) {
     switch (englishWeather.toLowerCase()) {
       case 'clear':
         return 'Cerah';
       case 'clouds':
         return 'Berawan';
+      case 'overcast clouds': 
+        return 'Mendung';
       case 'rain':
         return 'Hujan';
       case 'drizzle':
@@ -418,15 +441,17 @@ class _BerandaPageState extends State<BerandaPage> {
     }
   }
 
-  // Mendapatkan ikon yang sesuai dengan kondisi cuaca
-  IconData _getWeatherIcon(String weather) {
-    switch (weather.toLowerCase()) {
+// Fungsi untuk mendapatkan icon cuaca berdasarkan kondisi
+  IconData _getWeatherIcon(String weatherCondition) {
+    switch (weatherCondition.toLowerCase()) {
       case 'clear':
         return Icons.wb_sunny;
       case 'clouds':
         return Icons.cloud;
+      case 'overcast clouds':
+        return Icons.cloud;
       case 'rain':
-        return Icons.water_drop;
+        return Icons.grain;
       case 'drizzle':
         return Icons.grain;
       case 'thunderstorm':
@@ -436,18 +461,20 @@ class _BerandaPageState extends State<BerandaPage> {
       case 'mist':
       case 'fog':
       case 'haze':
-        return Icons.cloud_queue;
+        return Icons.cloud;
       default:
-        return Icons.cloud_queue;
+        return Icons.wb_cloudy;
     }
   }
 
-// Mendapatkan warna yang sesuai dengan kondisi cuaca
-  Color _getWeatherColor(String weather) {
-    switch (weather.toLowerCase()) {
+// Fungsi untuk mendapatkan warna berdasarkan kondisi cuaca
+  Color _getWeatherColor(String weatherCondition) {
+    switch (weatherCondition.toLowerCase()) {
       case 'clear':
         return Colors.orange;
       case 'clouds':
+        return Colors.grey;
+      case 'overcast clouds':
         return Colors.blueGrey;
       case 'rain':
         return Colors.blue;
@@ -456,87 +483,123 @@ class _BerandaPageState extends State<BerandaPage> {
       case 'thunderstorm':
         return Colors.deepPurple;
       case 'snow':
-        return Colors.lightBlue;
+        return Colors.lightBlue.shade100;
       case 'mist':
       case 'fog':
       case 'haze':
-        return Colors.grey;
+        return Colors.grey.shade400;
       default:
         return Colors.grey;
     }
   }
 
-  // Fungsi untuk mendapatkan lokasi pengguna
+  //fungsi unntuk mendapatkan lokasi
   Future<void> _getCurrentLocation() async {
     setState(() {
       _isLoadingLocation = true;
       _isLoadingWeather = true;
+      _currentLocation = "Mendeteksi lokasi...";
     });
 
     try {
-      // Cek permission lokasi
+      // Cek permission
       LocationPermission permission = await Geolocator.checkPermission();
       if (permission == LocationPermission.denied) {
         permission = await Geolocator.requestPermission();
         if (permission == LocationPermission.denied) {
-          setState(() {
-            _currentLocation = "Akses lokasi ditolak";
-            _isLoadingLocation = false;
-            _currentWeather = "Tidak dapat memuat cuaca";
-            _isLoadingWeather = false;
-          });
+          _handleLocationError("Akses lokasi ditolak");
           return;
         }
       }
 
       if (permission == LocationPermission.deniedForever) {
-        setState(() {
-          _currentLocation = "Akses lokasi ditolak permanen";
-          _isLoadingLocation = false;
-          _currentWeather = "Tidak dapat memuat cuaca";
-          _isLoadingWeather = false;
-        });
+        _handleLocationError("Akses lokasi ditolak permanen");
         return;
       }
 
-      // Mendapatkan posisi
+      // Dapatkan posisi
       Position position = await Geolocator.getCurrentPosition(
-          desiredAccuracy: LocationAccuracy.high);
+          desiredAccuracy: LocationAccuracy.best);
 
-      // Simpan koordinat untuk mendapatkan data cuaca
-      _latitude = position.latitude;
-      _longitude = position.longitude;
+      // Override manual untuk batam
+      if (_isInBatam(position.latitude, position.longitude)) {
+        _setBatamLocation(position);
+        return;
+      }
 
-      // Mendapatkan alamat dari koordinat
-      List<Placemark> placemarks =
-          await placemarkFromCoordinates(position.latitude, position.longitude);
+      // Lokal Indonesia
+      try {
+        List<Placemark> placemarks = await placemarkFromCoordinates(
+            position.latitude, position.longitude,
+            localeIdentifier: "id_ID" 
+            );
 
-      if (placemarks.isNotEmpty) {
-        Placemark place = placemarks[0];
-        setState(() {
-          _currentLocation = "${place.subLocality}, ${place.locality}";
-          _isLoadingLocation = false;
-        });
-
-        // Dapatkan data cuaca setelah mendapatkan lokasi
-        await _getWeatherData(position.latitude, position.longitude);
-      } else {
-        setState(() {
-          _currentLocation = "Lokasi tidak ditemukan";
-          _isLoadingLocation = false;
-        });
+        if (placemarks.isNotEmpty) {
+          _processPlacemark(placemarks.first, position);
+        } else {
+          _setBatamLocation(position);
+        }
+      }
+      // Geocoding tanpa lokal
+      catch (_) {
+        List<Placemark> placemarks = await placemarkFromCoordinates(
+            position.latitude, position.longitude);
+        placemarks.isNotEmpty
+            ? _processPlacemark(placemarks.first, position)
+            : _setBatamLocation(position);
       }
     } catch (e) {
-      setState(() {
-        _currentLocation = "Batam";
-        _isLoadingLocation = false;
-        _currentWeather = "Cerah";
-        _weatherIcon = Icons.wb_sunny;
-        _weatherColor = Colors.orange;
-        _isLoadingWeather = false;
-      });
-      print("Error mendapatkan lokasi: $e");
+      _handleLocationError("Error sistem", e);
     }
+  }
+
+// Fungsi helper
+  bool _isInBatam(double lat, double lon) {
+    return lat > 1.0 && lat < 1.2 && lon > 103.9 && lon < 104.1;
+  }
+
+  void _setBatamLocation(Position position) {
+    setState(() {
+      _currentLocation = "Batam";
+      _isLoadingLocation = false;
+    });
+    _getWeatherData(position.latitude, position.longitude);
+  }
+
+  void _processPlacemark(Placemark place, Position position) {
+    String locationName;
+
+    if (place.locality?.isNotEmpty == true) {
+      locationName = place.locality!;
+    } else if (place.subLocality?.isNotEmpty == true) {
+      locationName = place.subLocality!;
+    } else if (place.administrativeArea?.isNotEmpty == true) {
+      locationName = place.administrativeArea!;
+    } else {
+      locationName = "Batam";
+    }
+
+    // Force Batam jika terdeteksi Mountain View
+    if (locationName.contains("Mountain View")) {
+      locationName = "Batam";
+    }
+
+    setState(() {
+      _currentLocation = locationName;
+      _isLoadingLocation = false;
+    });
+    _getWeatherData(position.latitude, position.longitude);
+  }
+
+  void _handleLocationError(String message, [dynamic error]) {
+    setState(() {
+      _currentLocation = "Batam"; // Default ke Batam
+      _currentWeather = "Tidak dapat memuat cuaca";
+      _isLoadingLocation = false;
+      _isLoadingWeather = false;
+    });
+    _getWeatherData(1.0456, 104.0305); // Koordinat Batam
+    if (error != null) print("Error: $error");
   }
 
   Future<void> _loadNotificationCount() async {
@@ -589,6 +652,8 @@ class _BerandaPageState extends State<BerandaPage> {
     });
   }
 
+
+ //fungsi mulai menanam
   Future<void> _startPlanting() async {
     setState(() {
       _hasStartedPlanting = true;
@@ -596,10 +661,10 @@ class _BerandaPageState extends State<BerandaPage> {
       _plantAge = 1;
     });
 
-    // Save the data after starting planting
+    // menyimpan data setelah menanam
     await _savePlantData();
 
-    // Show success message
+    // pesan sukses
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -617,21 +682,21 @@ class _BerandaPageState extends State<BerandaPage> {
     }
   }
 
-// menghitung umur tanaman
+// fungsi menghitung umur tanaman
   Future<void> _calculatePlantAge() async {
     if (_plantStartDate != null) {
       final now = DateTime.now();
       final difference = now.difference(_plantStartDate!).inDays;
       final newAge = difference == 0 ? 1 : difference + 1;
 
-      // Hanya update state jika umur berubah
+      // update state jika umur berubah
       if (_plantAge != newAge) {
         setState(() {
           _plantAge = newAge;
         });
       }
 
-      // Auto show harvest dialog ketika umur mencapai 60 hari
+      // Panen dialog ketika tanaman berumur 60 hari
       if (_plantAge >= 60 && !_isHarvestDialogShown) {
         _isHarvestDialogShown = true;
         WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -653,7 +718,7 @@ class _BerandaPageState extends State<BerandaPage> {
       builder: (BuildContext context) {
         return Stack(
           children: [
-            // Confetti effect
+            // Confetti efek
             ...List.generate(50, (index) => _buildConfetti(index)),
             // Dialog
             AlertDialog(
@@ -669,7 +734,7 @@ class _BerandaPageState extends State<BerandaPage> {
                   ),
                   SizedBox(height: 10),
                   Text(
-                    'Selamat! 🎉',
+                    'Selamat!',
                     style: TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
@@ -1261,7 +1326,7 @@ class _BerandaPageState extends State<BerandaPage> {
   Widget _buildLocationWeatherWidget() {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
       decoration: BoxDecoration(
         color: Colors.white.withOpacity(0.2),
         borderRadius: BorderRadius.circular(15),
@@ -1305,11 +1370,11 @@ class _BerandaPageState extends State<BerandaPage> {
                                 ),
                                 const SizedBox(width: 8),
                                 Text(
-                                  'Memuat lokasi...',
+                                  'Memuat...',
                                   style: TextStyle(
                                     color: Colors.white.withOpacity(0.9),
                                     fontWeight: FontWeight.bold,
-                                    fontSize: 14,
+                                    fontSize: 12,
                                   ),
                                 ),
                               ],
@@ -1378,7 +1443,7 @@ class _BerandaPageState extends State<BerandaPage> {
                                   style: TextStyle(
                                     color: Colors.white.withOpacity(0.9),
                                     fontWeight: FontWeight.bold,
-                                    fontSize: 14,
+                                    fontSize: 12,
                                   ),
                                 ),
                               ],
@@ -1862,7 +1927,7 @@ class _BerandaPageState extends State<BerandaPage> {
     );
   }
 
-  // Widget Carousel 
+  // Widget Carousel
   Widget _buildCarouselPanduan() {
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 10, 20, 15),

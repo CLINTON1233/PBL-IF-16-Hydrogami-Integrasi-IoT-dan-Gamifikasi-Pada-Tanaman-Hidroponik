@@ -870,53 +870,6 @@ class _BerandaPageState extends State<BerandaPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFF24D17E),
-      // appBar: AppBar(
-      //   automaticallyImplyLeading: false,
-      //   backgroundColor: const Color(0xFF24D17E),
-      //   title: Row(
-      //     children: [
-      //       const SizedBox(width: 10),
-      //       Text(
-      //         'HYDROGAMI',
-      //         style: GoogleFonts.kurale(
-      //           fontSize: 20,
-      //           fontWeight: FontWeight.bold,
-      //           color: Colors.black,
-      //         ),
-      //       ),
-      //       const Spacer(),
-      //       MouseRegion(
-      //         onEnter: (_) {
-      //           setState(() {
-      //             _showLogoutText = true;
-      //           });
-      //         },
-      //         onExit: (_) {
-      //           setState(() {
-      //             _showLogoutText = false;
-      //           });
-      //         },
-      //         child: Column(
-      //           children: [
-      //             IconButton(
-      //               icon: const Icon(Icons.logout, color: Colors.black),
-      //               onPressed: _showLogoutConfirmationDialog,
-      //             ),
-      //             if (_showLogoutText)
-      //               const Text(
-      //                 'Logout',
-      //                 style: TextStyle(
-      //                   color: Colors.black,
-      //                   fontSize: 12,
-      //                 ),
-      //               ),
-      //           ],
-      //         ),
-      //       ),
-      //     ],
-      //   ),
-      // ),
-
       body: SingleChildScrollView(
         child: Column(
           children: [
@@ -926,7 +879,7 @@ class _BerandaPageState extends State<BerandaPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const SizedBox(height: 30),
+                  const SizedBox(height: 20),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -1862,7 +1815,7 @@ class _BerandaPageState extends State<BerandaPage> {
     );
   }
 
-  // Widget Carousel 
+  // Widget Carousel
   Widget _buildCarouselPanduan() {
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 10, 20, 15),

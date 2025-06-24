@@ -26,12 +26,8 @@ class _MonitoringPageState extends State<MonitoringPage> {
 
   // MQTT Client Configuration
   late MqttServerClient client;
-  final String broker = 'broker.hivemq.com'; // Broker online gratis
-  final int port = 1883;
-  final String clientIdentifier =
-      'hydrogami_flutter_client_${DateTime.now().millisecondsSinceEpoch}'; // Client ID unik
-  final String topic =
-      'hydrogami/sensor/data'; // Sesuai dengan topik di Arduino
+  final String broker = '10.170.16.56';
+  final String clientIdentifier = 'flutter_client';
 
   // Data sensor real-time
   double currentTDS = 0;

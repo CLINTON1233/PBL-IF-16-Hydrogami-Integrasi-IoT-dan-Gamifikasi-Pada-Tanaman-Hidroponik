@@ -6,6 +6,8 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:application_hydrogami/services/notifikasi_services.dart';
+import 'package:application_hydrogami/services/sensor_data_service.dart';
+import 'package:application_hydrogami/models/sensor_data_model.dart';
 import 'dart:convert';
 import 'package:mqtt_client/mqtt_client.dart';
 import 'package:mqtt_client/mqtt_server_client.dart';
@@ -19,10 +21,10 @@ class MonitoringPage extends StatefulWidget {
 
 class _MonitoringPageState extends State<MonitoringPage> {
   int _bottomNavCurrentIndex = 0;
-
   DateTime? _lastAlertTime;
+  final SensorDataService _sensorDataService = SensorDataService();
 
-  // MQTT Client
+  // MQTT Client Configuration
   late MqttServerClient client;
   final String broker = '192.168.15.189';
   final String clientIdentifier = 'flutter_client';
@@ -34,16 +36,19 @@ class _MonitoringPageState extends State<MonitoringPage> {
   double currentHumidity = 0;
   double currentLight = 0;
   int currentSoilMoisture = 0;
+  int relayWater = 0;
+  int relayAbMix = 0;
+  int relayPhUp = 0;
+  int relayPhDown = 0;
 
-  // Data untuk grafik TDS
+  // Data untuk grafik
   List<FlSpot> chartDataTDS = [];
   List<FlSpot> chartDataPH = [];
+  List<FlSpot> chartDataTemp = [];
+  List<FlSpot> chartDataHumidity = [];
 
   int timeCounter = 0;
   final int maxDataPoints = 10;
-
-  // bool _showTDS = true; // Toggle untuk grafik (pakai TDS sebagai default)
-  // String _selectedTab = 'Grafik TDS'; // Tab yang aktif
 
   @override
   void initState() {
@@ -52,9 +57,10 @@ class _MonitoringPageState extends State<MonitoringPage> {
     for (int i = 0; i < maxDataPoints; i++) {
       chartDataTDS.add(FlSpot(i.toDouble(), 0));
       chartDataPH.add(FlSpot(i.toDouble(), 0));
+      chartDataTemp.add(FlSpot(i.toDouble(), 0));
+      chartDataHumidity.add(FlSpot(i.toDouble(), 0));
     }
-    setupMqttClient();
-    connectClient();
+    _initMqttClient();
   }
 
   @override
@@ -63,17 +69,240 @@ class _MonitoringPageState extends State<MonitoringPage> {
     super.dispose();
   }
 
-  // Setup MQTT Client
-  void setupMqttClient() {
-    client = MqttServerClient.withPort(broker, clientIdentifier, 1883);
-    client.logging(on: true);
-    client.onConnected = onConnected;
-    client.onDisconnected = onDisconnected;
-    client.onSubscribed = onSubscribed;
-    client.onSubscribeFail = onSubscribeFail;
-    client.pongCallback = pong;
+  // Inisialisasi MQTT Client
+  void _initMqttClient() {
+    client = MqttServerClient(broker, clientIdentifier);
+    client.port = port;
     client.keepAlivePeriod = 60;
-    client.onBadCertificate = (cert) => true;
+    client.onDisconnected = _onDisconnected;
+    client.onConnected = _onConnected;
+    client.onSubscribed = _onSubscribed;
+    client.pongCallback = _pong;
+
+    // Set secure jika diperlukan (untuk broker yang membutuhkan SSL)
+    // client.secure = true;
+    // client.securityContext = SecurityContext.defaultContext;
+
+    // Connect ke broker
+    _connectToBroker();
+  }
+
+  Future<void> _connectToBroker() async {
+    try {
+      await client.connect();
+    } catch (e) {
+      print('Exception: $e');
+      client.disconnect();
+      // Coba reconnect setelah 5 detik
+      await Future.delayed(Duration(seconds: 5));
+      _connectToBroker();
+      return;
+    }
+
+    if (client.connectionStatus?.state == MqttConnectionState.connected) {
+      print('MQTT client connected');
+      _subscribeToTopic();
+    } else {
+      print('ERROR: MQTT client connection failed - disconnecting');
+      client.disconnect();
+    }
+  }
+
+  void _onConnected() {
+    print('Connected to MQTT broker');
+  }
+
+  void _onDisconnected() {
+    print('Disconnected from MQTT broker');
+    // Coba reconnect setelah 3 detik
+    Future.delayed(Duration(seconds: 3), () {
+      _connectToBroker();
+    });
+  }
+
+  void _onSubscribed(String topic) {
+    print('Subscribed to topic: $topic');
+  }
+
+  void _pong() {
+    print('Ping response received');
+  }
+
+  void _subscribeToTopic() {
+    client.subscribe(topic, MqttQos.atMostOnce);
+
+    client.updates?.listen((List<MqttReceivedMessage<MqttMessage>> c) async {
+      final MqttPublishMessage message = c[0].payload as MqttPublishMessage;
+      final payload =
+          MqttPublishPayload.bytesToStringAsString(message.payload.message);
+
+      print('Received MQTT message: $payload'); // Debug logging
+
+      try {
+        // Parse JSON data
+        Map<String, dynamic> data = jsonDecode(payload);
+
+        // Update state dengan data baru
+        setState(() {
+          currentTDS = data['tds']?.toDouble() ?? 0;
+          currentPH = data['ph']?.toDouble() ?? 0;
+          currentTemp = data['temperature']?.toDouble() ?? 0;
+          currentHumidity = data['humidity']?.toDouble() ?? 0;
+          currentLight = data['light']?.toDouble() ?? 0;
+          currentSoilMoisture = data['soil_moisture']?.toInt() ?? 0;
+          relayWater = data['relay_water']?.toInt() ?? 0;
+          relayAbMix = data['relay_ab_mix']?.toInt() ?? 0;
+          relayPhUp = data['relay_ph_up']?.toInt() ?? 0;
+          relayPhDown = data['relay_ph_down']?.toInt() ?? 0;
+
+          // Update grafik
+          _updateCharts();
+        });
+
+        // Buat objek SensorData dari data yang diterima
+        final sensorData = SensorData(
+          temperature: currentTemp,
+          humidity: currentHumidity,
+          light: currentLight,
+          soilMoisture: currentSoilMoisture,
+          tds: currentTDS,
+          ph: currentPH,
+        );
+
+        // Kirim data ke API (dengan error handling)
+        try {
+          final success = await _sensorDataService.sendSensorData(sensorData);
+          if (success) {
+            print('Data successfully sent to API');
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('Data terkirim ke server'),
+                  duration: Duration(seconds: 2),
+                ),
+              );
+            }
+          } else {
+            print('Failed to send data to API');
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('Gagal mengirim data ke server'),
+                  duration: Duration(seconds: 2),
+                ),
+              );
+            }
+          }
+        } catch (apiError) {
+          print('API Error: $apiError');
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Error API: $apiError'),
+                duration: Duration(seconds: 3),
+              ),
+            );
+          }
+        }
+
+        // Cek notifikasi alert
+        if (mounted) {
+          _checkForAlerts(context);
+        }
+      } catch (e) {
+        print('Error processing MQTT message: $e');
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Format data sensor tidak valid'),
+              duration: Duration(seconds: 2),
+            ),
+          );
+        }
+      }
+    });
+  }
+
+  Future<void> _sendDataToApi() async {
+    final sensorData = SensorData(
+      temperature: currentTemp,
+      humidity: currentHumidity,
+      light: currentLight,
+      soilMoisture: currentSoilMoisture,
+      tds: currentTDS,
+      ph: currentPH,
+    );
+
+    try {
+      final success = await _sensorDataService.sendSensorData(sensorData);
+      if (success) {
+        print('Data berhasil dikirim ke API');
+      } else {
+        print('Gagal mengirim data ke API');
+      }
+    } catch (e) {
+      print('Error saat mengirim data: $e');
+    }
+  }
+
+  void _updateCharts() {
+    setState(() {
+      timeCounter++;
+
+      // Geser data ke kiri
+      for (int i = 0; i < maxDataPoints - 1; i++) {
+        chartDataTDS[i] = FlSpot(i.toDouble(), chartDataTDS[i + 1].y);
+        chartDataPH[i] = FlSpot(i.toDouble(), chartDataPH[i + 1].y);
+        chartDataTemp[i] = FlSpot(i.toDouble(), chartDataTemp[i + 1].y);
+        chartDataHumidity[i] = FlSpot(i.toDouble(), chartDataHumidity[i + 1].y);
+      }
+
+      // Tambahkan data baru di akhir
+      chartDataTDS[maxDataPoints - 1] =
+          FlSpot((maxDataPoints - 1).toDouble(), currentTDS);
+      chartDataPH[maxDataPoints - 1] =
+          FlSpot((maxDataPoints - 1).toDouble(), currentPH);
+      chartDataTemp[maxDataPoints - 1] =
+          FlSpot((maxDataPoints - 1).toDouble(), currentTemp);
+      chartDataHumidity[maxDataPoints - 1] =
+          FlSpot((maxDataPoints - 1).toDouble(), currentHumidity);
+    });
+  }
+
+  void _checkForAlerts(BuildContext context) {
+    final now = DateTime.now();
+    if (_lastAlertTime != null &&
+        now.difference(_lastAlertTime!) < Duration(seconds: 30)) {
+      return; // Jangan tampilkan alert terlalu sering
+    }
+
+    // Cek kondisi alert
+    if (currentPH < 5.0 || currentPH > 7.0) {
+      _showAlert(
+          context,
+          'Peringatan pH',
+          'Nilai pH ${currentPH.toStringAsFixed(1)} di luar range optimal (5.5-6.5)!',
+          Colors.orange);
+      _lastAlertTime = now;
+    }
+
+    if (currentTDS < 300 || currentTDS > 1500) {
+      _showAlert(
+          context,
+          'Peringatan Nutrisi',
+          'Nilai TDS ${currentTDS.toStringAsFixed(0)} ppm di luar range optimal (800-1500 ppm)!',
+          Colors.orange);
+      _lastAlertTime = now;
+    }
+
+    if (currentTemp < 15 || currentTemp > 35) {
+      _showAlert(
+          context,
+          'Peringatan Suhu',
+          'Suhu ${currentTemp.toStringAsFixed(1)}°C di luar range optimal (20-30°C)!',
+          Colors.orange);
+      _lastAlertTime = now;
+    }
   }
 
   List<SnackBar> _snackBarQueue = [];
@@ -131,93 +360,6 @@ class _MonitoringPageState extends State<MonitoringPage> {
     }
   }
 
-  // Connect ke MQTT Broker
-  void connectClient() async {
-    try {
-      await client.connect('try', 'try');
-    } catch (e) {
-      print('Exception: $e');
-      client.disconnect();
-    }
-
-    if (client.connectionStatus?.state == MqttConnectionState.connected) {
-      print('MQTT client connected');
-      subscribeToTopic();
-    } else {
-      print('ERROR: MQTT client connection failed - disconnecting');
-      client.disconnect();
-    }
-  }
-
-  // Subscribe ke topic
-  void subscribeToTopic() {
-    const topic = 'sensor/data';
-    client.subscribe(topic, MqttQos.atMostOnce);
-
-    client.updates?.listen((List<MqttReceivedMessage<MqttMessage>> c) {
-      final MqttPublishMessage message = c[0].payload as MqttPublishMessage;
-      final payload =
-          MqttPublishPayload.bytesToStringAsString(message.payload.message);
-
-      print('Received message: $payload');
-
-      // Parse JSON data
-      Map<String, dynamic> data = jsonDecode(payload);
-
-      setState(() {
-        currentTDS = data['tds']?.toDouble() ?? 0;
-        currentPH = data['ph']?.toDouble() ?? 0;
-        currentTemp = data['temperature']?.toDouble() ?? 0;
-        currentHumidity = data['humidity']?.toDouble() ?? 0;
-        currentLight = data['light']?.toDouble() ?? 0;
-        currentSoilMoisture = data['soil_moisture']?.toInt() ?? 0;
-
-        // Update grafik
-        updateCharts(currentTDS, currentPH);
-      });
-    });
-  }
-
-  // Update data grafik
-  void updateCharts(double tdsValue, double phValue) {
-    setState(() {
-      timeCounter++;
-
-      // Geser data ke kiri dan tambahkan data baru di akhir
-      for (int i = 0; i < maxDataPoints - 1; i++) {
-        chartDataTDS[i] = FlSpot(i.toDouble(), chartDataTDS[i + 1].y);
-        chartDataPH[i] = FlSpot(i.toDouble(), chartDataPH[i + 1].y);
-      }
-
-      // Tambahkan data baru
-      chartDataTDS[maxDataPoints - 1] =
-          FlSpot((maxDataPoints - 1).toDouble(), tdsValue);
-      chartDataPH[maxDataPoints - 1] =
-          FlSpot((maxDataPoints - 1).toDouble(), phValue);
-    });
-  }
-
-  // MQTT Callback functions
-  void onConnected() {
-    print('Connected to MQTT broker');
-  }
-
-  void onDisconnected() {
-    print('Disconnected from MQTT broker');
-  }
-
-  void onSubscribed(String topic) {
-    print('Subscribed to topic: $topic');
-  }
-
-  void onSubscribeFail(String topic) {
-    print('Failed to subscribe to topic: $topic');
-  }
-
-  void pong() {
-    print('Ping response received');
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -255,25 +397,25 @@ class _MonitoringPageState extends State<MonitoringPage> {
           },
         ),
       ),
-      // Menggunakan Stack untuk menumpuk konten dan bottom navigation bar
       body: SafeArea(
         child: Stack(
           children: [
-            // Main Content dalam ListView untuk memungkinkan scrolling
             ListView(
               padding: const EdgeInsets.only(
-                  left: 16.0,
-                  right: 16.0,
-                  top: 20.0,
-                  bottom:
-                      30.0 // Tambahkan padding di bawah untuk BottomNavigationBar
-                  ),
+                left: 16.0,
+                right: 16.0,
+                top: 20.0,
+                bottom: 30.0,
+              ),
               children: [
                 _buildPHChart(),
                 const SizedBox(height: 24),
                 _buildMainChart(),
                 const SizedBox(height: 24),
+                _buildTemperatureHumidityChart(),
+                const SizedBox(height: 24),
                 _buildSensorCardsGrid(),
+                const SizedBox(height: 16),
               ],
             ),
           ],
@@ -283,8 +425,33 @@ class _MonitoringPageState extends State<MonitoringPage> {
     );
   }
 
-  // Widget baru untuk grafik pH di bagian atas
   Widget _buildPHChart() {
+    return _buildChart(
+      title: 'pH Levels',
+      currentValue: currentPH,
+      unit: 'pH',
+      chartData: chartDataPH,
+      color: Colors.purple,
+      minY: 0,
+      maxY: 14,
+      interval: 2,
+    );
+  }
+
+  Widget _buildMainChart() {
+    return _buildChart(
+      title: 'TDS Levels',
+      currentValue: currentTDS,
+      unit: 'ppm',
+      chartData: chartDataTDS,
+      color: Colors.blue,
+      minY: 0,
+      maxY: 2000,
+      interval: 500,
+    );
+  }
+
+  Widget _buildTemperatureHumidityChart() {
     return Container(
       width: double.infinity,
       height: 200,
@@ -304,7 +471,7 @@ class _MonitoringPageState extends State<MonitoringPage> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'pH Levels',
+            'Suhu & Kelembaban',
             style: GoogleFonts.poppins(
               fontSize: 16,
               fontWeight: FontWeight.w600,
@@ -312,7 +479,7 @@ class _MonitoringPageState extends State<MonitoringPage> {
           ),
           const SizedBox(height: 8),
           Text(
-            'Current pH: ${currentPH.toStringAsFixed(1)}',
+            'Suhu: ${currentTemp.toStringAsFixed(1)}°C | Kelembaban: ${currentHumidity.toStringAsFixed(1)}%',
             style: GoogleFonts.poppins(
               fontSize: 14,
               color: Colors.grey[700],
@@ -327,7 +494,7 @@ class _MonitoringPageState extends State<MonitoringPage> {
                   show: true,
                   drawVerticalLine: true,
                   drawHorizontalLine: true,
-                  horizontalInterval: 2,
+                  horizontalInterval: 10,
                   getDrawingHorizontalLine: (value) {
                     return FlLine(
                       color: Colors.grey.withOpacity(0.2),
@@ -378,7 +545,7 @@ class _MonitoringPageState extends State<MonitoringPage> {
                     sideTitles: SideTitles(
                       showTitles: true,
                       reservedSize: 40,
-                      interval: 2,
+                      interval: 10,
                       getTitlesWidget: (value, meta) {
                         return SideTitleWidget(
                           axisSide: meta.axisSide,
@@ -400,12 +567,12 @@ class _MonitoringPageState extends State<MonitoringPage> {
                 minX: 0,
                 maxX: maxDataPoints.toDouble() - 1,
                 minY: 0,
-                maxY: 14,
+                maxY: 100,
                 lineBarsData: [
                   LineChartBarData(
-                    spots: chartDataPH,
+                    spots: chartDataTemp,
                     isCurved: true,
-                    color: Colors.purple,
+                    color: Colors.orange,
                     barWidth: 2,
                     isStrokeCapRound: true,
                     dotData: FlDotData(
@@ -415,13 +582,35 @@ class _MonitoringPageState extends State<MonitoringPage> {
                           radius: 4,
                           color: Colors.white,
                           strokeWidth: 2,
-                          strokeColor: Colors.purple,
+                          strokeColor: Colors.orange,
                         );
                       },
                     ),
                     belowBarData: BarAreaData(
                       show: true,
-                      color: Colors.purple.withOpacity(0.1),
+                      color: Colors.orange.withOpacity(0.1),
+                    ),
+                  ),
+                  LineChartBarData(
+                    spots: chartDataHumidity,
+                    isCurved: true,
+                    color: Colors.teal,
+                    barWidth: 2,
+                    isStrokeCapRound: true,
+                    dotData: FlDotData(
+                      show: true,
+                      getDotPainter: (spot, percent, barData, index) {
+                        return FlDotCirclePainter(
+                          radius: 4,
+                          color: Colors.white,
+                          strokeWidth: 2,
+                          strokeColor: Colors.teal,
+                        );
+                      },
+                    ),
+                    belowBarData: BarAreaData(
+                      show: true,
+                      color: Colors.teal.withOpacity(0.1),
                     ),
                   ),
                 ],
@@ -433,10 +622,19 @@ class _MonitoringPageState extends State<MonitoringPage> {
     );
   }
 
-  Widget _buildMainChart() {
+  Widget _buildChart({
+    required String title,
+    required double currentValue,
+    required String unit,
+    required List<FlSpot> chartData,
+    required Color color,
+    required double minY,
+    required double maxY,
+    required double interval,
+  }) {
     return Container(
       width: double.infinity,
-      height: 200, // Reduced from 220 to 200
+      height: 200,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
@@ -453,13 +651,22 @@ class _MonitoringPageState extends State<MonitoringPage> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'TDS Levels',
+            title,
             style: GoogleFonts.poppins(
               fontSize: 16,
               fontWeight: FontWeight.w600,
             ),
           ),
-          const SizedBox(height: 8), // Reduced from 16 to 8
+          const SizedBox(height: 8),
+          Text(
+            'Current: ${currentValue.toStringAsFixed(1)} $unit',
+            style: GoogleFonts.poppins(
+              fontSize: 14,
+              color: Colors.grey[700],
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          const SizedBox(height: 16),
           Expanded(
             child: LineChart(
               LineChartData(
@@ -467,7 +674,7 @@ class _MonitoringPageState extends State<MonitoringPage> {
                   show: true,
                   drawVerticalLine: true,
                   drawHorizontalLine: true,
-                  horizontalInterval: 400,
+                  horizontalInterval: interval,
                   getDrawingHorizontalLine: (value) {
                     return FlLine(
                       color: Colors.grey.withOpacity(0.2),
@@ -492,7 +699,7 @@ class _MonitoringPageState extends State<MonitoringPage> {
                   bottomTitles: AxisTitles(
                     sideTitles: SideTitles(
                       showTitles: true,
-                      reservedSize: 22, // Reduced from 30 to 22
+                      reservedSize: 30,
                       interval: 2,
                       getTitlesWidget: (value, meta) {
                         final index = value.toInt();
@@ -517,8 +724,8 @@ class _MonitoringPageState extends State<MonitoringPage> {
                   leftTitles: AxisTitles(
                     sideTitles: SideTitles(
                       showTitles: true,
-                      reservedSize: 35, // Reduced from 40 to 35
-                      interval: 500,
+                      reservedSize: 40,
+                      interval: interval,
                       getTitlesWidget: (value, meta) {
                         return SideTitleWidget(
                           axisSide: meta.axisSide,
@@ -539,32 +746,29 @@ class _MonitoringPageState extends State<MonitoringPage> {
                 ),
                 minX: 0,
                 maxX: maxDataPoints.toDouble() - 1,
-                minY: 0,
-                maxY: 2000,
+                minY: minY,
+                maxY: maxY,
                 lineBarsData: [
                   LineChartBarData(
-                    spots: chartDataTDS,
+                    spots: chartData,
                     isCurved: true,
-                    color: Colors
-                        .blue, // Changed color to blue to distinguish from pH chart
+                    color: color,
                     barWidth: 2,
                     isStrokeCapRound: true,
                     dotData: FlDotData(
                       show: true,
                       getDotPainter: (spot, percent, barData, index) {
                         return FlDotCirclePainter(
-                          radius: 3, // Reduced from 4 to 3
+                          radius: 4,
                           color: Colors.white,
                           strokeWidth: 2,
-                          strokeColor:
-                              Colors.blue, // Changed color to match line
+                          strokeColor: color,
                         );
                       },
                     ),
                     belowBarData: BarAreaData(
                       show: true,
-                      color: Colors.blue
-                          .withOpacity(0.1), // Changed color to match line
+                      color: color.withOpacity(0.1),
                     ),
                   ),
                 ],
@@ -603,6 +807,7 @@ class _MonitoringPageState extends State<MonitoringPage> {
               icon: Icons.opacity,
               color: Colors.blue.shade50,
               iconColor: Colors.blue,
+              status: determineSensorStatus('TDS', currentTDS),
             ),
             _buildSensorDetailCard(
               title: 'pH Level',
@@ -611,6 +816,7 @@ class _MonitoringPageState extends State<MonitoringPage> {
               icon: Icons.blur_circular,
               color: Colors.purple.shade50,
               iconColor: Colors.purple,
+              status: determineSensorStatus('pH', currentPH),
             ),
             _buildSensorDetailCard(
               title: 'Suhu',
@@ -619,32 +825,76 @@ class _MonitoringPageState extends State<MonitoringPage> {
               icon: Icons.thermostat,
               color: Colors.orange.shade50,
               iconColor: Colors.orange,
+              status: determineSensorStatus('Suhu', currentTemp),
             ),
             _buildSensorDetailCard(
               title: 'Kelembaban Udara',
-              value: currentHumidity.toStringAsFixed(2),
+              value: currentHumidity.toStringAsFixed(1),
               unit: '%',
               icon: Icons.water_drop,
               color: Colors.teal.shade50,
               iconColor: Colors.teal,
+              status:
+                  determineSensorStatus('Kelembaban Udara', currentHumidity),
             ),
             _buildSensorDetailCard(
               title: 'Kelembaban Tanah',
-              value: currentSoilMoisture.toStringAsFixed(0),
+              value: currentSoilMoisture.toString(),
               unit: '%',
               icon: Icons.landscape,
               color: Colors.brown.shade50,
               iconColor: Colors.brown,
+              status: determineSensorStatus(
+                  'Kelembaban Tanah', currentSoilMoisture.toDouble()),
             ),
             _buildSensorDetailCard(
               title: 'Intensitas Cahaya',
-              value: currentLight.toStringAsFixed(2),
+              value: currentLight.toStringAsFixed(1),
               unit: 'Lux',
               icon: Icons.light_mode,
               color: Colors.amber.shade50,
               iconColor: Colors.amber,
+              status: determineSensorStatus('Intensitas Cahaya', currentLight),
             ),
           ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildRelayIndicator({
+    required String label,
+    required bool status,
+    required Color activeColor,
+  }) {
+    return Column(
+      children: [
+        Container(
+          width: 24,
+          height: 24,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: status ? activeColor : Colors.grey[300],
+            border: Border.all(
+              color: Colors.grey[500]!,
+              width: 1,
+            ),
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          label,
+          style: GoogleFonts.poppins(
+            fontSize: 12,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        Text(
+          status ? 'ON' : 'OFF',
+          style: GoogleFonts.poppins(
+            fontSize: 10,
+            color: Colors.grey[600],
+          ),
         ),
       ],
     );
@@ -657,6 +907,7 @@ class _MonitoringPageState extends State<MonitoringPage> {
     required IconData icon,
     required Color color,
     required Color iconColor,
+    required Color status,
   }) {
     return Container(
       padding: const EdgeInsets.all(16),
@@ -710,6 +961,19 @@ class _MonitoringPageState extends State<MonitoringPage> {
                       ),
                     ],
                   ),
+                  const SizedBox(height: 4),
+                  Container(
+                    width: 12,
+                    height: 12,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: status,
+                      border: Border.all(
+                        color: Colors.grey[500]!,
+                        width: 1,
+                      ),
+                    ),
+                  ),
                 ],
               ),
             ],
@@ -728,7 +992,6 @@ class _MonitoringPageState extends State<MonitoringPage> {
     );
   }
 
-  // Fungsi untuk membuat BottomNavigationBar
   Widget _buildBottomNavigation() {
     return ClipRRect(
       borderRadius: const BorderRadius.only(
@@ -823,7 +1086,6 @@ class _MonitoringPageState extends State<MonitoringPage> {
     );
   }
 
-  // Function to evaluate sensor status
   Color determineSensorStatus(String sensorType, double value) {
     switch (sensorType) {
       case 'Suhu':
@@ -848,10 +1110,10 @@ class _MonitoringPageState extends State<MonitoringPage> {
         return Colors.black;
 
       case 'Kelembaban Tanah':
-        if (value <= 0 || value > 1000) return Colors.red;
-        if ((value >= 300 && value <= 400) || (value >= 70 && value <= 80))
+        if (value <= 0 || value > 100) return Colors.red;
+        if ((value >= 30 && value <= 40) || (value >= 70 && value <= 80))
           return Colors.yellow;
-        if (value >= 500 && value <= 900) return Colors.green;
+        if (value >= 50 && value <= 70) return Colors.green;
         return Colors.black;
 
       case 'Kelembaban Udara':
@@ -874,7 +1136,6 @@ class _MonitoringPageState extends State<MonitoringPage> {
   }
 }
 
-// Data class untuk grafik
 class _ChartData {
   _ChartData(this.x, this.y);
   final int x;

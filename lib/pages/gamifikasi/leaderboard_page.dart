@@ -1,10 +1,14 @@
-import 'package:application_hydrogami/pages/beranda_page.dart';
-import 'package:application_hydrogami/pages/gamifikasi/gamifikasi_page.dart';
-import 'package:application_hydrogami/pages/monitoring/notifikasi_page.dart';
-import 'package:application_hydrogami/pages/panduan/panduan_page.dart';
-import 'package:application_hydrogami/pages/profil_page.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:application_hydrogami/services/leaderboard_services.dart';
+import 'package:application_hydrogami/models/leaderboard_model.dart';
+import 'package:application_hydrogami/pages/beranda_page.dart';
+import 'package:application_hydrogami/pages/profil_page.dart';
+import 'package:application_hydrogami/pages/monitoring/notifikasi_page.dart';
+import 'package:application_hydrogami/pages/panduan/panduan_page.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 
 class LeaderboardPage extends StatefulWidget {
   const LeaderboardPage({super.key});
@@ -15,16 +19,147 @@ class LeaderboardPage extends StatefulWidget {
 
 class _LeaderboardPageState extends State<LeaderboardPage> {
   int _bottomNavCurrentIndex = 0;
+  List<LeaderboardUser> _leaderboardData = [];
+  bool _isLoading = true;
+  String _currentUserName = 'Loading...';
+  int _currentUserCoins = 0;
+  int _currentUserPoints = 0;
+  String _currentUserId = '';
+  int _currentUserLevel = 1;
+  int _currentUserRank = 0;
+  LeaderboardService? _leaderboardService;
 
-  final List<Map<String, dynamic>> leaderboardData = [
-    {"name": "Anton", "exp": 500},
-    {"name": "Kris", "exp": 400},
-    {"name": "Jhon", "exp": 300},
-    {"name": "Andera", "exp": 150},
-    {"name": "Thomas", "exp": 100},
-    {"name": "Edward", "exp": 50},
-    {"name": "Jonatan", "exp": 45},
-  ];
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await _initializeServices();
+      await _loadUserData();
+      await _loadLeaderboardData();
+    });
+  }
+
+  Future<void> _initializeServices() async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('token');
+
+    setState(() {
+      _leaderboardService = LeaderboardService(
+        baseUrl: 'http://10.0.2.2:8000/api',
+        token: token,
+      );
+    });
+
+    _loadLeaderboardData();
+  }
+
+  Future<void> _loadUserData() async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('token');
+
+    // Debug: Print semua key yang ada
+    print('All keys in SharedPreferences: ${prefs.getKeys()}');
+
+    // Ambil current user ID
+    _currentUserId = prefs.getString('current_user_id') ?? '';
+    print('Current user ID: $_currentUserId');
+
+    // Jika tidak ada user ID, coba ambil dari API
+    if (_currentUserId.isEmpty && token != null) {
+      try {
+        final response = await http.get(
+          Uri.parse('http://10.0.2.2:8000/api/user'),
+          headers: {'Authorization': 'Bearer $token'},
+        );
+
+        if (response.statusCode == 200) {
+          final userData = json.decode(response.body);
+          _currentUserId = userData['id'].toString();
+          await prefs.setString('current_user_id', _currentUserId);
+        }
+      } catch (e) {
+        print('Error fetching user data: $e');
+      }
+    }
+
+    setState(() {
+      _currentUserName = prefs.getString('username') ?? 'Guest';
+      _currentUserCoins = prefs.getInt('${_currentUserId}_total_coins') ??
+          prefs.getInt('total_coins') ??
+          0; // Fallback
+      _currentUserPoints = prefs.getInt('${_currentUserId}_current_exp') ??
+          prefs.getInt('current_exp') ??
+          0; // Fallback
+      _currentUserLevel = prefs.getInt('${_currentUserId}_current_level') ??
+          prefs.getInt('current_level') ??
+          1; // Fallback
+
+      print('''
+    Loaded user data:
+    - Name: $_currentUserName
+    - Coins: $_currentUserCoins
+    - Points: $_currentUserPoints
+    - Level: $_currentUserLevel
+    ''');
+    });
+  }
+
+  Future<void> _loadLeaderboardData() async {
+    if (_leaderboardService == null) return;
+
+    try {
+      final leaderboard = await _leaderboardService!.getLeaderboard();
+      setState(() {
+        _leaderboardData = leaderboard;
+        _isLoading = false;
+
+        // Find current user's rank
+        _currentUserRank = _findCurrentUserRank();
+      });
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Gagal memuat leaderboard: $e')),
+      );
+    }
+  }
+
+  // Fungsi untuk refresh data
+  Future<void> _refreshData() async {
+    setState(() {
+      _isLoading = true;
+    });
+    
+    await _loadUserData();
+    await _loadLeaderboardData();
+    
+    // Tampilkan pesan berhasil refresh
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Data berhasil diperbarui'),
+        backgroundColor: Colors.green,
+        duration: Duration(seconds: 2),
+      ),
+    );
+  }
+
+  int _findCurrentUserRank() {
+    if (_currentUserId.isEmpty) return 0;
+
+    for (int i = 0; i < _leaderboardData.length; i++) {
+      if (_leaderboardData[i].id.toString() == _currentUserId) {
+        // Update user data dengan data terbaru dari leaderboard
+        setState(() {
+          _currentUserPoints = _leaderboardData[i].poin;
+          _currentUserLevel = _leaderboardData[i].level;
+        });
+        return i + 1;
+      }
+    }
+    return 0;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -55,136 +190,213 @@ class _LeaderboardPageState extends State<LeaderboardPage> {
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_sharp),
           iconSize: 20.0,
-          onPressed: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => const GamifikasiPage()),
-            );
-          },
+          onPressed: () => Navigator.pop(context),
         ),
       ),
-      body: Column(
-        children: [
-          // Header Leaderboard
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: const BoxDecoration(
-              color: Color(0xFF24D17E),
-              borderRadius: BorderRadius.only(
-                bottomLeft: Radius.circular(20),
-                bottomRight: Radius.circular(20),
-              ),
-            ),
-            child: Column(
-              children: [
-                const CircleAvatar(
-                  radius: 40,
-                  backgroundImage: AssetImage('assets/profile_leaderboard.png'),
-                ),
-                const SizedBox(height: 8),
-                const Text(
-                  "Rebecca Max",
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
-                ),
-                const Text(
-                  "750 Exp",
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: Colors.white,
-                  ),
-                ),
-                const SizedBox(height: 16),
-                // Tombol Tab Mingguan dan Setiap Hari
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    _buildTabButton("Mingguan", isSelected: true),
-                    const SizedBox(width: 8),
-                    _buildTabButton("Setiap Hari", isSelected: false),
-                  ],
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 12),
-          // Daftar Leaderboard
-          Expanded(
-            child: ListView.builder(
-              itemCount: leaderboardData.length,
-              itemBuilder: (context, index) {
-                final data = leaderboardData[index];
-                return Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(12),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.grey.withOpacity(0.2),
-                          blurRadius: 4,
-                          offset: const Offset(0, 2),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : RefreshIndicator(
+              onRefresh: _refreshData,
+              color: const Color(0xFF24D17E),
+              child: CustomScrollView(
+                slivers: [
+                  // Header Leaderboard sebagai SliverToBoxAdapter
+                  SliverToBoxAdapter(
+                    child: Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: const BoxDecoration(
+                        color: Color(0xFF24D17E),
+                        borderRadius: BorderRadius.only(
+                          bottomLeft: Radius.circular(20),
+                          bottomRight: Radius.circular(20),
                         ),
-                      ],
-                    ),
-                    child: ListTile(
-                      contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 8),
-                      leading: Container(
-                        width: 36,
-                        height: 36,
-                        decoration: const BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: Color(0xFFF3F3F3),
-                        ),
-                        child: Center(
-                          child: Text(
-                            (index + 2).toString(),
-                            style: GoogleFonts.poppins(
-                              fontSize: 16,
+                      ),
+                      child: Column(
+                        children: [
+                          Stack(
+                            alignment: Alignment.bottomRight,
+                            children: [
+                              const CircleAvatar(
+                                radius: 40,
+                                backgroundImage: AssetImage('assets/profile.jpg'),
+                              ),
+                              if (_currentUserRank > 0)
+                                Container(
+                                  padding: const EdgeInsets.all(6),
+                                  decoration: BoxDecoration(
+                                    color: _getRankColor(_currentUserRank),
+                                    shape: BoxShape.circle,
+                                    border: Border.all(
+                                      color: Colors.white,
+                                      width: 2,
+                                    ),
+                                  ),
+                                  child: Text(
+                                    '$_currentUserRank',
+                                    style: GoogleFonts.poppins(
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.bold,
+                                      color: _getRankTextColor(_currentUserRank),
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            _currentUserName,
+                            style: const TextStyle(
+                              fontSize: 20,
                               fontWeight: FontWeight.bold,
-                              color: Colors.black,
+                              color: Colors.white,
                             ),
                           ),
-                        ),
+                          Text(
+                            "$_currentUserPoints EXP | $_currentUserCoins Koin",
+                            style: const TextStyle(
+                              fontSize: 16,
+                              color: Colors.white,
+                            ),
+                          ),
+                          if (_currentUserRank > 0)
+                            Text(
+                              "Posisi Anda #$_currentUserRank di Leaderboard",
+                              style: const TextStyle(
+                                fontSize: 14,
+                                color: Colors.white,
+                              ),
+                            ),
+                          const SizedBox(height: 16),
+                          // Tab Buttons
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                            ],
+                          ),
+                        ],
                       ),
-                      title: Text(
-                        data["name"],
-                        style: GoogleFonts.poppins(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w500,
-                          color: Colors.black,
-                        ),
-                      ),
-                      subtitle: Text(
-                        "${data["exp"]} Exp",
-                        style: GoogleFonts.poppins(
-                          fontSize: 14,
-                          color: Colors.grey[600],
-                        ),
-                      ),
-                      trailing: index == 0
-                          ? const Icon(Icons.star,
-                              color: Colors.amber, size: 24)
-                          : null,
                     ),
                   ),
-                );
-              },
+                  
+                  // Spacing
+                  const SliverToBoxAdapter(
+                    child: SizedBox(height: 12),
+                  ),
+                  
+                  // Leaderboard List sebagai SliverList
+                  _leaderboardData.isEmpty
+                      ? const SliverFillRemaining(
+                          child: Center(child: Text('Belum ada data leaderboard')),
+                        )
+                      : SliverList(
+                          delegate: SliverChildBuilderDelegate(
+                            (context, index) {
+                              final user = _leaderboardData[index];
+                              final isCurrentUser =
+                                  user.id.toString() == _currentUserId;
+
+                              return Padding(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 16, vertical: 4),
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    color: isCurrentUser
+                                        ? const Color(0xFFE8F5E9)
+                                        : Colors.white,
+                                    borderRadius: BorderRadius.circular(12),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.grey.withOpacity(0.2),
+                                        blurRadius: 4,
+                                        offset: const Offset(0, 2),
+                                      ),
+                                    ],
+                                  ),
+                                  child: ListTile(
+                                    contentPadding: const EdgeInsets.symmetric(
+                                        horizontal: 16, vertical: 8),
+                                    leading: Container(
+                                      width: 36,
+                                      height: 36,
+                                      decoration: BoxDecoration(
+                                        shape: BoxShape.circle,
+                                        color: _getRankColor(index + 1),
+                                      ),
+                                      child: Center(
+                                        child: Text(
+                                          (index + 1).toString(),
+                                          style: GoogleFonts.poppins(
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.bold,
+                                            color: _getRankTextColor(index + 1),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                    title: Row(
+                                      children: [
+                                        Text(
+                                          user.username,
+                                          style: GoogleFonts.poppins(
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.w500,
+                                            color: Colors.black,
+                                          ),
+                                        ),
+                                        if (isCurrentUser)
+                                          const Padding(
+                                            padding: EdgeInsets.only(left: 8.0),
+                                            child: Icon(Icons.star,
+                                                color: Colors.amber, size: 16),
+                                          ),
+                                      ],
+                                    ),
+                                    subtitle: Text(
+                                      "${user.poin} EXP",
+                                      style: GoogleFonts.poppins(
+                                        fontSize: 14,
+                                        color: Colors.grey[600],
+                                      ),
+                                    ),
+                                    trailing: Text(
+                                      "Level ${user.level}",
+                                      style: GoogleFonts.poppins(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.bold,
+                                        color: const Color(0xFF24D17E),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              );
+                            },
+                            childCount: _leaderboardData.length,
+                          ),
+                        ),
+                ],
+              ),
             ),
-          ),
-        ],
-      ),
       bottomNavigationBar: _buildBottomNavigation(),
     );
   }
 
-  // Fungsi untuk membuat tombol tab
+  Color _getRankColor(int rank) {
+    switch (rank) {
+      case 1:
+        return const Color(0xFFFFD700); // Gold
+      case 2:
+        return const Color(0xFFC0C0C0); // Silver
+      case 3:
+        return const Color(0xFFCD7F32); // Bronze
+      default:
+        return const Color(0xFFF3F3F3);
+    }
+  }
+
+  Color _getRankTextColor(int rank) {
+    return Colors.black;
+  }
+
   Widget _buildTabButton(String title, {required bool isSelected}) {
     return ElevatedButton(
       onPressed: () {},
@@ -199,7 +411,6 @@ class _LeaderboardPageState extends State<LeaderboardPage> {
     );
   }
 
-  // Fungsi untuk membuat Bottom Navigation Bar
   Widget _buildBottomNavigation() {
     return ClipRRect(
       borderRadius: const BorderRadius.only(
@@ -214,7 +425,6 @@ class _LeaderboardPageState extends State<LeaderboardPage> {
             _bottomNavCurrentIndex = index;
           });
 
-          // Navigasi halaman berdasarkan index
           switch (index) {
             case 0:
               Navigator.pushReplacement(
@@ -245,47 +455,23 @@ class _LeaderboardPageState extends State<LeaderboardPage> {
         currentIndex: _bottomNavCurrentIndex,
         items: const [
           BottomNavigationBarItem(
-            activeIcon: Icon(
-              Icons.home,
-              color: Colors.black,
-            ),
-            icon: Icon(
-              Icons.home,
-              color: Colors.white,
-            ),
+            activeIcon: Icon(Icons.home, color: Colors.black),
+            icon: Icon(Icons.home, color: Colors.white),
             label: 'Beranda',
           ),
           BottomNavigationBarItem(
-            activeIcon: Icon(
-              Icons.notification_add,
-              color: Colors.black,
-            ),
-            icon: Icon(
-              Icons.notification_add,
-              color: Colors.white,
-            ),
+            activeIcon: Icon(Icons.notification_add, color: Colors.black),
+            icon: Icon(Icons.notification_add, color: Colors.white),
             label: 'Notifikasi',
           ),
           BottomNavigationBarItem(
-            activeIcon: Icon(
-              Icons.assignment,
-              color: Colors.black,
-            ),
-            icon: Icon(
-              Icons.assignment,
-              color: Colors.white,
-            ),
+            activeIcon: Icon(Icons.assignment, color: Colors.black),
+            icon: Icon(Icons.assignment, color: Colors.white),
             label: 'Panduan',
           ),
           BottomNavigationBarItem(
-            activeIcon: Icon(
-              Icons.person,
-              color: Colors.black,
-            ),
-            icon: Icon(
-              Icons.person,
-              color: Colors.white,
-            ),
+            activeIcon: Icon(Icons.person, color: Colors.black),
+            icon: Icon(Icons.person, color: Colors.white),
             label: 'Akun',
           ),
         ],

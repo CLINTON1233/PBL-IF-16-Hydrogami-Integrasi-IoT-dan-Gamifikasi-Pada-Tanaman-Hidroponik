@@ -11,6 +11,7 @@ import 'package:application_hydrogami/pages/panduan/detail_panduan_sensor_page.d
 import 'package:application_hydrogami/pages/panduan/detail_panduan_tanaman_page.dart';
 import 'package:application_hydrogami/pages/profil_page.dart';
 import 'package:application_hydrogami/pages/about_us_page.dart';
+import 'package:application_hydrogami/pages/gamifikasi/reward_page.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:application_hydrogami/pages/auth/login_page.dart';
@@ -352,8 +353,17 @@ class _BerandaPageState extends State<BerandaPage> {
     }
   }
 
+  // Tambahkan method ini dalam class _BerandaPageState
+  void _setDefaultWeather() {
+    setState(() {
+      _currentWeather = "Tidak dapat memuat data";
+      _weatherIcon = Icons.error;
+      _weatherColor = Colors.grey;
+      _isLoadingWeather = false;
+    });
+  }
+
   // Fungsi untuk mendapatkan data cuaca berdasarkan koordinat
-// Perbaikan logika penentuan kondisi cuaca
   Future<void> _getWeatherData(double latitude, double longitude) async {
     setState(() {
       _isLoadingWeather = true;
@@ -375,15 +385,16 @@ class _BerandaPageState extends State<BerandaPage> {
         final weatherDescription = data['weather'][0]['description'];
         final weatherId = data['weather'][0]['id'];
 
-        print("Weather ID: $weatherId"); // Debug log
-        print("Weather Main: $weatherMain"); // Debug log
-        print("Weather Description: $weatherDescription"); // Debug log
+        print("Weather ID: $weatherId");
+        print("Weather Main: $weatherMain");
+        print("Weather Description: $weatherDescription");
 
-        // PERBAIKAN: Logika penentuan cuaca yang lebih akurat
         String weatherCondition;
+
         if (weatherId >= 200 && weatherId < 300) {
           weatherCondition = 'Thunderstorm';
-        } else if (weatherId >= 300 && weatherId < 600) {
+        } else if ((weatherId >= 300 && weatherId < 600) ||
+            weatherMain == 'Rain') {
           weatherCondition = 'Rain';
         } else if (weatherId >= 600 && weatherId < 700) {
           weatherCondition = 'Snow';
@@ -391,15 +402,26 @@ class _BerandaPageState extends State<BerandaPage> {
           weatherCondition = 'Mist';
         } else if (weatherId == 800) {
           weatherCondition = 'Clear';
-        } else if (weatherId >= 801 && weatherId <= 804) {
-          // PERBAIKAN: ID 801-804 adalah berbagai tingkat awan
-          weatherCondition = 'Clouds';
+        } else if ((weatherId >= 801 && weatherId <= 804) ||
+            weatherMain == 'Clouds') {
+          // Deteksi jenis awan lebih spesifik
+          if (weatherDescription.contains('few clouds')) {
+            weatherCondition = 'Few clouds';
+          } else if (weatherDescription.contains('scattered clouds')) {
+            weatherCondition = 'Scattered clouds';
+          } else if (weatherDescription.contains('broken clouds')) {
+            weatherCondition = 'Broken clouds';
+          } else if (weatherDescription.contains('overcast clouds')) {
+            weatherCondition = 'Overcast clouds';
+          } else {
+            weatherCondition = 'Clouds';
+          }
         } else {
           // Fallback ke weatherMain jika ID tidak dikenali
           weatherCondition = weatherMain;
         }
 
-        print("Determined Weather Condition: $weatherCondition"); // Debug log
+        print("Determined Weather Condition: $weatherCondition");
 
         setState(() {
           _currentWeather = _getIndonesianWeather(weatherCondition);
@@ -407,9 +429,6 @@ class _BerandaPageState extends State<BerandaPage> {
           _weatherColor = _getWeatherColor(weatherCondition);
           _isLoadingWeather = false;
         });
-
-        // Debug log final result
-        print("Indonesian Weather: $_currentWeather");
       } else {
         print("API Error: ${response.statusCode}");
         _setDefaultWeather();
@@ -420,17 +439,7 @@ class _BerandaPageState extends State<BerandaPage> {
     }
   }
 
-// Fungsi untuk set default weather ketika error
-  void _setDefaultWeather() {
-    setState(() {
-      _currentWeather = "Tidak dapat memuat data";
-      _weatherIcon = Icons.error;
-      _weatherColor = Colors.grey;
-      _isLoadingWeather = false;
-    });
-  }
-
-// Fungsi penerjemahan yang diperbaiki
+// Fungsi penerjemahan yang diperbarui
   String _getIndonesianWeather(String englishWeather) {
     switch (englishWeather.toLowerCase()) {
       case 'clear':
@@ -440,13 +449,19 @@ class _BerandaPageState extends State<BerandaPage> {
       case 'few clouds':
         return 'Sedikit Berawan';
       case 'scattered clouds':
-        return 'Berawan Tersebar';
+        return 'Awan Tersebar';
       case 'broken clouds':
         return 'Berawan Sebagian';
       case 'overcast clouds':
         return 'Mendung';
       case 'rain':
         return 'Hujan';
+      case 'light rain':
+        return 'Hujan Ringan';
+      case 'moderate rain':
+        return 'Hujan Sedang';
+      case 'heavy rain':
+        return 'Hujan Lebat';
       case 'drizzle':
         return 'Gerimis';
       case 'thunderstorm':
@@ -462,16 +477,23 @@ class _BerandaPageState extends State<BerandaPage> {
     }
   }
 
-// Fungsi untuk mendapatkan icon cuaca berdasarkan kondisi
+// Fungsi icon yang diperbarui
   IconData _getWeatherIcon(String weatherCondition) {
     switch (weatherCondition.toLowerCase()) {
       case 'clear':
         return Icons.wb_sunny;
-      case 'clouds':
+      case 'few clouds':
+        return Icons.wb_cloudy;
+      case 'scattered clouds':
+      case 'broken clouds':
         return Icons.cloud;
       case 'overcast clouds':
-        return Icons.cloud;
+        return Icons.cloud_queue;
       case 'rain':
+      case 'light rain':
+      case 'moderate rain':
+        return Icons.beach_access;
+      case 'heavy rain':
         return Icons.grain;
       case 'drizzle':
         return Icons.grain;
@@ -488,17 +510,27 @@ class _BerandaPageState extends State<BerandaPage> {
     }
   }
 
-// Fungsi untuk mendapatkan warna berdasarkan kondisi cuaca
+// Fungsi warna yang diperbarui
   Color _getWeatherColor(String weatherCondition) {
     switch (weatherCondition.toLowerCase()) {
       case 'clear':
         return Colors.orange;
+      case 'few clouds':
+        return Colors.lightBlue;
+      case 'scattered clouds':
+        return Colors.blueGrey;
+      case 'broken clouds':
       case 'clouds':
         return Colors.grey;
       case 'overcast clouds':
-        return Colors.blueGrey;
+        return Colors.blueGrey.shade700;
       case 'rain':
+      case 'light rain':
+        return Colors.blue.shade300;
+      case 'moderate rain':
         return Colors.blue;
+      case 'heavy rain':
+        return Colors.blue.shade900;
       case 'drizzle':
         return Colors.lightBlue;
       case 'thunderstorm':
@@ -514,7 +546,7 @@ class _BerandaPageState extends State<BerandaPage> {
     }
   }
 
-// Fungsi untuk mendapatkan lokasi 
+// Fungsi untuk mendapatkan lokasi
   Future<void> _getCurrentLocation() async {
     setState(() {
       _isLoadingLocation = true;
@@ -541,7 +573,7 @@ class _BerandaPageState extends State<BerandaPage> {
       //Timeout
       Position position = await Geolocator.getCurrentPosition(
         desiredAccuracy: LocationAccuracy.high,
-        timeLimit: Duration(seconds: 10), 
+        timeLimit: Duration(seconds: 10),
       );
 
       print(
@@ -549,7 +581,7 @@ class _BerandaPageState extends State<BerandaPage> {
 
       // cek apakah di batam
       if (_isInBatam(position.latitude, position.longitude)) {
-        print("Location detected: Batam region"); 
+        print("Location detected: Batam region");
         _setBatamLocation(position);
         return;
       }
@@ -622,7 +654,7 @@ class _BerandaPageState extends State<BerandaPage> {
       locationName = "Unknown Location";
     }
 
-    // Override jika Mountain View terdeteksi 
+    // Override jika Mountain View terdeteksi
     if (locationName.contains("Mountain View") ||
         position.latitude > 35 &&
             position.latitude < 40 &&
@@ -747,8 +779,8 @@ class _BerandaPageState extends State<BerandaPage> {
         });
       }
 
-      // Panen dialog ketika tanaman berumur 60 hari
-      if (_plantAge >= 60 && !_isHarvestDialogShown) {
+      // Panen dialog ketika tanaman berumur 50 hari
+      if (_plantAge >= 50 && !_isHarvestDialogShown) {
         _isHarvestDialogShown = true;
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (mounted) {
@@ -1211,6 +1243,18 @@ class _BerandaPageState extends State<BerandaPage> {
                                 Navigator.push(
                                   context,
                                   MaterialPageRoute(
+                                      builder: (context) => RewardPage()),
+                                );
+                              },
+                              child: _buildCircleMenuWithLabel(
+                                  Icons.card_giftcard_rounded, 'Reward'),
+                            ),
+                            const SizedBox(width: 20),
+                            GestureDetector(
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
                                       builder: (context) => PanduanPage()),
                                 );
                               },
@@ -1592,7 +1636,7 @@ class _BerandaPageState extends State<BerandaPage> {
               decoration: BoxDecoration(
                 color: !_hasStartedPlanting
                     ? Colors.grey.withOpacity(0.2)
-                    : _plantAge >= 60
+                    : _plantAge >= 50
                         ? Colors.green.withOpacity(0.2)
                         : Colors.blue.withOpacity(0.2),
                 borderRadius: BorderRadius.circular(8),
@@ -1600,12 +1644,12 @@ class _BerandaPageState extends State<BerandaPage> {
               child: Icon(
                 !_hasStartedPlanting
                     ? Icons.grass
-                    : _plantAge >= 60
+                    : _plantAge >= 50
                         ? Icons.agriculture
                         : Icons.eco,
                 color: !_hasStartedPlanting
                     ? Colors.grey
-                    : _plantAge >= 60
+                    : _plantAge >= 50
                         ? Colors.green
                         : Colors.blue,
                 size: 16,
@@ -1619,7 +1663,7 @@ class _BerandaPageState extends State<BerandaPage> {
                   Text(
                     !_hasStartedPlanting
                         ? 'Tanaman Pakcoy'
-                        : _plantAge >= 60
+                        : _plantAge >= 50
                             ? 'Status Tanaman'
                             : 'Umur Pakcoy',
                     style: const TextStyle(
@@ -1630,7 +1674,7 @@ class _BerandaPageState extends State<BerandaPage> {
                   Text(
                     !_hasStartedPlanting
                         ? 'Belum ditanam'
-                        : _plantAge >= 60
+                        : _plantAge >= 50
                             ? 'Siap dipanen!'
                             : '$_plantAge hari',
                     style: TextStyle(
@@ -1638,7 +1682,7 @@ class _BerandaPageState extends State<BerandaPage> {
                       fontWeight: FontWeight.bold,
                       color: !_hasStartedPlanting
                           ? Colors.grey
-                          : _plantAge >= 60
+                          : _plantAge >= 50
                               ? Colors.green
                               : Colors.blue,
                     ),
@@ -1654,10 +1698,10 @@ class _BerandaPageState extends State<BerandaPage> {
                   ],
                   if (_hasStartedPlanting &&
                       _plantAge > 0 &&
-                      _plantAge < 60) ...[
+                      _plantAge < 50) ...[
                     const SizedBox(height: 4),
                     Text(
-                      '${60 - _plantAge} hari lagi sampai panen',
+                      '${50 - _plantAge} hari lagi sampai panen',
                       style: TextStyle(
                         fontSize: 10,
                         color: Colors.grey[600],
@@ -1665,7 +1709,7 @@ class _BerandaPageState extends State<BerandaPage> {
                     ),
                     const SizedBox(height: 2),
                     LinearProgressIndicator(
-                      value: _plantAge / 60,
+                      value: _plantAge / 50,
                       backgroundColor: Colors.grey[300],
                       valueColor: AlwaysStoppedAnimation<Color>(
                         _plantAge >= 45 ? Colors.orange : Colors.blue,
@@ -1706,7 +1750,7 @@ class _BerandaPageState extends State<BerandaPage> {
                         ],
                       ),
                     ),
-                  ] else if (_hasStartedPlanting && _plantAge >= 60) ...[
+                  ] else if (_hasStartedPlanting && _plantAge >= 50) ...[
                     const SizedBox(height: 8),
                     ElevatedButton(
                       onPressed: () {

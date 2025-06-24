@@ -13,18 +13,8 @@ class SensorDataService {
 
       final response = await http.post(
         Uri.parse('$_baseUrl/sensor-data'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-        },
-        body: json.encode({
-          'temperature': data.temperature,
-          'humidity': data.humidity,
-          'soil_moisture': data.soilMoisture,
-          'tds': data.tds,
-          'ph': data.ph,
-          'light': data.light,
-        }),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode(jsonData),
       );
 
       print('Response status: ${response.statusCode}'); // Debug 2

@@ -6,6 +6,8 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:application_hydrogami/services/notifikasi_services.dart';
+import 'package:application_hydrogami/services/sensor_data_service.dart';
+import 'package:application_hydrogami/models/sensor_data_model.dart';
 import 'dart:convert';
 import 'package:mqtt_client/mqtt_client.dart';
 import 'package:mqtt_client/mqtt_server_client.dart';
@@ -20,6 +22,7 @@ class MonitoringPage extends StatefulWidget {
 class _MonitoringPageState extends State<MonitoringPage> {
   int _bottomNavCurrentIndex = 0;
   DateTime? _lastAlertTime;
+  final SensorDataService _sensorDataService = SensorDataService();
 
   // MQTT Client Configuration
   late MqttServerClient client;
@@ -132,17 +135,18 @@ class _MonitoringPageState extends State<MonitoringPage> {
   void _subscribeToTopic() {
     client.subscribe(topic, MqttQos.atMostOnce);
 
-    client.updates?.listen((List<MqttReceivedMessage<MqttMessage>> c) {
+    client.updates?.listen((List<MqttReceivedMessage<MqttMessage>> c) async {
       final MqttPublishMessage message = c[0].payload as MqttPublishMessage;
       final payload =
           MqttPublishPayload.bytesToStringAsString(message.payload.message);
 
-      print('Received message: $payload');
+      print('Received MQTT message: $payload'); // Debug logging
 
       try {
         // Parse JSON data
         Map<String, dynamic> data = jsonDecode(payload);
 
+        // Update state dengan data baru
         setState(() {
           currentTDS = data['tds']?.toDouble() ?? 0;
           currentPH = data['ph']?.toDouble() ?? 0;
@@ -157,14 +161,92 @@ class _MonitoringPageState extends State<MonitoringPage> {
 
           // Update grafik
           _updateCharts();
-
-          // Cek notifikasi alert
-          _checkForAlerts(context);
         });
+
+        // Buat objek SensorData dari data yang diterima
+        final sensorData = SensorData(
+          temperature: currentTemp,
+          humidity: currentHumidity,
+          light: currentLight,
+          soilMoisture: currentSoilMoisture,
+          tds: currentTDS,
+          ph: currentPH,
+        );
+
+        // Kirim data ke API (dengan error handling)
+        try {
+          final success = await _sensorDataService.sendSensorData(sensorData);
+          if (success) {
+            print('Data successfully sent to API');
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('Data terkirim ke server'),
+                  duration: Duration(seconds: 2),
+                ),
+              );
+            }
+          } else {
+            print('Failed to send data to API');
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('Gagal mengirim data ke server'),
+                  duration: Duration(seconds: 2),
+                ),
+              );
+            }
+          }
+        } catch (apiError) {
+          print('API Error: $apiError');
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Error API: $apiError'),
+                duration: Duration(seconds: 3),
+              ),
+            );
+          }
+        }
+
+        // Cek notifikasi alert
+        if (mounted) {
+          _checkForAlerts(context);
+        }
       } catch (e) {
-        print('Error parsing MQTT message: $e');
+        print('Error processing MQTT message: $e');
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Format data sensor tidak valid'),
+              duration: Duration(seconds: 2),
+            ),
+          );
+        }
       }
     });
+  }
+
+  Future<void> _sendDataToApi() async {
+    final sensorData = SensorData(
+      temperature: currentTemp,
+      humidity: currentHumidity,
+      light: currentLight,
+      soilMoisture: currentSoilMoisture,
+      tds: currentTDS,
+      ph: currentPH,
+    );
+
+    try {
+      final success = await _sensorDataService.sendSensorData(sensorData);
+      if (success) {
+        print('Data berhasil dikirim ke API');
+      } else {
+        print('Gagal mengirim data ke API');
+      }
+    } catch (e) {
+      print('Error saat mengirim data: $e');
+    }
   }
 
   void _updateCharts() {

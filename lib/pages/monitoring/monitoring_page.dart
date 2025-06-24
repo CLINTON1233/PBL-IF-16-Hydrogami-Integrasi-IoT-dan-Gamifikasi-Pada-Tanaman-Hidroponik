@@ -9,8 +9,6 @@ import 'package:application_hydrogami/services/notifikasi_services.dart';
 import 'dart:convert';
 import 'package:mqtt_client/mqtt_client.dart';
 import 'package:mqtt_client/mqtt_server_client.dart';
-import 'package:application_hydrogami/services/sensor_data_service.dart';
-import 'package:application_hydrogami/models/sensor_data_model.dart';
 
 class MonitoringPage extends StatefulWidget {
   const MonitoringPage({super.key});
@@ -22,12 +20,15 @@ class MonitoringPage extends StatefulWidget {
 class _MonitoringPageState extends State<MonitoringPage> {
   int _bottomNavCurrentIndex = 0;
   DateTime? _lastAlertTime;
-  final SensorDataService _sensorDataService = SensorDataService();
 
   // MQTT Client Configuration
   late MqttServerClient client;
-  final String broker = '10.170.16.56';
-  final String clientIdentifier = 'flutter_client';
+  final String broker = 'broker.hivemq.com'; // Broker online gratis
+  final int port = 1883;
+  final String clientIdentifier =
+      'hydrogami_flutter_client_${DateTime.now().millisecondsSinceEpoch}'; // Client ID unik
+  final String topic =
+      'hydrogami/sensor/data'; // Sesuai dengan topik di Arduino
 
   // Data sensor real-time
   double currentTDS = 0;
@@ -131,7 +132,7 @@ class _MonitoringPageState extends State<MonitoringPage> {
   void _subscribeToTopic() {
     client.subscribe(topic, MqttQos.atMostOnce);
 
-    client.updates?.listen((List<MqttReceivedMessage<MqttMessage>> c) async {
+    client.updates?.listen((List<MqttReceivedMessage<MqttMessage>> c) {
       final MqttPublishMessage message = c[0].payload as MqttPublishMessage;
       final payload =
           MqttPublishPayload.bytesToStringAsString(message.payload.message);
@@ -160,23 +161,6 @@ class _MonitoringPageState extends State<MonitoringPage> {
           // Cek notifikasi alert
           _checkForAlerts(context);
         });
-
-        // Kirim data ke Laravel
-        final sensorData = SensorData(
-          temperature: currentTemp,
-          humidity: currentHumidity,
-          light: currentLight,
-          soilMoisture: currentSoilMoisture,
-          tds: currentTDS,
-          ph: currentPH,
-        );
-
-        final success = await _sensorDataService.sendSensorData(sensorData);
-        if (success) {
-          print('Data successfully sent to Laravel');
-        } else {
-          print('Failed to send data to Laravel');
-        }
       } catch (e) {
         print('Error parsing MQTT message: $e');
       }
@@ -353,6 +337,7 @@ class _MonitoringPageState extends State<MonitoringPage> {
                 _buildTemperatureHumidityChart(),
                 const SizedBox(height: 24),
                 _buildSensorCardsGrid(),
+                const SizedBox(height: 16),
               ],
             ),
           ],

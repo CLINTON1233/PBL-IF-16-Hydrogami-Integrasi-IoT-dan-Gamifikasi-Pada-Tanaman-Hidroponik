@@ -26,8 +26,12 @@ class _MonitoringPageState extends State<MonitoringPage> {
 
   // MQTT Client Configuration
   late MqttServerClient client;
-  final String broker = '192.168.15.189';
-  final String clientIdentifier = 'flutter_client';
+  final String broker = 'broker.hivemq.com'; // Broker online gratis
+  final int port = 1883;
+  final String clientIdentifier =
+      'hydrogami_flutter_client_${DateTime.now().millisecondsSinceEpoch}'; // Client ID unik
+  final String topic =
+      'hydrogami/sensor/data'; // Sesuai dengan topik di Arduino
 
   // Data sensor real-time
   double currentTDS = 0;
@@ -178,6 +182,7 @@ class _MonitoringPageState extends State<MonitoringPage> {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: Text('Data terkirim ke server'),
+                  backgroundColor: Colors.green,
                   duration: Duration(seconds: 2),
                 ),
               );
@@ -188,6 +193,7 @@ class _MonitoringPageState extends State<MonitoringPage> {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: Text('Gagal mengirim data ke server'),
+                  backgroundColor: Colors.red,
                   duration: Duration(seconds: 2),
                 ),
               );
@@ -276,32 +282,49 @@ class _MonitoringPageState extends State<MonitoringPage> {
       return; // Jangan tampilkan alert terlalu sering
     }
 
-    // Cek kondisi alert
     if (currentPH < 5.0 || currentPH > 7.0) {
-      _showAlert(
-          context,
-          'Peringatan pH',
-          'Nilai pH ${currentPH.toStringAsFixed(1)} di luar range optimal (5.5-6.5)!',
-          Colors.orange);
+      final message =
+          'Nilai pH ${currentPH.toStringAsFixed(1)} di luar range optimal (5.5-6.5)!';
+      _showAlert(context, 'Peringatan pH', message, Colors.orange);
+      _sendNotification('pH Sensor', message, 'warning');
       _lastAlertTime = now;
     }
 
     if (currentTDS < 300 || currentTDS > 1500) {
-      _showAlert(
-          context,
-          'Peringatan Nutrisi',
-          'Nilai TDS ${currentTDS.toStringAsFixed(0)} ppm di luar range optimal (800-1500 ppm)!',
-          Colors.orange);
+      final message =
+          'Nilai TDS ${currentTDS.toStringAsFixed(0)} ppm di luar range optimal (800-1500 ppm)!';
+      _showAlert(context, 'Peringatan Nutrisi', message, Colors.orange);
+      _sendNotification('TDS Sensor', message, 'warning');
       _lastAlertTime = now;
     }
 
     if (currentTemp < 15 || currentTemp > 35) {
-      _showAlert(
-          context,
-          'Peringatan Suhu',
-          'Suhu ${currentTemp.toStringAsFixed(1)}°C di luar range optimal (20-30°C)!',
-          Colors.orange);
+      final message =
+          'Suhu ${currentTemp.toStringAsFixed(1)}°C di luar range optimal (20-30°C)!';
+      _showAlert(context, 'Peringatan Suhu', message, Colors.orange);
+      _sendNotification('Suhu Sensor', message, 'danger');
       _lastAlertTime = now;
+    }
+  }
+
+// Fungsi baru untuk mengirim notifikasi
+  Future<void> _sendNotification(
+      String sensorType, String message, String status) async {
+    try {
+      final success = await LayananNotifikasi.kirimNotifikasi(
+        idSensor: '1', // Anda bisa menyesuaikan ID sensor
+        jenisSensor: sensorType,
+        pesan: message,
+        status: status,
+      );
+
+      if (success) {
+        print('Notifikasi berhasil dikirim');
+      } else {
+        print('Gagal mengirim notifikasi');
+      }
+    } catch (e) {
+      print('Error mengirim notifikasi: $e');
     }
   }
 

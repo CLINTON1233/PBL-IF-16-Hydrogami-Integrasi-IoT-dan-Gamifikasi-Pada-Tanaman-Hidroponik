@@ -1,9 +1,10 @@
+// notifikasi_page.dart
+import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:application_hydrogami/services/notifikasi_services.dart';
 import 'package:application_hydrogami/pages/beranda_page.dart';
 import 'package:application_hydrogami/pages/panduan/panduan_page.dart';
 import 'package:application_hydrogami/pages/profil_page.dart';
-import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 class NotifikasiPage extends StatefulWidget {
   const NotifikasiPage({super.key});
@@ -13,32 +14,39 @@ class NotifikasiPage extends StatefulWidget {
 }
 
 class _NotifikasiPageState extends State<NotifikasiPage> {
-  int _bottomNavCurrentIndex = 1;
+  // Add these missing variables
+  bool isLoading = false;
   List<NotifikasiModel> notifications = [];
-  bool isLoading = true;
+  bool hasNewNotifications = false;
+  int _bottomNavCurrentIndex = 1; // 1 for Notifications page  // ...
 
   @override
   void initState() {
     super.initState();
-    fetchNotifications();
+    _loadData();
+  }
+
+  Future<void> _loadData() async {
+    setState(() => isLoading = true);
+    await fetchNotifications();
+    setState(() => isLoading = false);
   }
 
   Future<void> fetchNotifications() async {
-    setState(() {
-      isLoading = true;
-    });
-
     try {
       final result = await LayananNotifikasi.ambilNotifikasi();
       setState(() {
         notifications = result;
-        isLoading = false;
+        hasNewNotifications = result.any((n) => n.dibaca == 0);
       });
     } catch (e) {
       print('Error: $e');
-      setState(() {
-        isLoading = false;
-      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Gagal memuat notifikasi'),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
   }
 
@@ -47,54 +55,108 @@ class _NotifikasiPageState extends State<NotifikasiPage> {
         await LayananNotifikasi.hapusNotifikasi(notification.idNotifikasi);
     if (success) {
       setState(() {
-        notifications.remove(notification);
+        notifications
+            .removeWhere((n) => n.idNotifikasi == notification.idNotifikasi);
+        hasNewNotifications = notifications.any((n) => n.dibaca == 0);
       });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Notifikasi berhasil dihapus'),
+          duration: Duration(seconds: 2),
+        ),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Gagal menghapus notifikasi'),
+          backgroundColor: Colors.red,
+          duration: Duration(seconds: 2),
+        ),
+      );
+    }
+  }
+
+  Future<void> markAsRead(NotifikasiModel notification) async {
+    if (notification.dibaca == 0) {
+      final success =
+          await LayananNotifikasi.tandaiDibaca(notification.idNotifikasi);
+      if (success) {
+        setState(() {
+          final index = notifications
+              .indexWhere((n) => n.idNotifikasi == notification.idNotifikasi);
+          if (index != -1) {
+            notifications[index] = NotifikasiModel(
+              idNotifikasi: notification.idNotifikasi,
+              idSensor: notification.idSensor,
+              jenisSensor: notification.jenisSensor,
+              pesan: notification.pesan,
+              status: notification.status,
+              dibaca: 1,
+              waktuDibuat: notification.waktuDibuat,
+            );
+            hasNewNotifications = notifications.any((n) => n.dibaca == 0);
+          }
+        });
+      }
     }
   }
 
   Map<String, List<NotifikasiModel>> _categorizeNotifications() {
-    final newNotifications = <NotifikasiModel>[];
-    final yesterdayNotifications = <NotifikasiModel>[];
-    final oneWeek = <NotifikasiModel>[];
-    final twoWeeks = <NotifikasiModel>[];
-    final threeWeeks = <NotifikasiModel>[];
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final yesterday = today.subtract(const Duration(days: 1));
 
-    for (var notification in notifications) {
-      final difference =
-          DateTime.now().difference(notification.waktuDibuat).inDays;
+    final newNotifications = notifications.where((n) {
+      return n.waktuDibuat.isAfter(now.subtract(const Duration(hours: 24)));
+    }).toList();
 
-      if (difference == 0) {
-        newNotifications.add(notification); // Baru saja
-      } else if (difference == 1) {
-        yesterdayNotifications.add(notification); // Semalam
-      } else if (difference <= 7) {
-        oneWeek.add(notification); // 1 Minggu Terakhir
-      } else if (difference <= 14) {
-        twoWeeks.add(notification); // 2 Minggu Terakhir
-      } else if (difference <= 21) {
-        threeWeeks.add(notification); // 3 Minggu Terakhir
-      }
-    }
+    final yesterdayNotifications = notifications.where((n) {
+      return n.waktuDibuat.isAfter(yesterday) && n.waktuDibuat.isBefore(today);
+    }).toList();
+
+    final thisWeek = notifications.where((n) {
+      return n.waktuDibuat.isAfter(now.subtract(const Duration(days: 7))) &&
+          !newNotifications.contains(n) &&
+          !yesterdayNotifications.contains(n);
+    }).toList();
+
+    final older = notifications.where((n) {
+      return !newNotifications.contains(n) &&
+          !yesterdayNotifications.contains(n) &&
+          !thisWeek.contains(n);
+    }).toList();
 
     return {
-      'Baru Saja': newNotifications,
-      'Kemarin': yesterdayNotifications,
-      '1 Minggu Terakhir': oneWeek,
-      '2 Minggu Terakhir': twoWeeks,
-      '3 Minggu Terakhir': threeWeeks,
+      if (newNotifications.isNotEmpty) 'Hari Ini': newNotifications,
+      if (yesterdayNotifications.isNotEmpty) 'Kemarin': yesterdayNotifications,
+      if (thisWeek.isNotEmpty) 'Minggu Ini': thisWeek,
+      if (older.isNotEmpty) 'Lebih Lama': older,
     };
   }
 
   String _timeAgo(DateTime time) {
     final duration = DateTime.now().difference(time);
-    if (duration.inDays >= 1) {
-      return '${duration.inDays} hari yang lalu';
-    } else if (duration.inHours >= 1) {
-      return '${duration.inHours} jam yang lalu';
-    } else if (duration.inMinutes >= 1) {
-      return '${duration.inMinutes} menit yang lalu';
-    } else {
-      return 'Baru saja';
+
+    if (duration.inDays > 0) {
+      return '${duration.inDays} hari lalu';
+    } else if (duration.inHours > 0) {
+      return '${duration.inHours} jam lalu';
+    } else if (duration.inMinutes > 0) {
+      return '${duration.inMinutes} menit lalu';
+    }
+    return 'Baru saja';
+  }
+
+  Color _getStatusColor(String status) {
+    switch (status.toLowerCase()) {
+      case 'danger':
+        return Colors.red;
+      case 'warning':
+        return Colors.orange;
+      case 'success':
+        return Colors.green;
+      default:
+        return Colors.blue;
     }
   }
 
@@ -107,14 +169,9 @@ class _NotifikasiPageState extends State<NotifikasiPage> {
       appBar: AppBar(
         backgroundColor: const Color(0xFF24D17E),
         elevation: 2,
-        centerTitle: false,
         title: Row(
           children: [
-            Image.asset(
-              'assets/logo.png',
-              width: 40,
-              height: 40,
-            ),
+            Image.asset('assets/logo.png', width: 40, height: 40),
             const SizedBox(width: 10),
             Text(
               'Notifikasi',
@@ -124,194 +181,254 @@ class _NotifikasiPageState extends State<NotifikasiPage> {
                 color: Colors.black,
               ),
             ),
+            if (hasNewNotifications)
+              Padding(
+                padding: const EdgeInsets.only(left: 8.0),
+                child: Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: const BoxDecoration(
+                    color: Colors.red,
+                    shape: BoxShape.circle,
+                  ),
+                ),
+              ),
           ],
         ),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_sharp),
-          iconSize: 20.0,
-          onPressed: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => const BerandaPage()),
-            );
-          },
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => const BerandaPage()),
+          ),
         ),
+        // actions dihapus seluruhnya
+
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: _loadData,
+          ),
+        ],
       ),
       body: isLoading
-          ? Center(child: CircularProgressIndicator())
-          : ListView(
-              children: categories.entries.map((entry) {
-                return Padding(
-                  padding: const EdgeInsets.symmetric(
-                      vertical: 8.0, horizontal: 16.0),
+          ? const Center(child: CircularProgressIndicator())
+          : notifications.isEmpty
+              ? Center(
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
+                      Icon(Icons.notifications_off,
+                          size: 60, color: Colors.grey[400]),
                       const SizedBox(height: 16),
                       Text(
-                        entry.key,
+                        'Tidak ada notifikasi',
                         style: GoogleFonts.poppins(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
+                          fontSize: 16,
+                          color: Colors.grey[600],
                         ),
                       ),
-                      ...entry.value.map((notification) {
-                        final timeAgo = _timeAgo(notification.waktuDibuat);
-                        return GestureDetector(
-                          onLongPress: () {
-                            showDialog(
-                              context: context,
-                              builder: (BuildContext context) {
-                                return AlertDialog(
-                                  title: const Icon(Icons.warning,
-                                      color: Colors.orange, size: 40),
-                                  content: const SingleChildScrollView(
-                                    child: Text(
-                                      "Apakah Kamu Yakin ingin Menghapus Notifikasi ini?",
-                                      textAlign: TextAlign.center,
-                                      style: TextStyle(fontSize: 16),
-                                    ),
-                                  ),
-                                  actions: <Widget>[
-                                    Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.spaceEvenly,
-                                      children: [
+                    ],
+                  ),
+                )
+              : RefreshIndicator(
+                  onRefresh: _loadData,
+                  child: ListView(
+                    children: [
+                      ...categories.entries.map((entry) {
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Padding(
+                              padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                              child: Text(
+                                entry.key,
+                                style: GoogleFonts.poppins(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.grey[700],
+                                ),
+                              ),
+                            ),
+                            ...entry.value.map((notification) {
+                              return Dismissible(
+                                key: Key(notification.idNotifikasi.toString()),
+                                direction: DismissDirection.endToStart,
+                                background: Container(
+                                  alignment: Alignment.centerRight,
+                                  padding: const EdgeInsets.only(right: 20),
+                                  color: Colors.red,
+                                  child: const Icon(Icons.delete,
+                                      color: Colors.white),
+                                ),
+                                confirmDismiss: (direction) async {
+                                  return await showDialog(
+                                    context: context,
+                                    builder: (context) => AlertDialog(
+                                      title: const Text('Hapus Notifikasi'),
+                                      content: const Text(
+                                          'Apakah Anda yakin ingin menghapus notifikasi ini?'),
+                                      actions: [
                                         TextButton(
-                                          child: const Text(
-                                            "Tidak, Batalkan!",
-                                            style: TextStyle(color: Colors.red),
-                                          ),
-                                          onPressed: () {
-                                            Navigator.of(context).pop();
-                                          },
+                                          onPressed: () =>
+                                              Navigator.of(context).pop(false),
+                                          child: const Text('Batal'),
                                         ),
                                         TextButton(
-                                          child: const Text(
-                                            "Ya, Hapus",
-                                            style:
-                                                TextStyle(color: Colors.green),
-                                          ),
-                                          onPressed: () {
-                                            handleDeleteNotification(
-                                                notification);
-                                            Navigator.of(context).pop();
-                                          },
+                                          onPressed: () =>
+                                              Navigator.of(context).pop(true),
+                                          child: const Text('Hapus',
+                                              style:
+                                                  TextStyle(color: Colors.red)),
                                         ),
                                       ],
                                     ),
-                                  ],
-                                );
-                              },
-                            );
-                          },
-                          child: Container(
-                            margin: const EdgeInsets.symmetric(vertical: 8.0),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(12),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.grey.withOpacity(0.2),
-                                  spreadRadius: 2,
-                                  blurRadius: 5,
-                                  offset: const Offset(0, 3),
+                                  );
+                                },
+                                onDismissed: (direction) =>
+                                    handleDeleteNotification(notification),
+                                child: InkWell(
+                                  onTap: () => markAsRead(notification),
+                                  child: Container(
+                                    margin: const EdgeInsets.symmetric(
+                                        horizontal: 16, vertical: 4),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white,
+                                      borderRadius: BorderRadius.circular(12),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.grey.withOpacity(0.1),
+                                          spreadRadius: 1,
+                                          blurRadius: 3,
+                                          offset: const Offset(0, 1),
+                                        ),
+                                      ],
+                                      border: notification.dibaca == 0
+                                          ? Border.all(
+                                              color: const Color(0xFF24D17E),
+                                              width: 1)
+                                          : null,
+                                    ),
+                                    child: ListTile(
+                                      contentPadding:
+                                          const EdgeInsets.symmetric(
+                                              horizontal: 16, vertical: 12),
+                                      leading: Container(
+                                        padding: const EdgeInsets.all(8),
+                                        decoration: BoxDecoration(
+                                          color: _getStatusColor(
+                                                  notification.status)
+                                              .withOpacity(0.2),
+                                          shape: BoxShape.circle,
+                                        ),
+                                        child: Icon(
+                                          _getIconForSensor(
+                                              notification.jenisSensor),
+                                          color: _getStatusColor(
+                                              notification.status),
+                                        ),
+                                      ),
+                                      title: Text(
+                                        notification.pesan,
+                                        style: GoogleFonts.poppins(
+                                          fontSize: 14,
+                                          fontWeight: notification.dibaca == 0
+                                              ? FontWeight.w600
+                                              : FontWeight.w500,
+                                        ),
+                                      ),
+                                      subtitle: Text(
+                                        _timeAgo(notification.waktuDibuat),
+                                        style: GoogleFonts.poppins(
+                                          fontSize: 12,
+                                          color: Colors.grey[600],
+                                        ),
+                                      ),
+                                      trailing: notification.dibaca == 0
+                                          ? Container(
+                                              width: 8,
+                                              height: 8,
+                                              decoration: const BoxDecoration(
+                                                color: Colors.red,
+                                                shape: BoxShape.circle,
+                                              ),
+                                            )
+                                          : null,
+                                    ),
+                                  ),
                                 ),
-                              ],
-                            ),
-                            child: ListTile(
-                              contentPadding: const EdgeInsets.symmetric(
-                                  vertical: 10, horizontal: 16),
-                              title: Text(
-                                notification.pesan ?? "Default message",
-                                style: GoogleFonts.poppins(
-                                    fontSize: 12, fontWeight: FontWeight.w500),
-                              ),
-                              subtitle: Text(
-                                'Dikirim: $timeAgo',
-                                style: GoogleFonts.poppins(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w300,
-                                    color: Colors.grey[600]),
-                              ),
-                              trailing: const Icon(
-                                Icons.notifications,
-                                color: Colors.black,
-                              ),
-                            ),
-                          ),
+                              );
+                            }).toList(),
+                          ],
                         );
                       }).toList(),
                     ],
                   ),
-                );
-              }).toList(),
-            ),
+                ),
       bottomNavigationBar: _buildBottomNavigation(),
     );
   }
 
-  Widget _buildBottomNavigation() {
-    return ClipRRect(
-      borderRadius: const BorderRadius.only(
-        topLeft: Radius.circular(10),
-        topRight: Radius.circular(10),
-      ),
-      child: BottomNavigationBar(
-        type: BottomNavigationBarType.fixed,
-        backgroundColor: const Color(0xFF24D17E),
-        onTap: (index) {
-          setState(() {
-            _bottomNavCurrentIndex = index;
-          });
+  IconData _getIconForSensor(String? jenisSensor) {
+    switch (jenisSensor?.toLowerCase()) {
+      case 'ph sensor':
+        return Icons.water_drop;
+      case 'suhu sensor':
+        return Icons.thermostat;
+      case 'tds sensor':
+        return Icons.science;
+      default:
+        return Icons.sensors;
+    }
+  }
 
-          switch (index) {
-            case 0: // Beranda
-              Navigator.pushReplacement(context,
-                  MaterialPageRoute(builder: (context) => const BerandaPage()));
-              break;
-            case 1: // Notifikasi
-              Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(
-                      builder: (context) => const NotifikasiPage()));
-              break;
-            case 2: // Panduan
-              Navigator.pushReplacement(context,
-                  MaterialPageRoute(builder: (context) => const PanduanPage()));
-              break;
-            case 3: // Profil
-              Navigator.pushReplacement(context,
-                  MaterialPageRoute(builder: (context) => const ProfilPage()));
-              break;
-          }
-        },
-        currentIndex: _bottomNavCurrentIndex,
-        items: const [
-          BottomNavigationBarItem(
-            activeIcon: Icon(Icons.home, color: Colors.black),
-            icon: Icon(Icons.home, color: Colors.white),
-            label: 'Beranda',
-          ),
-          BottomNavigationBarItem(
-            activeIcon: Icon(Icons.notifications, color: Colors.black),
-            icon: Icon(Icons.notifications, color: Colors.white),
-            label: 'Notifikasi',
-          ),
-          BottomNavigationBarItem(
-            activeIcon: Icon(Icons.assignment, color: Colors.black),
-            icon: Icon(Icons.assignment, color: Colors.white),
-            label: 'Panduan',
-          ),
-          BottomNavigationBarItem(
-            activeIcon: Icon(Icons.person, color: Colors.black),
-            icon: Icon(Icons.person, color: Colors.white),
-            label: 'Akun',
-          ),
-        ],
-        selectedItemColor: Colors.black,
-        unselectedItemColor: Colors.white,
-      ),
+  Widget _buildBottomNavigation() {
+    return BottomNavigationBar(
+      currentIndex: _bottomNavCurrentIndex,
+      type: BottomNavigationBarType.fixed,
+      backgroundColor: const Color(0xFF24D17E),
+      selectedItemColor: Colors.black,
+      unselectedItemColor: Colors.white,
+      onTap: (index) {
+        setState(() => _bottomNavCurrentIndex = index);
+        switch (index) {
+          case 0:
+            Navigator.pushReplacement(context,
+                MaterialPageRoute(builder: (context) => const BerandaPage()));
+            break;
+          case 1:
+            Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(
+                    builder: (context) => const NotifikasiPage()));
+            break;
+          case 2:
+            Navigator.pushReplacement(context,
+                MaterialPageRoute(builder: (context) => const PanduanPage()));
+            break;
+          case 3:
+            Navigator.pushReplacement(context,
+                MaterialPageRoute(builder: (context) => const ProfilPage()));
+            break;
+        }
+      },
+      items: const [
+        BottomNavigationBarItem(
+          icon: Icon(Icons.home),
+          label: 'Beranda',
+        ),
+        BottomNavigationBarItem(
+          icon: Icon(Icons.notifications),
+          label: 'Notifikasi',
+        ),
+        BottomNavigationBarItem(
+          icon: Icon(Icons.assignment),
+          label: 'Panduan',
+        ),
+        BottomNavigationBarItem(
+          icon: Icon(Icons.person),
+          label: 'Profil',
+        ),
+      ],
     );
   }
 }

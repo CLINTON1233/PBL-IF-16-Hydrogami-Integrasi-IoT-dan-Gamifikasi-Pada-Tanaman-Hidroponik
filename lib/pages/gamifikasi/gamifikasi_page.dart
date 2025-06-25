@@ -63,13 +63,12 @@ class _GamifikasiPageState extends State<GamifikasiPage>
     "PH DOWN": Colors.red,
   };
 
-  // MQTT Client
+  // MQTT Configuration
   late MqttServerClient client;
-
-  final String broker = '192.168.15.189';
-
-  final String broker = '192.168.15.53';
-
+  final String broker = 'broker.hivemq.com';
+  final int port = 1883;
+  final String clientIdentifier =
+      'hydrogami_gamifikasi_${DateTime.now().millisecondsSinceEpoch}';
   final String topic = 'gamifikasi/control';
 
   @override
@@ -119,10 +118,85 @@ class _GamifikasiPageState extends State<GamifikasiPage>
 
   @override
   void dispose() {
+    client.disconnect();
     _pulseController.dispose();
     _rotationController.dispose();
     _glowController.dispose();
     super.dispose();
+  }
+
+  Future<void> connectMQTT() async {
+    client = MqttServerClient(broker, clientIdentifier);
+    client.port = port;
+    client.keepAlivePeriod = 60;
+    client.onDisconnected = _onDisconnected;
+    client.onConnected = _onConnected;
+    client.onSubscribed = _onSubscribed;
+    client.pongCallback = _pong;
+
+    try {
+      await client.connect();
+    } catch (e) {
+      print('Exception: $e');
+      client.disconnect();
+      // Coba reconnect setelah 5 detik
+      await Future.delayed(const Duration(seconds: 5));
+      connectMQTT();
+      return;
+    }
+
+    if (client.connectionStatus?.state == MqttConnectionState.connected) {
+      print('MQTT client connected');
+    } else {
+      print('ERROR: MQTT client connection failed - disconnecting');
+      client.disconnect();
+    }
+  }
+
+  void _onConnected() {
+    print('Connected to MQTT broker');
+  }
+
+  void _onDisconnected() {
+    print('Disconnected from MQTT broker');
+    // Coba reconnect setelah 3 detik
+    Future.delayed(const Duration(seconds: 3), () {
+      connectMQTT();
+    });
+  }
+
+  void _onSubscribed(String topic) {
+    print('Subscribed to topic: $topic');
+  }
+
+  void _pong() {
+    print('Ping response received');
+  }
+
+  void publishControl(String device, bool isActive) {
+    if (client.connectionStatus?.state != MqttConnectionState.connected) {
+      print('MQTT not connected, trying to reconnect...');
+      connectMQTT();
+      return;
+    }
+
+    final builder = MqttClientPayloadBuilder();
+    String message = isActive ? "ON" : "OFF";
+    String specificTopic = "$topic/$device";
+
+    builder.addString(message);
+    client.publishMessage(specificTopic, MqttQos.atLeastOnce, builder.payload!);
+    print('Published to $specificTopic: $message');
+
+    // Untuk debugging, bisa ditambahkan snackbar
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Mengirim perintah: $device $message'),
+          duration: const Duration(seconds: 1),
+        ),
+      );
+    }
   }
 
   void _triggerControlAnimation(String controlName) {
@@ -209,42 +283,9 @@ class _GamifikasiPageState extends State<GamifikasiPage>
     }
   }
 
-  Future<void> connectMQTT() async {
-    client = MqttServerClient(broker, '');
-    client.port = 1883;
-    client.keepAlivePeriod = 20;
-    client.logging(on: false);
-    client.onDisconnected = onDisconnected;
-
-    try {
-      await client.connect();
-      debugPrint('MQTT Connected');
-    } catch (e) {
-      debugPrint('MQTT Connection failed: $e');
-      client.disconnect();
-    }
-  }
-
-  void onDisconnected() {
-    debugPrint('⚠️ MQTT Disconnected');
-  }
-
-  void publishControl(String device, bool isActive) {
-    if (client.connectionStatus == null ||
-        client.connectionStatus!.state != MqttConnectionState.connected) {
-      debugPrint('MQTT not connected, trying to reconnect...');
-      connectMQTT();
-      return;
-    }
-
-    final builder = MqttClientPayloadBuilder();
-    String message = isActive ? "ON" : "OFF";
-    String specificTopic = "$topic/$device";
-
-    builder.addString(message);
-    client.publishMessage(specificTopic, MqttQos.atLeastOnce, builder.payload!);
-    debugPrint('📤 Published to $specificTopic: $message');
-  }
+  // ... [Bagian widget lainnya tetap sama seperti sebelumnya] ...
+  // [Tetap sertakan semua widget yang ada di kode asli Anda]
+  // [Mulai dari Widget build() hingga akhir file]
 
   @override
   Widget build(BuildContext context) {
@@ -336,6 +377,9 @@ class _GamifikasiPageState extends State<GamifikasiPage>
       bottomNavigationBar: _buildBottomNavigation(),
     );
   }
+
+  // [Sertakan semua method widget lainnya di sini]
+  // [_buildEnhancedGameArea, _buildAutomaticControlSection, dll.]
 
   Widget _buildEnhancedGameArea() {
     return Container(

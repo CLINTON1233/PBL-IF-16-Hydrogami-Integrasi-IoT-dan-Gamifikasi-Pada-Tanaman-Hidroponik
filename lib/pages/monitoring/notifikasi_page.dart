@@ -1,4 +1,3 @@
-// notifikasi_page.dart
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:application_hydrogami/services/notifikasi_services.dart';
@@ -14,11 +13,10 @@ class NotifikasiPage extends StatefulWidget {
 }
 
 class _NotifikasiPageState extends State<NotifikasiPage> {
-  // Add these missing variables
   bool isLoading = false;
   List<NotifikasiModel> notifications = [];
   bool hasNewNotifications = false;
-  int _bottomNavCurrentIndex = 1; // 1 for Notifications page  // ...
+  int _bottomNavCurrentIndex = 1; // 1 for Notifications page
 
   @override
   void initState() {
@@ -98,6 +96,71 @@ class _NotifikasiPageState extends State<NotifikasiPage> {
           }
         });
       }
+    }
+  }
+
+  Future<void> _showDeleteAllConfirmation() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Hapus Semua Notifikasi'),
+        content:
+            const Text('Apakah Anda yakin ingin menghapus semua notifikasi?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Batal'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child:
+                const Text('Hapus Semua', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      await _deleteAllNotifications();
+    }
+  }
+
+  Future<void> _deleteAllNotifications() async {
+    setState(() => isLoading = true);
+
+    try {
+      final success = await LayananNotifikasi.hapusSemuaNotifikasi();
+
+      if (success) {
+        setState(() {
+          notifications.clear();
+          hasNewNotifications = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Semua notifikasi berhasil dihapus'),
+            duration: Duration(seconds: 2),
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Gagal menghapus semua notifikasi'),
+            backgroundColor: Colors.red,
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error: ${e.toString()}'),
+          backgroundColor: Colors.red,
+          duration: const Duration(seconds: 2),
+        ),
+      );
+    } finally {
+      setState(() => isLoading = false);
     }
   }
 
@@ -201,13 +264,12 @@ class _NotifikasiPageState extends State<NotifikasiPage> {
             MaterialPageRoute(builder: (context) => const BerandaPage()),
           ),
         ),
-        // actions dihapus seluruhnya
-
         actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: _loadData,
-          ),
+          if (notifications.isNotEmpty)
+            IconButton(
+              icon: const Icon(Icons.delete_sweep),
+              onPressed: () => _showDeleteAllConfirmation(),
+            ),
         ],
       ),
       body: isLoading

@@ -31,6 +31,7 @@ dependencies:
   simple_animations: ^5.2.0
   flutter_spin_wheel_menu: ^0.0.4
 
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

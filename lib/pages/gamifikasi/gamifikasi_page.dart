@@ -225,6 +225,72 @@ class _GamifikasiPageState extends State<GamifikasiPage>
     });
   }
 
+  // Method untuk menangani perubahan kontrol otomatis
+  void _handleAutomaticControlToggle() {
+    setState(() {
+      isAutomaticControl = !isAutomaticControl;
+
+      if (isAutomaticControl) {
+        // Jika kontrol otomatis aktif, nyalakan semua kontrol
+        controls = {
+          "A MIX": true,
+          "B MIX": true,
+          "PH UP": true,
+          "PH DOWN": true,
+        };
+
+        // Publish semua kontrol sebagai ON
+        controls.forEach((key, value) {
+          publishControl(key, value);
+        });
+
+        // Trigger animation untuk semua kontrol
+        _triggerControlAnimation("AUTO_ALL");
+      } else {
+        // Jika kontrol otomatis nonaktif, matikan semua kontrol
+        controls = {
+          "A MIX": false,
+          "B MIX": false,
+          "PH UP": false,
+          "PH DOWN": false,
+        };
+
+        // Publish semua kontrol sebagai OFF
+        controls.forEach((key, value) {
+          publishControl(key, value);
+        });
+      }
+    });
+
+    // Publish status kontrol otomatis
+    publishControl("AUTO", isAutomaticControl);
+  }
+
+  // Method untuk menangani kontrol individual
+  void _handleIndividualControl(String controlName) {
+    // Hanya bisa mengubah kontrol individual jika kontrol otomatis nonaktif
+    if (!isAutomaticControl) {
+      setState(() {
+        controls[controlName] = !controls[controlName]!;
+      });
+      publishControl(controlName, controls[controlName]!);
+
+      // Trigger animation jika kontrol dinyalakan
+      if (controls[controlName]!) {
+        _triggerControlAnimation(controlName);
+      }
+    } else {
+      // Tampilkan pesan jika mencoba mengubah kontrol saat mode otomatis aktif
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Matikan kontrol otomatis untuk mengontrol manual'),
+          duration: Duration(seconds: 2),
+          backgroundColor: Colors.orange,
+        ),
+      );
+    }
+  }
+
   Future<void> _handleRefresh() async {
     try {
       // Reconnect MQTT if needed
@@ -282,10 +348,6 @@ class _GamifikasiPageState extends State<GamifikasiPage>
       print('Error loading user data: $e');
     }
   }
-
-  // ... [Bagian widget lainnya tetap sama seperti sebelumnya] ...
-  // [Tetap sertakan semua widget yang ada di kode asli Anda]
-  // [Mulai dari Widget build() hingga akhir file]
 
   @override
   Widget build(BuildContext context) {
@@ -378,9 +440,6 @@ class _GamifikasiPageState extends State<GamifikasiPage>
     );
   }
 
-  // [Sertakan semua method widget lainnya di sini]
-  // [_buildEnhancedGameArea, _buildAutomaticControlSection, dll.]
-
   Widget _buildEnhancedGameArea() {
     return Container(
       padding: const EdgeInsets.all(20),
@@ -409,18 +468,24 @@ class _GamifikasiPageState extends State<GamifikasiPage>
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             decoration: BoxDecoration(
               color: _activeControl != null
-                  ? activeColors[_activeControl!]!.withOpacity(0.2)
+                  ? (isAutomaticControl
+                      ? const Color(0xFF24D17E).withOpacity(0.2)
+                      : activeColors[_activeControl!]!.withOpacity(0.2))
                   : Colors.grey.withOpacity(0.1),
               borderRadius: BorderRadius.circular(20),
             ),
             child: Text(
               _activeControl != null
-                  ? 'Kontrol $_activeControl Aktif'
+                  ? (isAutomaticControl
+                      ? 'Mode Otomatis Aktif'
+                      : 'Kontrol $_activeControl Aktif')
                   : 'Sistem Siap',
               style: TextStyle(
                 fontWeight: FontWeight.bold,
                 color: _activeControl != null
-                    ? activeColors[_activeControl!]
+                    ? (isAutomaticControl
+                        ? const Color(0xFF24D17E)
+                        : activeColors[_activeControl!])
                     : Colors.grey,
               ),
             ),
@@ -444,7 +509,9 @@ class _GamifikasiPageState extends State<GamifikasiPage>
                           shape: BoxShape.circle,
                           gradient: RadialGradient(
                             colors: [
-                              activeColors[_activeControl!]!
+                              (isAutomaticControl
+                                      ? const Color(0xFF24D17E)
+                                      : activeColors[_activeControl!]!)
                                   .withOpacity(_glowAnimation.value * 0.3),
                               Colors.transparent,
                             ],
@@ -477,7 +544,7 @@ class _GamifikasiPageState extends State<GamifikasiPage>
                             borderRadius: BorderRadius.circular(200),
                             child: Image.asset(
                               'assets/skala_easy.png',
-                              width: 450, // Reduced size to fit better
+                              width: 450,
                               height: 450,
                               fit: BoxFit.cover,
                             ),
@@ -500,16 +567,20 @@ class _GamifikasiPageState extends State<GamifikasiPage>
                         color: Colors.white,
                         shape: BoxShape.circle,
                         border: Border.all(
-                          color: _activeControl != null
-                              ? activeColors[_activeControl!]!
-                              : const Color(0xFF24D17E),
+                          color: isAutomaticControl
+                              ? const Color(0xFF24D17E)
+                              : (_activeControl != null
+                                  ? activeColors[_activeControl!]!
+                                  : const Color(0xFF24D17E)),
                           width: 4,
                         ),
                         boxShadow: [
                           BoxShadow(
-                            color: (_activeControl != null
-                                    ? activeColors[_activeControl!]!
-                                    : const Color(0xFF24D17E))
+                            color: (isAutomaticControl
+                                    ? const Color(0xFF24D17E)
+                                    : (_activeControl != null
+                                        ? activeColors[_activeControl!]!
+                                        : const Color(0xFF24D17E)))
                                 .withOpacity(0.4),
                             blurRadius: 20,
                             offset: const Offset(0, 5),
@@ -523,10 +594,12 @@ class _GamifikasiPageState extends State<GamifikasiPage>
                           gradient: LinearGradient(
                             colors: [
                               const Color(0xFFF8FFF9),
-                              _activeControl != null
-                                  ? activeColors[_activeControl!]!
-                                      .withOpacity(0.1)
-                                  : const Color(0xFFE8F8ED)
+                              isAutomaticControl
+                                  ? const Color(0xFF24D17E).withOpacity(0.1)
+                                  : (_activeControl != null
+                                      ? activeColors[_activeControl!]!
+                                          .withOpacity(0.1)
+                                      : const Color(0xFFE8F8ED))
                             ],
                             begin: Alignment.topCenter,
                             end: Alignment.bottomCenter,
@@ -545,7 +618,6 @@ class _GamifikasiPageState extends State<GamifikasiPage>
                     onDragEnd: (details) {
                       setState(() {
                         // Update posisi maskot berdasarkan posisi drag
-                        // Menghitung posisi relatif terhadap widget yang lebih besar
                         RenderBox renderBox =
                             context.findRenderObject() as RenderBox;
                         Offset localOffset =
@@ -565,16 +637,20 @@ class _GamifikasiPageState extends State<GamifikasiPage>
                               color: Colors.white,
                               shape: BoxShape.circle,
                               border: Border.all(
-                                color: _activeControl != null
-                                    ? activeColors[_activeControl!]!
-                                    : const Color(0xFF24D17E),
+                                color: isAutomaticControl
+                                    ? const Color(0xFF24D17E)
+                                    : (_activeControl != null
+                                        ? activeColors[_activeControl!]!
+                                        : const Color(0xFF24D17E)),
                                 width: 4,
                               ),
                               boxShadow: [
                                 BoxShadow(
-                                  color: (_activeControl != null
-                                          ? activeColors[_activeControl!]!
-                                          : const Color(0xFF24D17E))
+                                  color: (isAutomaticControl
+                                          ? const Color(0xFF24D17E)
+                                          : (_activeControl != null
+                                              ? activeColors[_activeControl!]!
+                                              : const Color(0xFF24D17E)))
                                       .withOpacity(0.4),
                                   blurRadius: 20,
                                   offset: const Offset(0, 5),
@@ -588,10 +664,13 @@ class _GamifikasiPageState extends State<GamifikasiPage>
                                 gradient: LinearGradient(
                                   colors: [
                                     const Color(0xFFF8FFF9),
-                                    _activeControl != null
-                                        ? activeColors[_activeControl!]!
+                                    isAutomaticControl
+                                        ? const Color(0xFF24D17E)
                                             .withOpacity(0.1)
-                                        : const Color(0xFFE8F8ED)
+                                        : (_activeControl != null
+                                            ? activeColors[_activeControl!]!
+                                                .withOpacity(0.1)
+                                            : const Color(0xFFE8F8ED))
                                   ],
                                   begin: Alignment.topCenter,
                                   end: Alignment.bottomCenter,
@@ -627,8 +706,8 @@ class _GamifikasiPageState extends State<GamifikasiPage>
                 if (_activeControl != null) ...[
                   ...List.generate(6, (index) {
                     return Positioned(
-                      left: 50 + (index * 40.0), // Adjusted spacing
-                      top: 100 + (index % 2 * 80.0), // Adjusted spacing
+                      left: 50 + (index * 40.0),
+                      top: 100 + (index % 2 * 80.0),
                       child: AnimatedBuilder(
                         animation: _glowAnimation,
                         builder: (context, child) {
@@ -640,7 +719,9 @@ class _GamifikasiPageState extends State<GamifikasiPage>
                                 width: 8,
                                 height: 8,
                                 decoration: BoxDecoration(
-                                  color: activeColors[_activeControl!],
+                                  color: isAutomaticControl
+                                      ? const Color(0xFF24D17E)
+                                      : activeColors[_activeControl!],
                                   shape: BoxShape.circle,
                                 ),
                               ),
@@ -665,10 +746,15 @@ class _GamifikasiPageState extends State<GamifikasiPage>
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(15),
+        border: isAutomaticControl
+            ? Border.all(color: const Color(0xFF24D17E), width: 2)
+            : null,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 10,
+            color: isAutomaticControl
+                ? const Color(0xFF24D17E).withOpacity(0.2)
+                : Colors.black.withOpacity(0.1),
+            blurRadius: isAutomaticControl ? 15 : 10,
             offset: const Offset(0, 5),
           ),
         ],
@@ -688,7 +774,9 @@ class _GamifikasiPageState extends State<GamifikasiPage>
                 ),
               ),
               Text(
-                isAutomaticControl ? "Aktif" : "Nonaktif",
+                isAutomaticControl
+                    ? "Aktif - Semua kontrol menyala"
+                    : "Nonaktif - Kontrol manual tersedia",
                 style: TextStyle(
                   fontSize: 12,
                   color: isAutomaticControl ? Colors.green : Colors.grey,
@@ -698,22 +786,20 @@ class _GamifikasiPageState extends State<GamifikasiPage>
             ],
           ),
           GestureDetector(
-            onTap: () {
-              setState(() {
-                isAutomaticControl = !isAutomaticControl;
-              });
-              publishControl("AUTO", isAutomaticControl);
-            },
+            onTap: _handleAutomaticControlToggle,
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 300),
               width: 60,
               height: 30,
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(15),
-                color: isAutomaticControl ? Colors.green : Colors.grey,
+                color:
+                    isAutomaticControl ? const Color(0xFF24D17E) : Colors.grey,
                 boxShadow: [
                   BoxShadow(
-                    color: (isAutomaticControl ? Colors.green : Colors.grey)
+                    color: (isAutomaticControl
+                            ? const Color(0xFF24D17E)
+                            : Colors.grey)
                         .withOpacity(0.3),
                     blurRadius: 8,
                     offset: const Offset(0, 2),
@@ -746,6 +832,19 @@ class _GamifikasiPageState extends State<GamifikasiPage>
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        // Tambahkan label "Kontrol Manual" di atas tombol-tombol
+        Padding(
+          padding: const EdgeInsets.only(bottom: 8.0),
+          child: Text(
+            'Kontrol Manual',
+            style: GoogleFonts.poppins(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              color: Colors.black87,
+            ),
+          ),
+        ),
+
         GridView.builder(
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
@@ -762,17 +861,8 @@ class _GamifikasiPageState extends State<GamifikasiPage>
               name: controlName,
               isActive: controls[controlName]!,
               activeColor: activeColors[controlName]!,
-              onTap: () {
-                setState(() {
-                  controls[controlName] = !controls[controlName]!;
-                });
-                publishControl(controlName, controls[controlName]!);
-
-                // Trigger animation if control is turned on
-                if (controls[controlName]!) {
-                  _triggerControlAnimation(controlName);
-                }
-              },
+              isLocked: isAutomaticControl,
+              onTap: () => _handleIndividualControl(controlName),
             );
           },
         ),
@@ -792,10 +882,11 @@ class _GamifikasiPageState extends State<GamifikasiPage>
     required String name,
     required bool isActive,
     required Color activeColor,
+    required bool isLocked,
     required VoidCallback onTap,
   }) {
     return GestureDetector(
-      onTap: onTap,
+      onTap: isLocked ? null : onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 300),
         decoration: BoxDecoration(
@@ -821,42 +912,66 @@ class _GamifikasiPageState extends State<GamifikasiPage>
             ),
           ],
         ),
-        child: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              AnimatedContainer(
-                duration: const Duration(milliseconds: 300),
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: isActive
-                      ? Colors.white.withOpacity(0.2)
-                      : Colors.transparent,
-                  shape: BoxShape.circle,
+        child: Opacity(
+          opacity: isLocked ? 0.7 : 1.0,
+          child: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    AnimatedContainer(
+                      duration: const Duration(milliseconds: 300),
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: isActive
+                            ? Colors.white.withOpacity(0.2)
+                            : Colors.transparent,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        controlIcons[name],
+                        color: isActive ? Colors.white : Colors.black54,
+                        size: 24,
+                      ),
+                    ),
+                    if (isLocked)
+                      Positioned(
+                        right: 0,
+                        top: 0,
+                        child: Container(
+                          padding: const EdgeInsets.all(2),
+                          decoration: const BoxDecoration(
+                            color: Colors.orange,
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(
+                            Icons.lock,
+                            color: Colors.white,
+                            size: 12,
+                          ),
+                        ),
+                      ),
+                  ],
                 ),
-                child: Icon(
-                  controlIcons[name],
-                  color: isActive ? Colors.white : Colors.black54,
-                  size: 24,
+                const SizedBox(height: 4),
+                Text(
+                  name,
+                  style: TextStyle(
+                    color: isActive ? Colors.white : Colors.black54,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 12,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                name,
-                style: TextStyle(
-                  color: isActive ? Colors.white : Colors.black54,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 12,
-                ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
     );
   }
 
-  // Widget untuk Level dengan Ikon
   Widget _buildLevelWidget({required int level}) {
     return InkWell(
       onTap: () {
@@ -895,7 +1010,6 @@ class _GamifikasiPageState extends State<GamifikasiPage>
     );
   }
 
-  // Widget untuk Reward (Jumlah Koin)
   Widget _buildRewardWidget({required int coins}) {
     return InkWell(
       onTap: () {
@@ -982,7 +1096,6 @@ class _GamifikasiPageState extends State<GamifikasiPage>
     );
   }
 
-  // Fungsi untuk membuat Bottom Navigation Bar
   Widget _buildBottomNavigation() {
     return ClipRRect(
       borderRadius: const BorderRadius.only(

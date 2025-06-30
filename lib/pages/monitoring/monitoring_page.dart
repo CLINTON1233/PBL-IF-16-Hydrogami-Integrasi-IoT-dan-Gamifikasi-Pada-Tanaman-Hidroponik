@@ -40,10 +40,6 @@ class _MonitoringPageState extends State<MonitoringPage> {
   double currentHumidity = 0;
   double currentLight = 0;
   int currentSoilMoisture = 0;
-  int relayWater = 0;
-  int relayAbMix = 0;
-  int relayPhUp = 0;
-  int relayPhDown = 0;
 
   // Data untuk grafik
   List<FlSpot> chartDataTDS = [];
@@ -154,10 +150,6 @@ class _MonitoringPageState extends State<MonitoringPage> {
           currentHumidity = data['humidity']?.toDouble() ?? 0;
           currentLight = data['light']?.toDouble() ?? 0;
           currentSoilMoisture = data['soil_moisture']?.toInt() ?? 0;
-          relayWater = data['relay_water']?.toInt() ?? 0;
-          relayAbMix = data['relay_ab_mix']?.toInt() ?? 0;
-          relayPhUp = data['relay_ph_up']?.toInt() ?? 0;
-          relayPhDown = data['relay_ph_down']?.toInt() ?? 0;
 
           // Update grafik
           _updateCharts();
@@ -880,44 +872,6 @@ class _MonitoringPageState extends State<MonitoringPage> {
               status: determineSensorStatus('Intensitas Cahaya', currentLight),
             ),
           ],
-        ),
-      ],
-    );
-  }
-
-  Widget _buildRelayIndicator({
-    required String label,
-    required bool status,
-    required Color activeColor,
-  }) {
-    return Column(
-      children: [
-        Container(
-          width: 24,
-          height: 24,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: status ? activeColor : Colors.grey[300],
-            border: Border.all(
-              color: Colors.grey[500]!,
-              width: 1,
-            ),
-          ),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          label,
-          style: GoogleFonts.poppins(
-            fontSize: 12,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-        Text(
-          status ? 'ON' : 'OFF',
-          style: GoogleFonts.poppins(
-            fontSize: 10,
-            color: Colors.grey[600],
-          ),
         ),
       ],
     );

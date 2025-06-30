@@ -801,89 +801,94 @@ class _BerandaPageState extends State<BerandaPage> {
       builder: (BuildContext context) {
         return Stack(
           children: [
-            // Confetti efek
+            // Confetti effects
             ...List.generate(50, (index) => _buildConfetti(index)),
-            // Dialog
+
+            // Main dialog
             AlertDialog(
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(20),
               ),
-              title: Column(
-                children: [
-                  Icon(
-                    Icons.celebration,
-                    color: Colors.orange,
-                    size: 50,
-                  ),
-                  SizedBox(height: 10),
-                  Text(
-                    'Selamat!',
-                    style: TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.green,
-                    ),
-                  ),
-                ],
-              ),
               content: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(
-                    'Tanaman pakcoy Anda sudah siap dipanen!',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(fontSize: 16),
+                  const Icon(
+                    Icons.celebration,
+                    size: 80,
+                    color: Colors.amber,
                   ),
-                  SizedBox(height: 10),
+                  const SizedBox(height: 16),
                   Text(
-                    'Umur tanaman: $_plantAge hari',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.green[600],
+                    'LEVEL PANEN!',
+                    style: GoogleFonts.poppins(
+                      fontSize: 24,
                       fontWeight: FontWeight.bold,
+                      color: Colors.amber,
                     ),
                   ),
-                  SizedBox(height: 10),
+                  const SizedBox(height: 8),
                   Text(
-                    'Apakah Anda ingin menanam lagi?',
+                    'Panen ke-${_totalHarvests + 1}',
+                    style: GoogleFonts.poppins(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Selamat! Tanaman Anda telah mencapai masa panen',
                     textAlign: TextAlign.center,
-                    style: TextStyle(
+                    style: GoogleFonts.poppins(
                       fontSize: 14,
                       color: Colors.grey[600],
                     ),
                   ),
-                ],
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () {
-                    _isHarvestDialogShown = false;
-                    Navigator.of(context).pop();
-                    _showPostponeMessage();
-                  },
-                  child: Text(
-                    'Nanti Saja',
-                    style: TextStyle(color: Colors.grey),
-                  ),
-                ),
-                ElevatedButton(
-                  onPressed: () async {
-                    await _harvestPlant();
-                    Navigator.of(context).pop();
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.green,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Umur $_plantAge hari',
+                    style: GoogleFonts.poppins(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF24D17E),
                     ),
                   ),
-                  child: Text(
-                    'Ya, Tanam!',
-                    style: TextStyle(color: Colors.white),
+                  const SizedBox(height: 20),
+                  ElevatedButton(
+                    onPressed: () async {
+                      await _harvestPlant();
+                      Navigator.of(context).pop();
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF24D17E),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      minimumSize: const Size(double.infinity, 50),
+                    ),
+                    child: Text(
+                      'Panen Sekarang',
+                      style: GoogleFonts.poppins(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
                   ),
-                ),
-              ],
+                  const SizedBox(height: 12),
+                  TextButton(
+                    onPressed: () {
+                      _isHarvestDialogShown = false;
+                      Navigator.of(context).pop();
+                      _showPostponeMessage();
+                    },
+                    child: Text(
+                      'Tunda Panen',
+                      style: GoogleFonts.poppins(
+                        color: Colors.grey[600],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ],
         );
@@ -936,79 +941,106 @@ class _BerandaPageState extends State<BerandaPage> {
   void _showLogoutConfirmationDialog() {
     showDialog(
       context: context,
+      barrierDismissible: false,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: const Icon(Icons.warning, color: Colors.orange, size: 40),
-          content: const Text(
-            "Apakah Kamu Yakin ingin Melakukan Logout?",
-            textAlign: TextAlign.center,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
           ),
-          actions: <Widget>[
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                Padding(
-                  padding: const EdgeInsets.only(left: 16.0),
-                  child: TextButton(
-                    child: const Text("Tidak, Batalkan!",
-                        style: TextStyle(color: Colors.red)),
-                    onPressed: () {
-                      Navigator.of(context).pop();
-                    },
-                  ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(
+                Icons.logout,
+                size: 80,
+                color: Colors.amber,
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'LOGOUT',
+                style: GoogleFonts.poppins(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.amber,
                 ),
-                Padding(
-                  padding: const EdgeInsets.only(right: 40.0),
-                  child: TextButton(
-                    child:
-                        const Text("Ya", style: TextStyle(color: Colors.green)),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Konfirmasi Logout',
+                style: GoogleFonts.poppins(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Anda akan keluar dari akun ini dan perlu login kembali untuk mengaksesnya',
+                textAlign: TextAlign.center,
+                style: GoogleFonts.poppins(
+                  fontSize: 14,
+                  color: Colors.grey[600],
+                ),
+              ),
+              const SizedBox(height: 20),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  TextButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    child: Text(
+                      'Batal',
+                      style: GoogleFonts.poppins(
+                        color: Colors.grey[600],
+                      ),
+                    ),
+                  ),
+                  ElevatedButton(
                     onPressed: () async {
                       try {
                         final prefs = await SharedPreferences.getInstance();
                         await prefs.remove('token');
                         await prefs.remove('username');
 
-                        // debug logging
-                        print('Logout successful - all data cleared');
-
-                        // verifikasi token sudah terhapus
-                        String? remainingToken = prefs.getString('token');
-                        print('Remaining token after logout: $remainingToken');
-
-                        Navigator.of(context).pop(); // Close dialog first
-
-                        // Navigate to login and clear all routes
+                        Navigator.of(context).pop();
                         Navigator.pushReplacement(
                           context,
                           MaterialPageRoute(
                               builder: (context) => const LoginPage()),
                         );
 
-                        // Show success message
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(
-                            content: Text('Logout Berhasil'),
+                            content: Text('Logout berhasil'),
                             backgroundColor: Colors.green,
                           ),
                         );
                       } catch (e) {
-                        print('Error during logout: $e');
-                        Navigator.of(context).pop(); // Close dialog
-
-                        // Show error message
+                        Navigator.of(context).pop();
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(
-                            content: Text('Gagal logout, coba lagi'),
+                            content: Text('Gagal logout'),
                             backgroundColor: Colors.red,
                           ),
                         );
                       }
                     },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF24D17E),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                    child: Text(
+                      'Logout',
+                      style: GoogleFonts.poppins(
+                        color: Colors.white,
+                      ),
+                    ),
                   ),
-                ),
-              ],
-            ),
-          ],
+                ],
+              ),
+            ],
+          ),
         );
       },
     );

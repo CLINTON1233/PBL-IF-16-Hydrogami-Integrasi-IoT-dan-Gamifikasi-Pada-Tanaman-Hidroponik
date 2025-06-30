@@ -48,6 +48,7 @@ class _GamifikasiProgresPageState extends State<GamifikasiProgresPage>
   int _totalCoins = 0;
   int _currentLevel = 1;
   final int _expPerLevel = 200;
+  final int _maxLevel = 15; // Maximum level
 
   // User data
   String _userId = '';
@@ -154,14 +155,166 @@ class _GamifikasiProgresPageState extends State<GamifikasiProgresPage>
     _controlBounceAnimation();
   }
 
-  // 1. Perbaiki method _loadUserData untuk memastikan username tersimpan dengan benar
+  // Mascot image selection based on level and completion status
+  String _getMascotImage() {
+    String baseImage;
+
+    if (_hasCompletedMissionToday) {
+      // Happy mascot variations
+      if (_currentLevel >= 10) {
+        baseImage = 'assets/maskot_happy_adult.png';
+      } else if (_currentLevel >= 5) {
+        baseImage = 'assets/maskot_happy_remaja.png';
+      } else {
+        baseImage = 'assets/maskot_happy.png';
+      }
+    } else {
+      // Sad mascot variations
+      if (_currentLevel >= 10) {
+        baseImage = 'assets/maskot_sedih_adult.png';
+      } else if (_currentLevel >= 5) {
+        baseImage = 'assets/maskot_sedih_remaja.png';
+      } else {
+        baseImage = 'assets/maskot_sedih.png';
+      }
+    }
+
+    return baseImage;
+  }
+
+  // Reset mascot function
+  void _resetMascot() async {
+    showDialog(
+      context: context,
+      barrierDismissible: false, // Konsisten dengan template
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20), // Sesuai template
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(
+                Icons.refresh,
+                size: 80,
+                color: Colors.amber, // Warna konsisten
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'RESET MASKOT',
+                style: GoogleFonts.poppins(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.amber, // Warna konsisten
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Level $_currentLevel → Level 1',
+                style: GoogleFonts.poppins(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Apakah Anda yakin ingin mereset maskot?',
+                textAlign: TextAlign.center,
+                style: GoogleFonts.poppins(
+                  fontSize: 14,
+                  color: Colors.grey[600],
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Tindakan ini akan:\n• Mereset EXP ke 0\n• Mereset Level ke 1\n• Koin tetap tersimpan\n• Maskot kembali ke bentuk awal',
+                textAlign: TextAlign.left,
+                style: GoogleFonts.poppins(
+                  fontSize: 12,
+                  color: Colors.grey[600],
+                ),
+              ),
+              const SizedBox(height: 20),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  TextButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    child: Text(
+                      'Batal',
+                      style: TextStyle(color: Colors.grey[600]),
+                    ),
+                  ),
+                  ElevatedButton(
+                    onPressed: () async {
+                      Navigator.of(context).pop();
+                      await _performMascotReset();
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor:
+                          const Color(0xFF24D17E), // Warna hijau konsisten
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                    child: const Text(
+                      'Reset',
+                      style: TextStyle(color: Colors.white),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _performMascotReset() async {
+    try {
+      setState(() {
+        _currentExp = 0;
+        _currentLevel = 1;
+        _hasCompletedMissionToday = false;
+      });
+
+      await _saveProgressData();
+      _updateProgressAnimation();
+      _controlBounceAnimation();
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              Icon(Icons.check_circle, color: Colors.white),
+              SizedBox(width: 8),
+              Text('Maskot berhasil direset! Mulai petualangan baru!'),
+            ],
+          ),
+          backgroundColor: Colors.green,
+          duration: Duration(seconds: 3),
+        ),
+      );
+
+      _debugUserData();
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Gagal mereset maskot: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
   Future<void> _loadUserData() async {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('token') ?? '';
     _gamificationService = GamificationService(token);
 
     try {
-      // Get user data from API
       final userResponse = await http.get(
         Uri.parse('http://10.0.2.2:8000/api/user'),
         headers: {
@@ -175,34 +328,34 @@ class _GamifikasiProgresPageState extends State<GamifikasiProgresPage>
         final userId = userData['id'].toString();
         final userName = userData['username'] ?? 'Pengguna Hydrogami';
 
-        // Simpan data user ke SharedPreferences
         await prefs.setString('current_user_id', userId);
-        await prefs.setString('current_user_name', userName); // Tambah ini
+        await prefs.setString('current_user_name', userName);
         await prefs.setString('${userId}_username', userName);
 
-        // Set state dulu sebelum load gamification data
         setState(() {
           _userId = userId;
           _userName = userName;
         });
 
-        // Load gamification data from API
         try {
           final gamificationData = await _gamificationService.getGamification();
 
-          // Update progress dengan data dari API
+          int level = gamificationData.level;
+          if (level > _maxLevel) {
+            level = _maxLevel;
+          }
+
           await _updateProgress(
             gamificationData.poin,
             gamificationData.coin,
-            gamificationData.level,
+            level,
             saveToLocal: true,
           );
 
           print(
-              'Gamification data loaded from API: EXP=${gamificationData.poin}, Coins=${gamificationData.coin}, Level=${gamificationData.level}');
+              'Gamification data loaded from API: EXP=${gamificationData.poin}, Coins=${gamificationData.coin}, Level=$level');
         } catch (e) {
           print('Failed to fetch gamification data from API: $e');
-          // Jika gagal dari API, load dari local
           await _loadProgressDataFromLocal(prefs, userId);
         }
       } else {
@@ -210,7 +363,6 @@ class _GamifikasiProgresPageState extends State<GamifikasiProgresPage>
       }
     } catch (e) {
       print('Error loading user data: $e');
-      // Fallback ke data lokal jika ada
       final savedUserId = prefs.getString('current_user_id');
       final savedUserName = prefs.getString('current_user_name');
 
@@ -228,10 +380,12 @@ class _GamifikasiProgresPageState extends State<GamifikasiProgresPage>
 
   Future<void> _updateProgress(int exp, int coins, int level,
       {bool saveToLocal = false}) async {
+    int cappedLevel = level > _maxLevel ? _maxLevel : level;
+
     setState(() {
       _currentExp = exp;
       _totalCoins = coins;
-      _currentLevel = level;
+      _currentLevel = cappedLevel;
     });
 
     if (saveToLocal) {
@@ -246,10 +400,16 @@ class _GamifikasiProgresPageState extends State<GamifikasiProgresPage>
 
   Future<void> _loadProgressDataFromLocal(
       SharedPreferences prefs, String userId) async {
+    int level = prefs.getInt('${userId}_current_level') ?? 1;
+    if (level > _maxLevel) {
+      level = _maxLevel;
+      await prefs.setInt('${userId}_current_level', level);
+    }
+
     setState(() {
       _currentExp = prefs.getInt('${userId}_current_exp') ?? 0;
       _totalCoins = prefs.getInt('${userId}_total_coins') ?? 0;
-      _currentLevel = prefs.getInt('${userId}_current_level') ?? 1;
+      _currentLevel = level;
     });
     _updateProgressAnimation();
   }
@@ -269,23 +429,15 @@ class _GamifikasiProgresPageState extends State<GamifikasiProgresPage>
     await _loadProgressDataFromLocal(prefs, defaultId);
   }
 
-  // 4. Perbaiki method _saveProgressData untuk memastikan sinkronisasi
   Future<void> _saveProgressData() async {
     final prefs = await SharedPreferences.getInstance();
-
-    // Simpan ke local storage
     await prefs.setInt('${_userId}_current_exp', _currentExp);
     await prefs.setInt('${_userId}_total_coins', _totalCoins);
     await prefs.setInt('${_userId}_current_level', _currentLevel);
-
-    // Simpan leaderboard data
     await _saveLeaderboardData();
-
-    // Sync dengan API
     await _syncProgressWithApi();
   }
 
-// 5. Tambahkan method untuk debugging data user
   void _debugUserData() {
     print('=== DEBUG USER DATA ===');
     print('User ID: $_userId');
@@ -293,10 +445,12 @@ class _GamifikasiProgresPageState extends State<GamifikasiProgresPage>
     print('Current EXP: $_currentExp');
     print('Total Coins: $_totalCoins');
     print('Current Level: $_currentLevel');
+    print('Max Level: $_maxLevel');
+    print('Is at Max Level: ${_currentLevel >= _maxLevel}');
+    print('Mascot Image: ${_getMascotImage()}');
     print('========================');
   }
 
-  // 2. Perbaiki method _syncProgressWithApi untuk benar-benar melakukan sinkronisasi
   Future<void> _syncProgressWithApi() async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -324,7 +478,6 @@ class _GamifikasiProgresPageState extends State<GamifikasiProgresPage>
     }
   }
 
-// 3. Tambahkan method untuk memaksa sinkronisasi data
   Future<void> _forceSyncWithAPI() async {
     try {
       setState(() {
@@ -338,18 +491,20 @@ class _GamifikasiProgresPageState extends State<GamifikasiProgresPage>
         throw Exception('Token not found');
       }
 
-      // Ambil data terbaru dari API
       final gamificationData = await _gamificationService.getGamification();
 
-      // Update progress dengan data dari API
+      int level = gamificationData.level;
+      if (level > _maxLevel) {
+        level = _maxLevel;
+      }
+
       await _updateProgress(
         gamificationData.poin,
         gamificationData.coin,
-        gamificationData.level,
+        level,
         saveToLocal: true,
       );
 
-      // Sync leaderboard data
       await _saveLeaderboardData();
 
       setState(() {
@@ -421,26 +576,42 @@ class _GamifikasiProgresPageState extends State<GamifikasiProgresPage>
   }
 
   void _updateProgressAnimation() {
-    int expInCurrentLevel = _currentExp % _expPerLevel;
-    double progress = expInCurrentLevel / _expPerLevel;
+    if (_currentLevel >= _maxLevel) {
+      _progressAnimation = Tween<double>(
+        begin: 0.0,
+        end: 1.0,
+      ).animate(CurvedAnimation(
+        parent: _progressAnimationController,
+        curve: Curves.easeInOut,
+      ));
+    } else {
+      int expInCurrentLevel = _currentExp % _expPerLevel;
+      double progress = expInCurrentLevel / _expPerLevel;
 
-    _progressAnimation = Tween<double>(
-      begin: 0.0,
-      end: progress,
-    ).animate(CurvedAnimation(
-      parent: _progressAnimationController,
-      curve: Curves.easeInOut,
-    ));
+      _progressAnimation = Tween<double>(
+        begin: 0.0,
+        end: progress,
+      ).animate(CurvedAnimation(
+        parent: _progressAnimationController,
+        curve: Curves.easeInOut,
+      ));
+    }
 
     _progressAnimationController.reset();
     _progressAnimationController.forward();
   }
 
   int _getExpForCurrentLevel() {
+    if (_currentLevel >= _maxLevel) {
+      return _expPerLevel;
+    }
     return _currentExp % _expPerLevel;
   }
 
   int _getExpNeededForNextLevel() {
+    if (_currentLevel >= _maxLevel) {
+      return 0;
+    }
     return _expPerLevel - (_currentExp % _expPerLevel);
   }
 
@@ -505,13 +676,13 @@ class _GamifikasiProgresPageState extends State<GamifikasiProgresPage>
   Future<void> _handleRefresh() async {
     try {
       setState(() {
-        _isLoading = true; // Tampilkan loading indicator
+        _isLoading = true;
       });
 
-      await _loadMisiData(); // Panggil fungsi untuk memuat ulang data
+      await _loadMisiData();
 
       setState(() {
-        _isLoading = false; // Sembunyikan loading indicator
+        _isLoading = false;
       });
 
       ScaffoldMessenger.of(context).showSnackBar(
@@ -575,7 +746,6 @@ class _GamifikasiProgresPageState extends State<GamifikasiProgresPage>
     final prefs = await SharedPreferences.getInstance();
     final today = DateTime.now().toIso8601String().substring(0, 10);
 
-    // Handle weekly mission reset
     if (misi.tipeMisi == 'mingguan') {
       final lastWeek = prefs.getString('${_userId}_last_week_number');
       final currentWeek = _getCurrentWeekNumber();
@@ -586,7 +756,6 @@ class _GamifikasiProgresPageState extends State<GamifikasiProgresPage>
       }
     }
 
-    // Handle daily mission tracking
     final lastMissionDate = prefs.getString('${_userId}_last_mission_date');
     final completedToday =
         prefs.getInt('${_userId}_missions_completed_today') ?? 0;
@@ -603,13 +772,15 @@ class _GamifikasiProgresPageState extends State<GamifikasiProgresPage>
       isFirstMissionToday = (completedToday == 0);
     }
 
-    // Calculate new progress
     int oldLevel = _currentLevel;
     int newExp = _currentExp + misi.poin;
     int newCoins = _totalCoins + (misi.poin ~/ 2);
     int newLevel = (newExp ~/ _expPerLevel) + 1;
 
-    // Update state
+    if (newLevel > _maxLevel) {
+      newLevel = _maxLevel;
+    }
+
     setState(() {
       misi.statusMisi = 'completed';
       _misiList = _sortMissions(_misiList);
@@ -621,43 +792,51 @@ class _GamifikasiProgresPageState extends State<GamifikasiProgresPage>
 
     _controlBounceAnimation();
 
-    // Show confetti for first mission of the day
     if (isFirstMissionToday) {
       _confettiController.play();
     }
 
-    // Save completed mission
     final completedMissions = await _getCompletedMissions();
     completedMissions.add(misi.namaMisi.toString());
     await _saveCompletedMissions(completedMissions);
 
-    // Save progress and sync with API
     await _saveProgressData();
     _updateProgressAnimation();
 
-    // Animate coin gain
     _coinAnimationController.reset();
     _coinAnimationController.forward().then((_) {
       _coinAnimationController.reverse();
     });
 
-    // Handle level up
     if (newLevel > oldLevel) {
-      _showLevelUpDialog(oldLevel, newLevel);
+      _confettiController.play();
+
+      if (newLevel >= _maxLevel) {
+        _showMaxLevelDialog();
+      } else {
+        _showLevelUpDialog(oldLevel, newLevel);
+      }
       _levelUpAnimationController.reset();
       _levelUpAnimationController.forward().then((_) {
         _levelUpAnimationController.reverse();
       });
     }
 
-    // Show success message
+    String expMessage = newLevel >= _maxLevel
+        ? 'Misi "${misi.namaMisi}" selesai! Level maksimal tercapai!'
+        : 'Misi "${misi.namaMisi}" selesai! +${misi.poin} EXP';
+
+// Untuk color (terpisah)
+    Color messageColor = newLevel >= _maxLevel
+        ? Color.fromARGB(255, 148, 115, 115)
+        : Colors.green;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Row(
           children: [
             const Icon(Icons.check_circle, color: Colors.white),
             const SizedBox(width: 8),
-            Text('Misi "${misi.namaMisi}" selesai! +${misi.poin} EXP'),
+            Expanded(child: Text(expMessage)),
           ],
         ),
         backgroundColor: Colors.green,
@@ -665,8 +844,96 @@ class _GamifikasiProgresPageState extends State<GamifikasiProgresPage>
       ),
     );
 
-    // Debug data after mission completion
     _debugUserData();
+  }
+
+  void _showMaxLevelDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: false, // Konsisten dengan template
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20), // Sesuai template
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(
+                Icons.emoji_events,
+                size: 80,
+                color: Colors.amber, // Warna konsisten
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'LEVEL MAKSIMAL!',
+                style: GoogleFonts.poppins(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.amber, // Warna konsisten
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Level $_maxLevel',
+                style: GoogleFonts.poppins(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Selamat! Anda telah mencapai level maksimal!',
+                textAlign: TextAlign.center,
+                style: GoogleFonts.poppins(
+                  fontSize: 14,
+                  color: Colors.grey[600],
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Koin Anda: $_totalCoins',
+                style: GoogleFonts.poppins(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.amber,
+                ),
+              ),
+              const SizedBox(height: 20),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  TextButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    child: const Text(
+                      'Tutup',
+                      style: TextStyle(color: Colors.grey),
+                    ),
+                  ),
+                  ElevatedButton(
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                      _resetMascot();
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor:
+                          const Color(0xFF24D17E), // Warna hijau konsisten
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                    child: const Text(
+                      'Reset Maskot',
+                      style: TextStyle(color: Colors.white),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        );
+      },
+    );
   }
 
   String _getCurrentWeekNumber() {
@@ -768,7 +1035,125 @@ class _GamifikasiProgresPageState extends State<GamifikasiProgresPage>
     );
   }
 
-  //build method
+  void _showUserInfoDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(
+                Icons.person,
+                size: 80,
+                color: Colors.amber, // Using amber to match template
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'PROFIL PENGGUNA',
+                style: GoogleFonts.poppins(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.amber, // Using amber to match template
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Level $_currentLevel',
+                style: GoogleFonts.poppins(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.grey[50],
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.grey[200]!),
+                ),
+                child: Column(
+                  children: [
+                    _buildUserInfoItem(
+                        'Nama Pengguna', _userName, Icons.person),
+                    const Divider(height: 16),
+                    _buildUserInfoItem('ID Pengguna', _userId, Icons.code),
+                    const Divider(height: 16),
+                    _buildUserInfoItem('Total EXP', '$_currentExp', Icons.star),
+                    const Divider(height: 16),
+                    _buildUserInfoItem(
+                        'Total Koin', '$_totalCoins', Icons.monetization_on),
+                    const Divider(height: 16),
+                    _buildUserInfoItem(
+                        'Progress Level',
+                        '${_getExpForCurrentLevel()}/$_expPerLevel EXP',
+                        Icons.trending_up),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 20),
+              ElevatedButton(
+                onPressed: () => Navigator.of(context).pop(),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF24D17E),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  minimumSize: const Size(double.infinity, 50),
+                ),
+                child: Text(
+                  'Tutup',
+                  style: GoogleFonts.poppins(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildUserInfoItem(String label, String value, IconData icon) {
+    return Row(
+      children: [
+        Icon(
+          icon,
+          size: 20,
+          color: Colors.grey[600],
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: GoogleFonts.poppins(
+                  fontSize: 12,
+                  color: Colors.grey[600],
+                ),
+              ),
+              Text(
+                value,
+                style: GoogleFonts.poppins(
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -906,76 +1291,89 @@ class _GamifikasiProgresPageState extends State<GamifikasiProgresPage>
         Container(
           color: const Color(0xFF24D17E),
           child: Row(
-            mainAxisAlignment: MainAxisAlignment.end,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              // EXP display widget with animation
-              AnimatedBuilder(
-                animation: _coinAnimation,
-                builder: (context, child) {
-                  return Transform.scale(
-                    scale: _coinAnimation.value,
-                    child: Material(
-                      color: Colors.transparent,
-                      child: InkWell(
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                                builder: (context) => const RewardPage()),
-                          );
-                        },
-                        borderRadius: BorderRadius.circular(20),
-                        splashColor: Colors.amber.withOpacity(0.2),
-                        highlightColor: Colors.amber.withOpacity(0.1),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 12, vertical: 6),
-                          margin: const EdgeInsets.only(right: 10),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
+              // Widget penyeimbang (tetap ada meskipun reset button tidak muncul)
+              _currentLevel >= _maxLevel
+                  ? IconButton(
+                      onPressed: _resetMascot,
+                      icon: const Icon(Icons.refresh),
+                      color: Colors.white,
+                      tooltip: 'Reset Maskot',
+                    )
+                  : const SizedBox(
+                      width: 48), // Sesuaikan lebar dengan icon button
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  AnimatedBuilder(
+                    animation: _coinAnimation,
+                    builder: (context, child) {
+                      return Transform.scale(
+                        scale: _coinAnimation.value,
+                        child: Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (context) => const RewardPage()),
+                              );
+                            },
                             borderRadius: BorderRadius.circular(20),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.1),
-                                blurRadius: 4,
-                                offset: const Offset(0, 2),
+                            splashColor: Colors.amber.withOpacity(0.2),
+                            highlightColor: Colors.amber.withOpacity(0.1),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 12, vertical: 6),
+                              margin: const EdgeInsets.only(right: 10),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(20),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withOpacity(0.1),
+                                    blurRadius: 4,
+                                    offset: const Offset(0, 2),
+                                  ),
+                                ],
                               ),
-                            ],
-                          ),
-                          child: Row(
-                            children: [
-                              const Icon(Icons.star,
-                                  color: Colors.amber, size: 20),
-                              const SizedBox(width: 5),
-                              Text(
-                                '$_currentExp',
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 14,
-                                ),
+                              child: Row(
+                                children: [
+                                  const Icon(Icons.star,
+                                      color: Colors.amber, size: 20),
+                                  const SizedBox(width: 5),
+                                  Text(
+                                    '$_currentExp',
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                ],
                               ),
-                            ],
+                            ),
                           ),
                         ),
-                      ),
-                    ),
-                  );
-                },
-              ),
-              // Existing coin widget
-              AnimatedBuilder(
-                animation: _coinAnimation,
-                builder: (context, child) {
-                  return Transform.scale(
-                    scale: _coinAnimation.value,
-                    child: _buildRewardWidget(coins: _totalCoins),
-                  );
-                },
-              ),
-              IconButton(
-                onPressed: _showUserInfoDialog,
-                icon: const Icon(Icons.info),
-                color: Colors.grey[700],
+                      );
+                    },
+                  ),
+                  AnimatedBuilder(
+                    animation: _coinAnimation,
+                    builder: (context, child) {
+                      return Transform.scale(
+                        scale: _coinAnimation.value,
+                        child: _buildRewardWidget(coins: _totalCoins),
+                      );
+                    },
+                  ),
+                  IconButton(
+                    onPressed: _showUserInfoDialog,
+                    icon: const Icon(Icons.info),
+                    color: Colors.white,
+                  ),
+                ],
               ),
             ],
           ),
@@ -1020,13 +1418,13 @@ class _GamifikasiProgresPageState extends State<GamifikasiProgresPage>
                     );
                   },
                   child: Image.asset(
-                    'assets/maskot_happy.png',
+                    _getMascotImage(),
                     height: 200,
                   ),
                 )
               else
                 Image.asset(
-                  'assets/maskot_sedih.png',
+                  _getMascotImage(),
                   height: 200,
                 ),
               if (_hasCompletedMissionToday)
@@ -1072,50 +1470,6 @@ class _GamifikasiProgresPageState extends State<GamifikasiProgresPage>
           ),
         ),
       ],
-    );
-  }
-
-  void _showUserInfoDialog() {
-    _debugUserData(); // Debug sebelum show dialog
-
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Informasi Pengguna',
-          style: TextStyle(color:Colors.green),),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('ID Pengguna: $_userId'),
-              const SizedBox(height: 8),
-              Text('Nama: $_userName'),
-              const SizedBox(height: 8),
-              Text('Level: $_currentLevel'),
-              const SizedBox(height: 8),
-              Text('Total EXP: $_currentExp'),
-              const SizedBox(height: 8),
-              Text('Total Koin: $_totalCoins'),
-              const SizedBox(height: 8),
-              Text(
-                  'EXP di Level Ini: ${_getExpForCurrentLevel()}/$_expPerLevel'),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: _forceSyncWithAPI,
-              child: const Text('Sync Data',
-              style: TextStyle(color: Colors.green),),
-            ),
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Tutup',
-              style: TextStyle(color: Colors.green),),
-            ),
-          ],
-        );
-      },
     );
   }
 
@@ -1179,7 +1533,9 @@ class _GamifikasiProgresPageState extends State<GamifikasiProgresPage>
                 style: const TextStyle(color: Colors.black, fontSize: 12),
               ),
               Text(
-                'Level ${_currentLevel + 1}',
+                _currentLevel >= _maxLevel
+                    ? 'MAX'
+                    : 'Level ${_currentLevel + 1}',
                 style: const TextStyle(color: Colors.black, fontSize: 12),
               ),
             ],

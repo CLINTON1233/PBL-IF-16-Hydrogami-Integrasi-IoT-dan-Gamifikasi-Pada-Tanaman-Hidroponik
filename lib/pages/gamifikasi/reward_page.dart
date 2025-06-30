@@ -218,7 +218,7 @@ class _RewardPageState extends State<RewardPage>
             children: [
               const Icon(
                 Icons.celebration,
-                size: 60,
+                size: 80,
                 color: Colors.amber,
               ),
               const SizedBox(height: 16),
@@ -233,13 +233,28 @@ class _RewardPageState extends State<RewardPage>
               const SizedBox(height: 8),
               Text(
                 'Level $oldLevel → Level $newLevel',
-                style: GoogleFonts.poppins(fontSize: 18),
+                style: GoogleFonts.poppins(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Selamat! Anda telah naik ke level $newLevel!',
+                textAlign: TextAlign.center,
+                style: GoogleFonts.poppins(
+                  fontSize: 14,
+                  color: Colors.grey[600],
+                ),
               ),
               const SizedBox(height: 20),
               ElevatedButton(
-                onPressed: () => Navigator.pop(context),
+                onPressed: () => Navigator.of(context).pop(),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF24D17E),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
                 ),
                 child: const Text(
                   'Lanjutkan',
@@ -349,7 +364,8 @@ class _RewardPageState extends State<RewardPage>
 
     if (_userCoins < 10) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Koin tidak cukup! Butuh 10 koin.')),
+        const SnackBar(content: Text('Koin tidak cukup! Butuh 10 koin.'),
+        backgroundColor: Colors.red),
       );
       return;
     }
@@ -386,16 +402,20 @@ class _RewardPageState extends State<RewardPage>
 
     if (_userCoins < requiredCoins) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Koin tidak cukup! Butuh $requiredCoins koin.')),
+        SnackBar(
+          content: Text('Koin tidak cukup! Butuh $requiredCoins koin.'),
+          backgroundColor: Colors.red,
+        ),
       );
       return;
     }
 
     setState(() {
       _userCoins -= requiredCoins;
-      // ✅ FIXED: Add to separate redeem history
-      _redeemResults.insert(0,
-          'Berhasil menukar Rp ${NumberFormat('#,###').format(selectedReward.amount)}!');
+      _redeemResults.insert(
+        0,
+        'Berhasil menukar Rp ${NumberFormat('#,###').format(selectedReward.amount)}!',
+      );
       if (_redeemResults.length > 5) {
         _redeemResults.removeLast();
       }
@@ -411,18 +431,64 @@ class _RewardPageState extends State<RewardPage>
       print('Failed to update gamification: $e');
     }
 
+    // Dialog yang diperbarui
     showDialog(
       context: context,
+      barrierDismissible: false,
       builder: (context) => AlertDialog(
-        title: const Text('Redeem Berhasil'),
-        content: Text(
-            'Rp ${NumberFormat('#,###').format(selectedReward.amount)} akan diproses.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('OK'),
-          ),
-        ],
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(
+              Icons.check_circle,
+              size: 80,
+              color: Colors.amber,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'PENUKARAN BERHASIL!',
+              style: GoogleFonts.poppins(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: Colors.amber,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Rp ${NumberFormat('#,###').format(selectedReward.amount)}',
+              style: GoogleFonts.poppins(
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Penukaran koin berhasil diproses!',
+              textAlign: TextAlign.center,
+              style: GoogleFonts.poppins(
+                fontSize: 14,
+                color: Colors.grey[600],
+              ),
+            ),
+            const SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: () => Navigator.pop(context),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF24D17E),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+              child: const Text(
+                'Tutup',
+                style: TextStyle(color: Colors.white),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -1196,7 +1262,7 @@ class _RewardPageState extends State<RewardPage>
                     children: [
                       const Icon(
                         Icons.error_outline,
-                        size: 64,
+                        size: 80,
                         color: Colors.red,
                       ),
                       const SizedBox(height: 16),
@@ -1213,9 +1279,12 @@ class _RewardPageState extends State<RewardPage>
                         onPressed: _loadRewards,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFF24D17E),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
                         ),
                         child: const Text(
-                          'Ulang',
+                          'Coba Lagi',
                           style: TextStyle(color: Colors.white),
                         ),
                       ),

@@ -1000,6 +1000,8 @@ class _BerandaPageState extends State<BerandaPage> {
                         final prefs = await SharedPreferences.getInstance();
                         await prefs.remove('token');
                         await prefs.remove('username');
+                        await prefs.remove('current_user_id');
+                        await prefs.remove('id');
 
                         Navigator.of(context).pop();
                         Navigator.pushReplacement(
@@ -1032,6 +1034,96 @@ class _BerandaPageState extends State<BerandaPage> {
                     ),
                     child: Text(
                       'Logout',
+                      style: GoogleFonts.poppins(
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  // Fungsi dialog reset tanaman yang disesuaikan dengan dialog logout
+  void _showResetPlantDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(
+                Icons.refresh,
+                size: 80,
+                color: Colors.amber,
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'RESET TANAMAN',
+                style: GoogleFonts.poppins(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.amber,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Konfirmasi Reset',
+                style: GoogleFonts.poppins(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Apakah Anda yakin ingin memulai penanaman baru? Umur tanaman akan direset ke hari ke-1.',
+                textAlign: TextAlign.center,
+                style: GoogleFonts.poppins(
+                  fontSize: 14,
+                  color: Colors.grey[600],
+                ),
+              ),
+              const SizedBox(height: 20),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  TextButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    child: Text(
+                      'Batal',
+                      style: GoogleFonts.poppins(
+                        color: Colors.grey[600],
+                      ),
+                    ),
+                  ),
+                  ElevatedButton(
+                    onPressed: () async {
+                      await _resetPlant();
+                      Navigator.of(context).pop();
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Tanaman baru dimulai!'),
+                          backgroundColor: Colors.green,
+                        ),
+                      );
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF24D17E),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                    child: Text(
+                      'Reset',
                       style: GoogleFonts.poppins(
                         color: Colors.white,
                       ),
@@ -1658,214 +1750,177 @@ class _BerandaPageState extends State<BerandaPage> {
 
   // Widget untuk menampilkan umur tanaman
   Widget _buildPlantAgeItem() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: !_hasStartedPlanting
-                    ? Colors.grey.withOpacity(0.2)
-                    : _plantAge >= 50
-                        ? Colors.green.withOpacity(0.2)
-                        : Colors.blue.withOpacity(0.2),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Icon(
-                !_hasStartedPlanting
-                    ? Icons.grass
-                    : _plantAge >= 50
-                        ? Icons.agriculture
-                        : Icons.eco,
-                color: !_hasStartedPlanting
-                    ? Colors.grey
-                    : _plantAge >= 50
-                        ? Colors.green
-                        : Colors.blue,
-                size: 16,
-              ),
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: !_hasStartedPlanting
+                  ? Colors.grey.withOpacity(0.2)
+                  : _plantAge >= 50
+                      ? Colors.green.withOpacity(0.2)
+                      : Colors.blue.withOpacity(0.2),
+              borderRadius: BorderRadius.circular(8),
             ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    !_hasStartedPlanting
-                        ? 'Tanaman Pakcoy'
-                        : _plantAge >= 50
-                            ? 'Status Tanaman'
-                            : 'Umur Pakcoy',
-                    style: const TextStyle(
-                      fontSize: 12,
-                      color: Colors.black54,
-                    ),
-                  ),
-                  Text(
-                    !_hasStartedPlanting
-                        ? 'Belum ditanam'
-                        : _plantAge >= 50
-                            ? 'Siap dipanen!'
-                            : '$_plantAge hari',
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                      color: !_hasStartedPlanting
-                          ? Colors.grey
-                          : _plantAge >= 50
-                              ? Colors.green
-                              : Colors.blue,
-                    ),
-                  ),
-                  if (_totalHarvests > 0) ...[
-                    Text(
-                      'Total panen: $_totalHarvests kali',
-                      style: TextStyle(
-                        fontSize: 10,
-                        color: Colors.grey[600],
-                      ),
-                    ),
-                  ],
-                  if (_hasStartedPlanting &&
-                      _plantAge > 0 &&
-                      _plantAge < 50) ...[
-                    const SizedBox(height: 4),
-                    Text(
-                      '${50 - _plantAge} hari lagi sampai panen',
-                      style: TextStyle(
-                        fontSize: 10,
-                        color: Colors.grey[600],
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    LinearProgressIndicator(
-                      value: _plantAge / 50,
-                      backgroundColor: Colors.grey[300],
-                      valueColor: AlwaysStoppedAnimation<Color>(
-                        _plantAge >= 45 ? Colors.orange : Colors.blue,
-                      ),
-                      minHeight: 2,
-                    ),
-                  ],
-
-                  // Tombol tanam sekarang
-                  if (!_hasStartedPlanting && _hasCompletedSetup) ...[
-                    const SizedBox(height: 8),
-                    ElevatedButton(
-                      onPressed: () {
-                        _startPlanting();
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.blue,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        padding:
-                            EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                        minimumSize: Size(0, 0),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Icons.grass, size: 16, color: Colors.white),
-                          SizedBox(width: 6),
-                          Text(
-                            'Tanam',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ] else if (_hasStartedPlanting && _plantAge >= 50) ...[
-                    const SizedBox(height: 8),
-                    ElevatedButton(
-                      onPressed: () {
-                        _showHarvestDialog();
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.green,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        padding:
-                            EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                        minimumSize: Size(0, 0),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Icons.agriculture,
-                              size: 16, color: Colors.white),
-                          SizedBox(width: 6),
-                          Text(
-                            'Panen',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ],
-              ),
+            child: Icon(
+              !_hasStartedPlanting
+                  ? Icons.grass
+                  : _plantAge >= 50
+                      ? Icons.agriculture
+                      : Icons.eco,
+              color: !_hasStartedPlanting
+                  ? Colors.grey
+                  : _plantAge >= 50
+                      ? Colors.green
+                      : Colors.blue,
+              size: 16,
             ),
-            // Tombol Reset, muncul jika sudah menanam
-            if (_hasStartedPlanting) ...[
-              IconButton(
-                onPressed: () {
-                  showDialog(
-                    context: context,
-                    builder: (BuildContext context) {
-                      return AlertDialog(
-                        title: const Text('Reset Tanaman'),
-                        content: const Text(
-                          'Apakah Anda yakin ingin memulai penanaman baru? '
-                          'Umur tanaman akan direset ke hari ke-1.',
-                        ),
-                        actions: [
-                          TextButton(
-                            onPressed: () => Navigator.of(context).pop(),
-                            child: const Text('Batal'),
-                          ),
-                          ElevatedButton(
-                            onPressed: () async {
-                              await _resetPlant();
-                              Navigator.of(context).pop();
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('Tanaman baru dimulai!'),
-                                  backgroundColor: Colors.green,
-                                ),
-                              );
-                            },
-                            child: const Text('Reset'),
-                          ),
-                        ],
-                      );
-                    },
-                  );
-                },
-                icon: const Icon(Icons.refresh, size: 18),
-                tooltip: 'Reset Tanaman',
-                constraints: const BoxConstraints(
-                  minWidth: 32,
-                  minHeight: 32,
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  !_hasStartedPlanting
+                      ? 'Tanaman Pakcoy'
+                      : _plantAge >= 50
+                          ? 'Status Tanaman'
+                          : 'Umur Pakcoy',
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: Colors.black54,
+                  ),
                 ),
+                Text(
+                  !_hasStartedPlanting
+                      ? 'Belum ditanam'
+                      : _plantAge >= 50
+                          ? 'Siap dipanen!'
+                          : '$_plantAge hari',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    color: !_hasStartedPlanting
+                        ? Colors.grey
+                        : _plantAge >= 50
+                            ? Colors.green
+                            : Colors.blue,
+                  ),
+                ),
+                if (_totalHarvests > 0) ...[
+                  Text(
+                    'Total panen: $_totalHarvests kali',
+                    style: TextStyle(
+                      fontSize: 10,
+                      color: Colors.grey[600],
+                    ),
+                  ),
+                ],
+                if (_hasStartedPlanting && _plantAge > 0 && _plantAge < 50) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    '${50 - _plantAge} hari lagi sampai panen',
+                    style: TextStyle(
+                      fontSize: 10,
+                      color: Colors.grey[600],
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  LinearProgressIndicator(
+                    value: _plantAge / 50,
+                    backgroundColor: Colors.grey[300],
+                    valueColor: AlwaysStoppedAnimation<Color>(
+                      _plantAge >= 45 ? Colors.orange : Colors.blue,
+                    ),
+                    minHeight: 2,
+                  ),
+                ],
+                // Tombol tanam sekarang
+                if (!_hasStartedPlanting && _hasCompletedSetup) ...[
+                  const SizedBox(height: 8),
+                  ElevatedButton(
+                    onPressed: () {
+                      _startPlanting();
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.blue,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      padding:
+                          EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      minimumSize: Size(0, 0),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.grass, size: 16, color: Colors.white),
+                        SizedBox(width: 6),
+                        Text(
+                          'Tanam',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ] else if (_hasStartedPlanting && _plantAge >= 50) ...[
+                  const SizedBox(height: 8),
+                  ElevatedButton(
+                    onPressed: () {
+                      _showHarvestDialog();
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.green,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      padding:
+                          EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      minimumSize: Size(0, 0),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.agriculture, size: 16, color: Colors.white),
+                        SizedBox(width: 6),
+                        Text(
+                          'Panen',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+          // Tombol Reset, muncul jika sudah menanam
+          if (_hasStartedPlanting) ...[
+            IconButton(
+              onPressed: () {
+                _showResetPlantDialog(); // Panggil dialog baru
+              },
+              icon: const Icon(Icons.refresh, size: 18),
+              tooltip: 'Reset Tanaman',
+              constraints: const BoxConstraints(
+                minWidth: 32,
+                minHeight: 32,
               ),
-            ],
+            ),
           ],
-        ),
-      ],
-    );
+        ],
+      ),
+    ]);
   }
 
   // Widget untuk membuat efek confetti

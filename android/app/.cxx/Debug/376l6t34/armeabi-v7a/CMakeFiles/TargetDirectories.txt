@@ -1,0 +1,2 @@
+D:/PBL-IF-16-Hydrogami-Integrasi-IoT-dan-Gamifikasi-Pada-Tanaman-Hidroponik-2/android/app/.cxx/Debug/376l6t34/armeabi-v7a/CMakeFiles/edit_cache.dir
+D:/PBL-IF-16-Hydrogami-Integrasi-IoT-dan-Gamifikasi-Pada-Tanaman-Hidroponik-2/android/app/.cxx/Debug/376l6t34/armeabi-v7a/CMakeFiles/rebuild_cache.dir

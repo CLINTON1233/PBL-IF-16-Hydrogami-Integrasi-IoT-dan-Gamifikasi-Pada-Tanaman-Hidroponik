@@ -17,10 +17,12 @@ class LeaderboardPage extends StatefulWidget {
   State<LeaderboardPage> createState() => _LeaderboardPageState();
 }
 
-class _LeaderboardPageState extends State<LeaderboardPage> {
+class _LeaderboardPageState extends State<LeaderboardPage>
+    with SingleTickerProviderStateMixin {
   int _bottomNavCurrentIndex = 0;
   List<LeaderboardUser> _leaderboardData = [];
   bool _isLoading = true;
+  String _errorMessage = '';
   String _currentUserName = 'Loading...';
   int _currentUserCoins = 0;
   int _currentUserPoints = 0;
@@ -28,121 +30,160 @@ class _LeaderboardPageState extends State<LeaderboardPage> {
   int _currentUserLevel = 1;
   int _currentUserRank = 0;
   LeaderboardService? _leaderboardService;
+  late AnimationController _animationController;
+  late Animation<double> _avatarAnimation;
 
   @override
   void initState() {
     super.initState();
+    _animationController = AnimationController(
+      duration: const Duration(milliseconds: 800),
+      vsync: this,
+    );
+    _avatarAnimation = Tween<double>(begin: 0.8, end: 1.0).animate(
+      CurvedAnimation(parent: _animationController, curve: Curves.easeOut),
+    );
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       await _initializeServices();
       await _loadUserData();
       await _loadLeaderboardData();
+      _animationController.forward();
     });
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
   }
 
   Future<void> _initializeServices() async {
-    final prefs = await SharedPreferences.getInstance();
-    final token = prefs.getString('token');
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('token');
 
-    setState(() {
-      _leaderboardService = LeaderboardService(
-        baseUrl: 'http://10.0.2.2:8000/api',
-        token: token,
-      );
-    });
-
-    _loadLeaderboardData();
+      if (mounted) {
+        setState(() {
+          _leaderboardService = LeaderboardService(
+            baseUrl: 'http://10.0.2.2:8000/api',
+            token: token,
+          );
+        });
+      }
+    } catch (e) {
+      debugPrint('Error initializing services: $e');
+      if (mounted) {
+        setState(() {
+          _errorMessage = 'Gagal menginisialisasi layanan';
+        });
+      }
+    }
   }
 
   Future<void> _loadUserData() async {
-    final prefs = await SharedPreferences.getInstance();
-    final token = prefs.getString('token');
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('token');
 
-    // Debug: Print semua key yang ada
-    print('All keys in SharedPreferences: ${prefs.getKeys()}');
+      _currentUserId = prefs.getString('current_user_id') ?? '';
 
-    // Ambil current user ID
-    _currentUserId = prefs.getString('current_user_id') ?? '';
-    print('Current user ID: $_currentUserId');
+      if (_currentUserId.isEmpty && token != null) {
+        try {
+          final response = await http.get(
+            Uri.parse('http://10.0.2.2:8000/api/user'),
+            headers: {'Authorization': 'Bearer $token'},
+          );
 
-    // Jika tidak ada user ID, coba ambil dari API
-    if (_currentUserId.isEmpty && token != null) {
-      try {
-        final response = await http.get(
-          Uri.parse('http://10.0.2.2:8000/api/user'),
-          headers: {'Authorization': 'Bearer $token'},
-        );
-
-        if (response.statusCode == 200) {
-          final userData = json.decode(response.body);
-          _currentUserId = userData['id'].toString();
-          await prefs.setString('current_user_id', _currentUserId);
+          if (response.statusCode == 200) {
+            final userData = json.decode(response.body);
+            _currentUserId = userData['id'].toString();
+            await prefs.setString('current_user_id', _currentUserId);
+          }
+        } catch (e) {
+          debugPrint('Error fetching user data: $e');
         }
-      } catch (e) {
-        print('Error fetching user data: $e');
+      }
+
+      if (mounted) {
+        setState(() {
+          _currentUserName = prefs.getString('username') ?? 'Guest';
+          _currentUserCoins = prefs.getInt('${_currentUserId}_total_coins') ?? 0;
+          _currentUserPoints = prefs.getInt('${_currentUserId}_current_exp') ?? 0;
+          _currentUserLevel = prefs.getInt('${_currentUserId}_current_level') ?? 1;
+        });
+      }
+    } catch (e) {
+      debugPrint('Error loading user data: $e');
+      if (mounted) {
+        setState(() {
+          _errorMessage = 'Gagal memuat data pengguna';
+        });
       }
     }
-
-    setState(() {
-      _currentUserName = prefs.getString('username') ?? 'Guest';
-      _currentUserCoins = prefs.getInt('${_currentUserId}_total_coins') ??
-          prefs.getInt('total_coins') ??
-          0; // Fallback
-      _currentUserPoints = prefs.getInt('${_currentUserId}_current_exp') ??
-          prefs.getInt('current_exp') ??
-          0; // Fallback
-      _currentUserLevel = prefs.getInt('${_currentUserId}_current_level') ??
-          prefs.getInt('current_level') ??
-          1; // Fallback
-
-      print('''
-    Loaded user data:
-    - Name: $_currentUserName
-    - Coins: $_currentUserCoins
-    - Points: $_currentUserPoints
-    - Level: $_currentUserLevel
-    ''');
-    });
   }
 
   Future<void> _loadLeaderboardData() async {
     if (_leaderboardService == null) return;
 
     try {
-      final leaderboard = await _leaderboardService!.getLeaderboard();
-      setState(() {
-        _leaderboardData = leaderboard;
-        _isLoading = false;
+      if (mounted) {
+        setState(() {
+          _isLoading = true;
+          _errorMessage = '';
+        });
+      }
 
-        // Find current user's rank
-        _currentUserRank = _findCurrentUserRank();
-      });
+      final leaderboard = await _leaderboardService!.getLeaderboard();
+      
+      if (mounted) {
+        setState(() {
+          _leaderboardData = leaderboard;
+          _isLoading = false;
+          _currentUserRank = _findCurrentUserRank();
+        });
+      }
     } catch (e) {
-      setState(() {
-        _isLoading = false;
-      });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Gagal memuat leaderboard: $e')),
-      );
+      debugPrint('Error loading leaderboard: $e');
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _errorMessage = 'Gagal memuat leaderboard: ${e.toString()}';
+        });
+        
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(_errorMessage),
+            backgroundColor: Colors.red,
+            action: SnackBarAction(
+              label: 'Coba Lagi',
+              textColor: Colors.white,
+              onPressed: _loadLeaderboardData,
+            ),
+          ),
+        );
+      }
     }
   }
 
-  // Fungsi untuk refresh data
   Future<void> _refreshData() async {
-    setState(() {
-      _isLoading = true;
-    });
-    
+    if (mounted) {
+      setState(() {
+        _isLoading = true;
+      });
+    }
+
     await _loadUserData();
     await _loadLeaderboardData();
-    
-    // Tampilkan pesan berhasil refresh
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Data berhasil diperbarui'),
-        backgroundColor: Colors.green,
-        duration: Duration(seconds: 2),
-      ),
-    );
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Data berhasil diperbarui'),
+          backgroundColor: Colors.green,
+          duration: Duration(seconds: 2),
+        ),
+      );
+    }
   }
 
   int _findCurrentUserRank() {
@@ -150,15 +191,77 @@ class _LeaderboardPageState extends State<LeaderboardPage> {
 
     for (int i = 0; i < _leaderboardData.length; i++) {
       if (_leaderboardData[i].id.toString() == _currentUserId) {
-        // Update user data dengan data terbaru dari leaderboard
-        setState(() {
-          _currentUserPoints = _leaderboardData[i].poin;
-          _currentUserLevel = _leaderboardData[i].level;
-        });
+        if (mounted) {
+          setState(() {
+            _currentUserPoints = _leaderboardData[i].poin;
+            _currentUserLevel = _leaderboardData[i].level;
+          });
+        }
         return i + 1;
       }
     }
     return 0;
+  }
+
+  Color _getRankColor(int rank) {
+    switch (rank) {
+      case 1:
+        return const Color(0xFFFFD700); // Gold
+      case 2:
+        return const Color(0xFFC0C0C0); // Silver
+      case 3:
+        return const Color(0xFFCD7F32); // Bronze
+      default:
+        return const Color(0xFFF3F3F3);
+    }
+  }
+
+  Color _getRankTextColor(int rank) {
+    return rank <= 3 ? Colors.black : Colors.grey[600]!;
+  }
+
+  IconData _getRankIcon(int rank) {
+    switch (rank) {
+      case 1:
+        return Icons.emoji_events;
+      case 2:
+        return Icons.emoji_events;
+      case 3:
+        return Icons.emoji_events;
+      default:
+        return Icons.person;
+    }
+  }
+
+  void _navigateToPage(int index) {
+    if (!mounted) return;
+    
+    setState(() {
+      _bottomNavCurrentIndex = index;
+    });
+
+    Widget page;
+    switch (index) {
+      case 0:
+        page = const BerandaPage();
+        break;
+      case 1:
+        page = const NotifikasiPage();
+        break;
+      case 2:
+        page = const PanduanPage();
+        break;
+      case 3:
+        page = const ProfilPage();
+        break;
+      default:
+        return;
+    }
+
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (context) => page),
+    );
   }
 
   @override
@@ -175,6 +278,13 @@ class _LeaderboardPageState extends State<LeaderboardPage> {
               'assets/logo.png',
               width: 40,
               height: 40,
+              errorBuilder: (context, error, stackTrace) {
+                return const Icon(
+                  Icons.image_not_supported,
+                  size: 40,
+                  color: Colors.white,
+                );
+              },
             ),
             const SizedBox(width: 10),
             Text(
@@ -194,220 +304,295 @@ class _LeaderboardPageState extends State<LeaderboardPage> {
         ),
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : RefreshIndicator(
-              onRefresh: _refreshData,
-              color: const Color(0xFF24D17E),
-              child: CustomScrollView(
-                slivers: [
-                  // Header Leaderboard sebagai SliverToBoxAdapter
-                  SliverToBoxAdapter(
-                    child: Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: const BoxDecoration(
-                        color: Color(0xFF24D17E),
-                        borderRadius: BorderRadius.only(
-                          bottomLeft: Radius.circular(20),
-                          bottomRight: Radius.circular(20),
+          ? const Center(
+              child: CircularProgressIndicator(color: Color(0xFF24D17E))
+            )
+          : _errorMessage.isNotEmpty
+              ? Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(
+                        Icons.error_outline,
+                        size: 64,
+                        color: Colors.red,
+                      ),
+                      const SizedBox(height: 16),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 32),
+                        child: Text(
+                          _errorMessage,
+                          textAlign: TextAlign.center,
+                          style: GoogleFonts.poppins(
+                            fontSize: 16,
+                            color: Colors.red,
+                          ),
                         ),
                       ),
-                      child: Column(
-                        children: [
-                          Stack(
-                            alignment: Alignment.bottomRight,
-                            children: [
-                              const CircleAvatar(
-                                radius: 40,
-                                backgroundImage: AssetImage('assets/profile.jpg'),
-                              ),
-                              if (_currentUserRank > 0)
-                                Container(
-                                  padding: const EdgeInsets.all(6),
-                                  decoration: BoxDecoration(
-                                    color: _getRankColor(_currentUserRank),
-                                    shape: BoxShape.circle,
-                                    border: Border.all(
-                                      color: Colors.white,
-                                      width: 2,
-                                    ),
-                                  ),
-                                  child: Text(
-                                    '$_currentUserRank',
-                                    style: GoogleFonts.poppins(
-                                      fontSize: 15,
-                                      fontWeight: FontWeight.bold,
-                                      color: _getRankTextColor(_currentUserRank),
-                                    ),
-                                  ),
-                                ),
-                            ],
+                      const SizedBox(height: 16),
+                      ElevatedButton(
+                        onPressed: _loadLeaderboardData,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF24D17E),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
                           ),
-                          const SizedBox(height: 8),
-                          Text(
-                            _currentUserName,
-                            style: const TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                            ),
+                        ),
+                        child: Text(
+                          'Coba Lagi',
+                          style: GoogleFonts.poppins(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w600,
                           ),
-                          Text(
-                            "$_currentUserPoints EXP | $_currentUserCoins Koin",
-                            style: const TextStyle(
-                              fontSize: 16,
-                              color: Colors.white,
-                            ),
-                          ),
-                          if (_currentUserRank > 0)
-                            Text(
-                              "Posisi Anda #$_currentUserRank di Leaderboard",
-                              style: const TextStyle(
-                                fontSize: 14,
-                                color: Colors.white,
-                              ),
-                            ),
-                          const SizedBox(height: 16),
-                          // Tab Buttons
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                            ],
-                          ),
-                        ],
+                        ),
                       ),
-                    ),
+                    ],
                   ),
-                  
-                  // Spacing
-                  const SliverToBoxAdapter(
-                    child: SizedBox(height: 12),
-                  ),
-                  
-                  // Leaderboard List sebagai SliverList
-                  _leaderboardData.isEmpty
-                      ? const SliverFillRemaining(
-                          child: Center(child: Text('Belum ada data leaderboard')),
-                        )
-                      : SliverList(
-                          delegate: SliverChildBuilderDelegate(
-                            (context, index) {
-                              final user = _leaderboardData[index];
-                              final isCurrentUser =
-                                  user.id.toString() == _currentUserId;
-
-                              return Padding(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 16, vertical: 4),
-                                child: Container(
-                                  decoration: BoxDecoration(
-                                    color: isCurrentUser
-                                        ? const Color(0xFFE8F5E9)
-                                        : Colors.white,
-                                    borderRadius: BorderRadius.circular(12),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: Colors.grey.withOpacity(0.2),
-                                        blurRadius: 4,
-                                        offset: const Offset(0, 2),
-                                      ),
-                                    ],
-                                  ),
-                                  child: ListTile(
-                                    contentPadding: const EdgeInsets.symmetric(
-                                        horizontal: 16, vertical: 8),
-                                    leading: Container(
-                                      width: 36,
-                                      height: 36,
-                                      decoration: BoxDecoration(
-                                        shape: BoxShape.circle,
-                                        color: _getRankColor(index + 1),
-                                      ),
-                                      child: Center(
-                                        child: Text(
-                                          (index + 1).toString(),
-                                          style: GoogleFonts.poppins(
-                                            fontSize: 16,
-                                            fontWeight: FontWeight.bold,
-                                            color: _getRankTextColor(index + 1),
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                    title: Row(
+                )
+              : RefreshIndicator(
+                  onRefresh: _refreshData,
+                  color: const Color(0xFF24D17E),
+                  child: CustomScrollView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    slivers: [
+                      // Header Section
+                      SliverToBoxAdapter(
+                        child: Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: const BoxDecoration(
+                            color: Color(0xFF24D17E),
+                            borderRadius: BorderRadius.only(
+                              bottomLeft: Radius.circular(20),
+                              bottomRight: Radius.circular(20),
+                            ),
+                          ),
+                          child: Column(
+                            children: [
+                              AnimatedBuilder(
+                                animation: _avatarAnimation,
+                                builder: (context, child) {
+                                  return Transform.scale(
+                                    scale: _avatarAnimation.value,
+                                    child: Stack(
+                                      alignment: Alignment.bottomRight,
                                       children: [
-                                        Text(
-                                          user.username,
-                                          style: GoogleFonts.poppins(
-                                            fontSize: 16,
-                                            fontWeight: FontWeight.w500,
-                                            color: Colors.black,
+                                        Container(
+                                          decoration: BoxDecoration(
+                                            shape: BoxShape.circle,
+                                            border: Border.all(
+                                              color: Colors.white,
+                                              width: 3,
+                                            ),
+                                            boxShadow: [
+                                              BoxShadow(
+                                                color: Colors.black.withOpacity(0.2),
+                                                blurRadius: 8,
+                                                offset: const Offset(0, 4),
+                                              ),
+                                            ],
+                                          ),
+                                          child: CircleAvatar(
+                                            radius: 40,
+                                            backgroundImage: const AssetImage('assets/profile.jpg'),
+                                            onBackgroundImageError: (exception, stackTrace) {
+                                              debugPrint('Error loading profile image: $exception');
+                                            },
+                                            child: const Icon(
+                                              Icons.person,
+                                              size: 40,
+                                              color: Colors.grey,
+                                            ),
                                           ),
                                         ),
-                                        if (isCurrentUser)
-                                          const Padding(
-                                            padding: EdgeInsets.only(left: 8.0),
-                                            child: Icon(Icons.star,
-                                                color: Colors.amber, size: 16),
+                                        if (_currentUserRank > 0)
+                                          Container(
+                                            padding: const EdgeInsets.all(6),
+                                            decoration: BoxDecoration(
+                                              color: _getRankColor(_currentUserRank),
+                                              shape: BoxShape.circle,
+                                              border: Border.all(
+                                                color: Colors.white,
+                                                width: 2,
+                                              ),
+                                            ),
+                                            child: Text(
+                                              '$_currentUserRank',
+                                              style: GoogleFonts.poppins(
+                                                fontSize: 14,
+                                                fontWeight: FontWeight.bold,
+                                                color: _getRankTextColor(_currentUserRank),
+                                              ),
+                                            ),
                                           ),
                                       ],
                                     ),
-                                    subtitle: Text(
-                                      "${user.poin} EXP",
-                                      style: GoogleFonts.poppins(
-                                        fontSize: 14,
-                                        color: Colors.grey[600],
-                                      ),
-                                    ),
-                                    trailing: Text(
-                                      "Level ${user.level}",
-                                      style: GoogleFonts.poppins(
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.bold,
-                                        color: const Color(0xFF24D17E),
-                                      ),
+                                  );
+                                },
+                              ),
+                              const SizedBox(height: 12),
+                              Text(
+                                _currentUserName,
+                                style: GoogleFonts.poppins(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
+                              ),
+                              if (_currentUserRank > 0)
+                                Padding(
+                                  padding: const EdgeInsets.only(top: 8),
+                                  child: Text(
+                                    'Posisi #$_currentUserRank di Leaderboard',
+                                    style: GoogleFonts.poppins(
+                                      fontSize: 14,
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.w500,
                                     ),
                                   ),
                                 ),
-                              );
-                            },
-                            childCount: _leaderboardData.length,
+                              const SizedBox(height: 16),
+                            ],
                           ),
                         ),
-                ],
-              ),
-            ),
+                      ),
+                      // Spacing
+                      const SliverToBoxAdapter(child: SizedBox(height: 16)),
+                      // Leaderboard List
+                      _leaderboardData.isEmpty
+                          ? SliverFillRemaining(
+                              child: Center(
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(
+                                      Icons.leaderboard_outlined,
+                                      size: 64,
+                                      color: Colors.grey[400],
+                                    ),
+                                    const SizedBox(height: 16),
+                                    Text(
+                                      'Belum ada data leaderboard',
+                                      style: GoogleFonts.poppins(
+                                        fontSize: 16,
+                                        color: Colors.grey[600],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            )
+                          : SliverList(
+                              delegate: SliverChildBuilderDelegate(
+                                (context, index) {
+                                  final user = _leaderboardData[index];
+                                  final isCurrentUser = user.id.toString() == _currentUserId;
+                                  return AnimatedOpacity(
+                                    opacity: _isLoading ? 0.0 : 1.0,
+                                    duration: Duration(milliseconds: 300 + (index * 100)),
+                                    child: Padding(
+                                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                                      child: Container(
+                                        decoration: BoxDecoration(
+                                          gradient: index < 3
+                                              ? LinearGradient(
+                                                  colors: [
+                                                    _getRankColor(index + 1).withOpacity(0.2),
+                                                    Colors.white,
+                                                  ],
+                                                  begin: Alignment.topLeft,
+                                                  end: Alignment.bottomRight,
+                                                )
+                                              : null,
+                                          color: isCurrentUser
+                                              ? const Color(0xFFE8F5E9)
+                                              : index < 3
+                                                  ? null
+                                                  : Colors.white,
+                                          borderRadius: BorderRadius.circular(12),
+                                          boxShadow: [
+                                            BoxShadow(
+                                              color: Colors.grey.withOpacity(0.2),
+                                              blurRadius: 4,
+                                              offset: const Offset(0, 2),
+                                            ),
+                                          ],
+                                        ),
+                                        child: Material(
+                                          color: Colors.transparent,
+                                          child: InkWell(
+                                            borderRadius: BorderRadius.circular(12),
+                                            onTap: () {
+                                              // Optional: Add tap feedback or user profile view
+                                            },
+                                            child: ListTile(
+                                              contentPadding: const EdgeInsets.symmetric(
+                                                  horizontal: 16, vertical: 8),
+                                              leading: Container(
+                                                width: 40,
+                                                height: 40,
+                                                decoration: BoxDecoration(
+                                                  shape: BoxShape.circle,
+                                                  color: _getRankColor(index + 1),
+                                                ),
+                                                child: Center(
+                                                  child: Icon(
+                                                    _getRankIcon(index + 1),
+                                                    color: _getRankTextColor(index + 1),
+                                                    size: 20,
+                                                  ),
+                                                ),
+                                              ),
+                                              title: Row(
+                                                children: [
+                                                  Expanded(
+                                                    child: Text(
+                                                      user.username,
+                                                      style: GoogleFonts.poppins(
+                                                        fontSize: 16,
+                                                        fontWeight: FontWeight.w600,
+                                                        color: Colors.black,
+                                                      ),
+                                                      overflow: TextOverflow.ellipsis,
+                                                    ),
+                                                  ),
+                                                  if (isCurrentUser)
+                                                    const Padding(
+                                                      padding: EdgeInsets.only(left: 8.0),
+                                                      child: Icon(Icons.star,
+                                                          color: Colors.amber, size: 16),
+                                                    ),
+                                                ],
+                                              ),
+                                              subtitle: Text(
+                                                "${user.poin} EXP | Level ${user.level}",
+                                                style: GoogleFonts.poppins(
+                                                  fontSize: 12,
+                                                  color: Colors.grey[600],
+                                                ),
+                                              ),
+                                              trailing: Text(
+                                                '#${index + 1}',
+                                                style: GoogleFonts.poppins(
+                                                  fontSize: 14,
+                                                  fontWeight: FontWeight.bold,
+                                                  color: const Color(0xFF24D17E),
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  );
+                                },
+                                childCount: _leaderboardData.length,
+                              ),
+                            ),
+                      const SliverToBoxAdapter(child: SizedBox(height: 16)),
+                    ],
+                  ),
+                ),
       bottomNavigationBar: _buildBottomNavigation(),
-    );
-  }
-
-  Color _getRankColor(int rank) {
-    switch (rank) {
-      case 1:
-        return const Color(0xFFFFD700); // Gold
-      case 2:
-        return const Color(0xFFC0C0C0); // Silver
-      case 3:
-        return const Color(0xFFCD7F32); // Bronze
-      default:
-        return const Color(0xFFF3F3F3);
-    }
-  }
-
-  Color _getRankTextColor(int rank) {
-    return Colors.black;
-  }
-
-  Widget _buildTabButton(String title, {required bool isSelected}) {
-    return ElevatedButton(
-      onPressed: () {},
-      style: ElevatedButton.styleFrom(
-        backgroundColor: isSelected ? Colors.white : const Color(0xFF24D17E),
-        foregroundColor: isSelected ? Colors.black : Colors.white,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-        ),
-      ),
-      child: Text(title),
     );
   }
 
@@ -420,38 +605,7 @@ class _LeaderboardPageState extends State<LeaderboardPage> {
       child: BottomNavigationBar(
         type: BottomNavigationBarType.fixed,
         backgroundColor: const Color(0xFF24D17E),
-        onTap: (index) {
-          setState(() {
-            _bottomNavCurrentIndex = index;
-          });
-
-          switch (index) {
-            case 0:
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(builder: (context) => const BerandaPage()),
-              );
-              break;
-            case 1:
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(builder: (context) => const NotifikasiPage()),
-              );
-              break;
-            case 2:
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(builder: (context) => const PanduanPage()),
-              );
-              break;
-            case 3:
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(builder: (context) => const ProfilPage()),
-              );
-              break;
-          }
-        },
+        onTap: _navigateToPage,
         currentIndex: _bottomNavCurrentIndex,
         items: const [
           BottomNavigationBarItem(

@@ -78,12 +78,6 @@ class _MonitoringPageState extends State<MonitoringPage> {
     client.onConnected = _onConnected;
     client.onSubscribed = _onSubscribed;
     client.pongCallback = _pong;
-
-    // Set secure jika diperlukan (untuk broker yang membutuhkan SSL)
-    // client.secure = true;
-    // client.securityContext = SecurityContext.defaultContext;
-
-    // Connect ke broker
     _connectToBroker();
   }
 
@@ -170,37 +164,37 @@ class _MonitoringPageState extends State<MonitoringPage> {
           final success = await _sensorDataService.sendSensorData(sensorData);
           if (success) {
             print('Data successfully sent to API');
-            if (mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('Data terkirim ke server'),
-                  backgroundColor: Colors.green,
-                  duration: Duration(seconds: 2),
-                ),
-              );
-            }
+            // if (mounted) {
+            //   ScaffoldMessenger.of(context).showSnackBar(
+            //     SnackBar(
+            //       content: Text('Data terkirim ke server'),
+            //       backgroundColor: Colors.green,
+            //       duration: Duration(seconds: 2),
+            //     ),
+            //   );
+            // }
           } else {
             print('Failed to send data to API');
-            if (mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('Gagal mengirim data ke server'),
-                  backgroundColor: Colors.red,
-                  duration: Duration(seconds: 2),
-                ),
-              );
-            }
+            // if (mounted) {
+            //   ScaffoldMessenger.of(context).showSnackBar(
+            //     SnackBar(
+            //       content: Text('Gagal mengirim data ke server'),
+            //       backgroundColor: Colors.red,
+            //       duration: Duration(seconds: 2),
+            //     ),
+            //   );
+            // }
           }
         } catch (apiError) {
           print('API Error: $apiError');
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('Error API: $apiError'),
-                duration: Duration(seconds: 3),
-              ),
-            );
-          }
+          // if (mounted) {
+          //   ScaffoldMessenger.of(context).showSnackBar(
+          //     SnackBar(
+          //       content: Text('Error API: $apiError'),
+          //       duration: Duration(seconds: 3),
+          //     ),
+          //   );
+          // }
         }
 
         // Cek notifikasi alert
@@ -209,14 +203,14 @@ class _MonitoringPageState extends State<MonitoringPage> {
         }
       } catch (e) {
         print('Error processing MQTT message: $e');
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Format data sensor tidak valid'),
-              duration: Duration(seconds: 2),
-            ),
-          );
-        }
+        // if (mounted) {
+        //   ScaffoldMessenger.of(context).showSnackBar(
+        //     SnackBar(
+        //       content: Text('Format data sensor tidak valid'),
+        //       duration: Duration(seconds: 2),
+        //     ),
+        //   );
+        // }
       }
     });
   }

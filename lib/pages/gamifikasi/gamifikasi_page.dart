@@ -182,7 +182,10 @@ class _GamifikasiPageState extends State<GamifikasiPage>
 
     final builder = MqttClientPayloadBuilder();
     String message = isActive ? "ON" : "OFF";
-    String specificTopic = "$topic/$device";
+
+    // Mapping nama kontrol yang sesuai dengan ESP32
+    String mqttDeviceName = device.replaceAll(" ", "_");
+    String specificTopic = "$topic/$mqttDeviceName";
 
     builder.addString(message);
     client.publishMessage(specificTopic, MqttQos.atLeastOnce, builder.payload!);

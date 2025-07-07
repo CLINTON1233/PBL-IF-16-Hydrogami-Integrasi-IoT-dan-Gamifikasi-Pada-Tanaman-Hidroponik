@@ -192,14 +192,14 @@ class _GamifikasiPageState extends State<GamifikasiPage>
     print('Published to $specificTopic: $message');
 
     // Untuk debugging, bisa ditambahkan snackbar
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Mengirim perintah: $device $message'),
-          duration: const Duration(seconds: 1),
-        ),
-      );
-    }
+    //if (mounted) {
+     // ScaffoldMessenger.of(context).showSnackBar(
+      //  SnackBar(
+      //    content: Text('Mengirim perintah: $device $message'),
+      //    duration: const Duration(seconds: 1),
+      //  ),
+     // );
+   // }
   }
 
   void _triggerControlAnimation(String controlName) {
@@ -286,7 +286,7 @@ class _GamifikasiPageState extends State<GamifikasiPage>
       // Tampilkan pesan jika mencoba mengubah kontrol saat mode otomatis aktif
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Matikan kontrol otomatis untuk mengontrol manual'),
+          content: Text('Matikan untuk mengontrol manual'),
           duration: Duration(seconds: 2),
           backgroundColor: Colors.orange,
         ),
@@ -480,7 +480,7 @@ class _GamifikasiPageState extends State<GamifikasiPage>
             child: Text(
               _activeControl != null
                   ? (isAutomaticControl
-                      ? 'Mode Otomatis Aktif'
+                      ? 'Mode Kontrol Semua Aktif'
                       : 'Kontrol $_activeControl Aktif')
                   : 'Sistem Siap',
               style: TextStyle(
@@ -769,7 +769,7 @@ class _GamifikasiPageState extends State<GamifikasiPage>
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                "Kontrol Otomatis",
+                "Kontrol Semua Pompa",
                 style: GoogleFonts.poppins(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,

@@ -316,7 +316,7 @@ class _GamifikasiProgresPageState extends State<GamifikasiProgresPage>
 
     try {
       final userResponse = await http.get(
-        Uri.parse('http://10.0.2.2:8000/api/user'),
+        Uri.parse('https://admin-hydrogami.up.railway.app/api/user'),
         headers: {
           'Authorization': 'Bearer $token',
           'Accept': 'application/json',

@@ -4,7 +4,7 @@ import '../models/sensor_data_model.dart';
 
 class SensorDataService {
   static const String _baseUrl =
-      'http://10.0.2.2:8000/api'; // Ganti dengan URL Laravel Anda
+      'https://admin-hydrogami.up.railway.app/api'; // Ganti dengan URL Laravel Anda
 
   Future<bool> sendSensorData(SensorData data) async {
     try {

@@ -1,0 +1,2 @@
+D:/PBL-IF-16-Hydrogami-Integrasi-IoT-dan-Gamifikasi-Pada-Tanaman-Hidroponik-2/android/app/.cxx/RelWithDebInfo/4x2q1h45/x86_64/CMakeFiles/edit_cache.dir
+D:/PBL-IF-16-Hydrogami-Integrasi-IoT-dan-Gamifikasi-Pada-Tanaman-Hidroponik-2/android/app/.cxx/RelWithDebInfo/4x2q1h45/x86_64/CMakeFiles/rebuild_cache.dir

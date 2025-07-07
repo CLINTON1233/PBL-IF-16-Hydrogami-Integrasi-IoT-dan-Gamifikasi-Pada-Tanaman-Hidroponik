@@ -18,10 +18,14 @@ class AuthServices {
 
     http.Response response = await http.post(
       url,
-      headers: headers,
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json', // Tambahkan ini
+      },
       body: body,
     );
-    print(response.body);
+    print('Response Status: ${response.statusCode}');
+    print('Response Body: ${response.body}');
     return response;
   }
 
@@ -48,7 +52,10 @@ class AuthServices {
 
     http.Response response = await http.post(
       url,
-      headers: headers,
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json', // Tambahkan ini
+      },
       body: body,
     );
 

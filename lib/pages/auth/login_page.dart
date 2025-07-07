@@ -32,7 +32,7 @@ class _LoginPageState extends State<LoginPage>
   void loginUser(String email, String password) async {
     try {
       final response = await http.post(
-        Uri.parse('http://localhost:8000/api/auth/login'),
+        Uri.parse('https://admin-hydrogami.up.railway.app/api/auth/login'),
         body: {
           'email': email,
           'password': password,

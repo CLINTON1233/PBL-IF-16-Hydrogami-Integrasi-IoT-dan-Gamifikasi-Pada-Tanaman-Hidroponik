@@ -436,7 +436,7 @@ class _MonitoringPageState extends State<MonitoringPage> {
 
   Widget _buildPHChart() {
     return _buildChart(
-      title: 'pH Levels',
+      title: 'Kadar pH',
       currentValue: currentPH,
       unit: 'pH',
       chartData: chartDataPH,
@@ -449,7 +449,7 @@ class _MonitoringPageState extends State<MonitoringPage> {
 
   Widget _buildMainChart() {
     return _buildChart(
-      title: 'TDS Levels',
+      title: 'Kadar TDS',
       currentValue: currentTDS,
       unit: 'ppm',
       chartData: chartDataTDS,
@@ -794,7 +794,7 @@ class _MonitoringPageState extends State<MonitoringPage> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Sensor Readings',
+          'Hasil Pembacaan Sensor',
           style: GoogleFonts.poppins(
             fontSize: 16,
             fontWeight: FontWeight.w600,
@@ -810,7 +810,7 @@ class _MonitoringPageState extends State<MonitoringPage> {
           mainAxisSpacing: 12,
           children: [
             _buildSensorDetailCard(
-              title: 'TDS Level',
+              title: 'Kadar TDS',
               value: currentTDS.toStringAsFixed(1),
               unit: 'ppm',
               icon: Icons.opacity,
@@ -819,7 +819,7 @@ class _MonitoringPageState extends State<MonitoringPage> {
               status: determineSensorStatus('TDS', currentTDS),
             ),
             _buildSensorDetailCard(
-              title: 'pH Level',
+              title: 'Kadar pH',
               value: currentPH.toStringAsFixed(1),
               unit: 'pH',
               icon: Icons.blur_circular,

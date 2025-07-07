@@ -65,7 +65,7 @@ class _LeaderboardPageState extends State<LeaderboardPage>
       if (mounted) {
         setState(() {
           _leaderboardService = LeaderboardService(
-            baseUrl: 'http://10.0.2.2:8000/api',
+            baseUrl: 'https://admin-hydrogami.up.railway.app/api',
             token: token,
           );
         });
@@ -90,7 +90,7 @@ class _LeaderboardPageState extends State<LeaderboardPage>
       if (_currentUserId.isEmpty && token != null) {
         try {
           final response = await http.get(
-            Uri.parse('http://10.0.2.2:8000/api/user'),
+            Uri.parse('https://admin-hydrogami.up.railway.app/api/user'),
             headers: {'Authorization': 'Bearer $token'},
           );
 

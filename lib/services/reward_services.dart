@@ -5,14 +5,14 @@ import '../models/reward_model.dart';
 
 class RewardService {
   final String token;
-  static const String baseUrl = 'http://10.0.2.2:8000'; // Ganti dengan URL API Anda
+  static const String baseUrl = 'https://admin-hydrogami.up.railway.app/api'; // Ganti dengan URL API Anda
 
   RewardService(this.token);
 
   Future<List<Reward>> getGachaRewards() async {
     try {
       final response = await http.get(
-        Uri.parse('$baseUrl/api/rewards/gacha'),
+        Uri.parse('$baseUrl/rewards/gacha'),
         headers: {
           'Authorization': 'Bearer $token',
           'Accept': 'application/json',
@@ -33,7 +33,7 @@ class RewardService {
   Future<List<Reward>> getRedeemRewards() async {
     try {
       final response = await http.get(
-        Uri.parse('$baseUrl/api/rewards/redeem'),
+        Uri.parse('$baseUrl/rewards/redeem'),
         headers: {
           'Authorization': 'Bearer $token',
           'Accept': 'application/json',

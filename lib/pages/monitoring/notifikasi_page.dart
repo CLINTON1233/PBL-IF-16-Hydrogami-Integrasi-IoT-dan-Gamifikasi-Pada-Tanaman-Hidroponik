@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:application_hydrogami/models/notifikasi_model.dart'; // Import model yang benar
 import 'package:application_hydrogami/services/notifikasi_services.dart';
 import 'package:application_hydrogami/pages/beranda_page.dart';
 import 'package:application_hydrogami/pages/panduan/panduan_page.dart';
@@ -16,46 +17,63 @@ class _NotifikasiPageState extends State<NotifikasiPage> {
   bool isLoading = false;
   List<NotifikasiModel> notifications = [];
   bool hasNewNotifications = false;
-  int _bottomNavCurrentIndex = 1; // 1 for Notifications page
+  int _bottomNavCurrentIndex = 1;
 
   @override
   void initState() {
     super.initState();
-    _loadData();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadData();
+    });
   }
 
   Future<void> _loadData() async {
-    setState(() => isLoading = true);
-    await fetchNotifications();
-    setState(() => isLoading = false);
+    if (mounted) {
+      setState(() => isLoading = true);
+    }
+
+    try {
+      await fetchNotifications();
+    } catch (e) {
+      print('Error _loadData: $e');
+    } finally {
+      if (mounted) {
+        setState(() => isLoading = false);
+      }
+    }
   }
 
   Future<void> fetchNotifications() async {
     try {
+      print('Memulai fetch notifikasi...');
       final result = await LayananNotifikasi.ambilNotifikasi();
-      setState(() {
-        notifications = result;
-        hasNewNotifications = result.any((n) => n.dibaca == 0);
-      });
+      print('Dapat ${result.length} notifikasi');
+
+      if (mounted) {
+        setState(() {
+          notifications = result;
+          hasNewNotifications = result.any((n) => !n.dibaca);
+        });
+      }
     } catch (e) {
-      print('Error: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Gagal memuat notifikasi'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      print('Error fetchNotifications: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Gagal memuat notifikasi: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 
   Future<void> handleDeleteNotification(NotifikasiModel notification) async {
-    final success =
-        await LayananNotifikasi.hapusNotifikasi(notification.idNotifikasi);
+    final success = await LayananNotifikasi.hapusNotifikasi(notification.id);
     if (success) {
       setState(() {
-        notifications
-            .removeWhere((n) => n.idNotifikasi == notification.idNotifikasi);
-        hasNewNotifications = notifications.any((n) => n.dibaca == 0);
+        notifications.removeWhere((n) => n.id == notification.id);
+        hasNewNotifications = notifications.any((n) => !n.dibaca);
       });
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -75,24 +93,22 @@ class _NotifikasiPageState extends State<NotifikasiPage> {
   }
 
   Future<void> markAsRead(NotifikasiModel notification) async {
-    if (notification.dibaca == 0) {
-      final success =
-          await LayananNotifikasi.tandaiDibaca(notification.idNotifikasi);
+    if (!notification.dibaca) {
+      final success = await LayananNotifikasi.tandaiDibaca(notification.id);
       if (success) {
         setState(() {
-          final index = notifications
-              .indexWhere((n) => n.idNotifikasi == notification.idNotifikasi);
+          final index = notifications.indexWhere((n) => n.id == notification.id);
           if (index != -1) {
             notifications[index] = NotifikasiModel(
-              idNotifikasi: notification.idNotifikasi,
+              id: notification.id,
               idSensor: notification.idSensor,
               jenisSensor: notification.jenisSensor,
               pesan: notification.pesan,
               status: notification.status,
-              dibaca: 1,
+              dibaca: true,
               waktuDibuat: notification.waktuDibuat,
             );
-            hasNewNotifications = notifications.any((n) => n.dibaca == 0);
+            hasNewNotifications = notifications.any((n) => !n.dibaca);
           }
         });
       }
@@ -104,8 +120,7 @@ class _NotifikasiPageState extends State<NotifikasiPage> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Hapus Semua Notifikasi'),
-        content:
-            const Text('Apakah Anda yakin ingin menghapus semua notifikasi?'),
+        content: const Text('Apakah Anda yakin ingin menghapus semua notifikasi?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
@@ -113,8 +128,7 @@ class _NotifikasiPageState extends State<NotifikasiPage> {
           ),
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
-            child:
-                const Text('Hapus Semua', style: TextStyle(color: Colors.red)),
+            child: const Text('Hapus Semua', style: TextStyle(color: Colors.red)),
           ),
         ],
       ),
@@ -289,6 +303,10 @@ class _NotifikasiPageState extends State<NotifikasiPage> {
                           color: Colors.grey[600],
                         ),
                       ),
+                      TextButton(
+                        onPressed: _loadData,
+                        child: Text('Muat Ulang'),
+                      ),
                     ],
                   ),
                 )
@@ -313,7 +331,7 @@ class _NotifikasiPageState extends State<NotifikasiPage> {
                             ),
                             ...entry.value.map((notification) {
                               return Dismissible(
-                                key: Key(notification.idNotifikasi.toString()),
+                                key: Key(notification.id),
                                 direction: DismissDirection.endToStart,
                                 background: Container(
                                   alignment: Alignment.centerRight,
@@ -364,7 +382,7 @@ class _NotifikasiPageState extends State<NotifikasiPage> {
                                           offset: const Offset(0, 1),
                                         ),
                                       ],
-                                      border: notification.dibaca == 0
+                                      border: !notification.dibaca
                                           ? Border.all(
                                               color: const Color(0xFF24D17E),
                                               width: 1)
@@ -393,7 +411,7 @@ class _NotifikasiPageState extends State<NotifikasiPage> {
                                         notification.pesan,
                                         style: GoogleFonts.poppins(
                                           fontSize: 14,
-                                          fontWeight: notification.dibaca == 0
+                                          fontWeight: !notification.dibaca
                                               ? FontWeight.w600
                                               : FontWeight.w500,
                                         ),
@@ -405,7 +423,7 @@ class _NotifikasiPageState extends State<NotifikasiPage> {
                                           color: Colors.grey[600],
                                         ),
                                       ),
-                                      trailing: notification.dibaca == 0
+                                      trailing: !notification.dibaca
                                           ? Container(
                                               width: 8,
                                               height: 8,
@@ -458,10 +476,8 @@ class _NotifikasiPageState extends State<NotifikasiPage> {
                 MaterialPageRoute(builder: (context) => const BerandaPage()));
             break;
           case 1:
-            Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(
-                    builder: (context) => const NotifikasiPage()));
+            Navigator.pushReplacement(context,
+                MaterialPageRoute(builder: (context) => const NotifikasiPage()));
             break;
           case 2:
             Navigator.pushReplacement(context,

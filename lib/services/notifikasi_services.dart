@@ -1,52 +1,11 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:application_hydrogami/models/notifikasi_model.dart'; // Import model
 import 'package:application_hydrogami/services/globals.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-class NotifikasiModel {
-  final int idNotifikasi;
-  final int? idSensor;
-  final String? jenisSensor;
-  final String pesan;
-  final String status;
-  final int dibaca;
-  final DateTime waktuDibuat;
-
-  NotifikasiModel({
-    required this.idNotifikasi,
-    this.idSensor,
-    this.jenisSensor,
-    required this.pesan,
-    required this.status,
-    required this.dibaca,
-    required this.waktuDibuat,
-  });
-
-  factory NotifikasiModel.fromJson(Map<String, dynamic> json) {
-    return NotifikasiModel(
-      idNotifikasi: json['id_notifikasi'] ?? 0,
-      idSensor: json['id_sensor'],
-      jenisSensor: json['jenis_sensor'],
-      pesan: json['pesan'] ?? 'No message',
-      status: json['status'] ?? 'info',
-      dibaca: json['dibaca'] ?? 0,
-      waktuDibuat: DateTime.parse(json['waktu_dibuat']),
-    );
-  }
-
-  Map<String, dynamic> toJson() => {
-        'id_notifikasi': idNotifikasi,
-        'id_sensor': idSensor,
-        'jenis_sensor': jenisSensor,
-        'pesan': pesan,
-        'status': status,
-        'dibaca': dibaca,
-        'waktu_dibuat': waktuDibuat.toIso8601String(),
-      };
-}
-
 class LayananNotifikasi {
-  // Debug flag untuk logging
+  static const String baseURL = 'https://admin-hydrogami.up.railway.app/api/';
   static const bool debugMode = true;
 
   // Method untuk mendapatkan headers dengan auth token dan logging
@@ -95,25 +54,27 @@ class LayananNotifikasi {
   // Ambil semua notifikasi
   static Future<List<NotifikasiModel>> ambilNotifikasi() async {
     try {
+      print('Mengambil notifikasi dari ${baseURL}notifikasi');
       final response = await http.get(
         Uri.parse('${baseURL}notifikasi'),
         headers: await _getHeaders(),
       );
 
-      final data = _handleResponse(response);
+      print('Response status: ${response.statusCode}');
+      print('Response body: ${response.body}');
+
+      final data = json.decode(response.body);
 
       if (response.statusCode == 200 && data != null && data['success']) {
-        return (data['data'] as List)
-            .map((item) => NotifikasiModel.fromJson(item))
-            .toList();
+        final List<dynamic> items = data['data'] ?? [];
+        print('Parsed items: $items');
+        
+        return items.map((item) => NotifikasiModel.fromJson(item)).toList();
       } else {
-        if (debugMode)
-          print(
-              '[NotifikasiService] Gagal ambil notifikasi: ${data?['message']}');
         throw Exception(data?['message'] ?? 'Gagal memuat notifikasi');
       }
     } catch (e) {
-      if (debugMode) print('[NotifikasiService] Error ambilNotifikasi: $e');
+      print('Error ambilNotifikasi: $e');
       rethrow;
     }
   }
@@ -167,14 +128,11 @@ class LayananNotifikasi {
           );
           anyNotificationSent = true;
         }
-
-        // Bisa ditambahkan pengecekan lainnya (TDS, dll)
       }
 
       return anyNotificationSent;
     } catch (e) {
-      if (debugMode)
-        print('[NotifikasiService] Error generateNotifications: $e');
+      if (debugMode) print('[NotifikasiService] Error generateNotifications: $e');
       return false;
     }
   }
@@ -191,16 +149,19 @@ class LayananNotifikasi {
         Uri.parse('${baseURL}notifikasi'),
         headers: await _getHeaders(),
         body: jsonEncode({
-          'id_sensor': idSensor,
-          'jenis_sensor': jenisSensor,
-          'pesan': pesan,
-          'status': status,
-          'dibaca': 0,
+          'type': jenisSensor,
+          'notifiable_type': 'sensor',
+          'notifiable_id': idSensor,
+          'data': {
+            'message': pesan,
+            'status': status,
+            'id_sensor': idSensor,
+          },
         }),
       );
 
       final data = _handleResponse(response);
-      return response.statusCode == 200 && data != null && data['success'];
+      return response.statusCode == 200 && data != null;
     } catch (e) {
       if (debugMode) print('[NotifikasiService] Error kirimNotifikasi: $e');
       return false;
@@ -208,10 +169,10 @@ class LayananNotifikasi {
   }
 
   // Tandai notifikasi sebagai sudah dibaca
-  static Future<bool> tandaiDibaca(int idNotifikasi) async {
+  static Future<bool> tandaiDibaca(String id) async { // Ubah parameter ke String
     try {
       final response = await http.put(
-        Uri.parse('${baseURL}notifikasi/$idNotifikasi/read'),
+        Uri.parse('${baseURL}notifikasi/$id/read'),
         headers: await _getHeaders(),
       );
 
@@ -224,10 +185,10 @@ class LayananNotifikasi {
   }
 
   // Hapus notifikasi tertentu
-  static Future<bool> hapusNotifikasi(int idNotifikasi) async {
+  static Future<bool> hapusNotifikasi(String id) async { // Ubah parameter ke String
     try {
       final response = await http.delete(
-        Uri.parse('${baseURL}notifikasi/$idNotifikasi'),
+        Uri.parse('${baseURL}notifikasi/$id'),
         headers: await _getHeaders(),
       );
 
@@ -257,8 +218,7 @@ class LayananNotifikasi {
       final data = _handleResponse(response);
       return response.statusCode == 200 && data != null && data['success'];
     } catch (e) {
-      if (debugMode)
-        print('[NotifikasiService] Error hapusSemuaNotifikasi: $e');
+      if (debugMode) print('[NotifikasiService] Error hapusSemuaNotifikasi: $e');
       return false;
     }
   }
@@ -278,8 +238,7 @@ class LayananNotifikasi {
       }
       return 0;
     } catch (e) {
-      if (debugMode)
-        print('[NotifikasiService] Error hitungNotifikasiBelumDibaca: $e');
+      if (debugMode) print('[NotifikasiService] Error hitungNotifikasiBelumDibaca: $e');
       return 0;
     }
   }

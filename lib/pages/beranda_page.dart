@@ -1395,7 +1395,7 @@ Future<void> _loadSensorData() async {
                               '${_nutrientLevel.toStringAsFixed(1)}%',
                               Icons.water_drop_outlined,
                               const Color.fromARGB(255, 255, 255, 255),
-                              'Optimal: 70-85%',
+                              'Optimal: 71.4-100%',
                             ),
                             const SizedBox(width: 15),
                             _buildInfoCard(

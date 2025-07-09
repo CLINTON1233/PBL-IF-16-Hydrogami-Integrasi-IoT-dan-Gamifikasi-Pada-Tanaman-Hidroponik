@@ -50,8 +50,7 @@ class _MonitoringPageState extends State<MonitoringPage> {
   final int maxDataPoints = 10;
 
   // Sistem notifikasi baru
-  final List<Widget> _alerts = [];
-  final List<String> _alertIds = [];
+  final List<Map<String, dynamic>> _notifications = [];
 
   @override
   void initState() {
@@ -122,61 +121,61 @@ class _MonitoringPageState extends State<MonitoringPage> {
     print('Ping response received');
   }
 
-void _subscribeToTopic() {
-  client.subscribe(topic, MqttQos.atMostOnce);
+  void _subscribeToTopic() {
+    client.subscribe(topic, MqttQos.atMostOnce);
 
-  client.updates?.listen((List<MqttReceivedMessage<MqttMessage>> c) async {
-    final MqttPublishMessage message = c[0].payload as MqttPublishMessage;
-    final payload = MqttPublishPayload.bytesToStringAsString(message.payload.message);
+    client.updates?.listen((List<MqttReceivedMessage<MqttMessage>> c) async {
+      final MqttPublishMessage message = c[0].payload as MqttPublishMessage;
+      final payload = MqttPublishPayload.bytesToStringAsString(message.payload.message);
 
-    print('Received MQTT message: $payload');
-
-    try {
-      Map<String, dynamic> data = jsonDecode(payload);
-
-      setState(() {
-        currentTDS = data['tds']?.toDouble() ?? 0;
-        currentPH = data['ph']?.toDouble() ?? 0;
-        currentTemp = data['temperature']?.toDouble() ?? 0;
-        currentHumidity = data['humidity']?.toDouble() ?? 0;
-        currentLight = data['light']?.toDouble() ?? 0;
-        currentSoilMoisture = data['soil_moisture']?.toInt() ?? 0;
-
-        _updateCharts();
-      });
-
-      // Simpan data TDS ke SharedPreferences
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setDouble('current_tds', currentTDS);
-
-      final sensorData = SensorData(
-        temperature: currentTemp,
-        humidity: currentHumidity,
-        light: currentLight,
-        soilMoisture: currentSoilMoisture,
-        tds: currentTDS,
-        ph: currentPH,
-      );
+      print('Received MQTT message: $payload');
 
       try {
-        final success = await _sensorDataService.sendSensorData(sensorData);
-        if (success) {
-          print('Data successfully sent to API');
-        } else {
-          print('Failed to send data to API');
-        }
-      } catch (apiError) {
-        print('API Error: $apiError');
-      }
+        Map<String, dynamic> data = jsonDecode(payload);
 
-      if (mounted) {
-        _checkForAlerts(context);
+        setState(() {
+          currentTDS = data['tds']?.toDouble() ?? 0;
+          currentPH = data['ph']?.toDouble() ?? 0;
+          currentTemp = data['temperature']?.toDouble() ?? 0;
+          currentHumidity = data['humidity']?.toDouble() ?? 0;
+          currentLight = data['light']?.toDouble() ?? 0;
+          currentSoilMoisture = data['soil_moisture']?.toInt() ?? 0;
+
+          _updateCharts();
+        });
+
+        // Simpan data TDS ke SharedPreferences
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setDouble('current_tds', currentTDS);
+
+        final sensorData = SensorData(
+          temperature: currentTemp,
+          humidity: currentHumidity,
+          light: currentLight,
+          soilMoisture: currentSoilMoisture,
+          tds: currentTDS,
+          ph: currentPH,
+        );
+
+        try {
+          final success = await _sensorDataService.sendSensorData(sensorData);
+          if (success) {
+            print('Data successfully sent to API');
+          } else {
+            print('Failed to send data to API');
+          }
+        } catch (apiError) {
+          print('API Error: $apiError');
+        }
+
+        if (mounted) {
+          _checkForAlerts(context);
+        }
+      } catch (e) {
+        print('Error processing MQTT message: $e');
       }
-    } catch (e) {
-      print('Error processing MQTT message: $e');
-    }
-  });
-}
+    });
+  }
 
   Future<void> _sendDataToApi() async {
     final sensorData = SensorData(
@@ -224,6 +223,9 @@ void _subscribeToTopic() {
       return;
     }
 
+    // Batasi jumlah notifikasi maksimal
+    if (_notifications.length >= 3) return;
+
     if (currentPH < 5.0 || currentPH > 7.0) {
       final message = 'Nilai pH ${currentPH.toStringAsFixed(1)} di luar range optimal (5.5-6.5)!';
       _showAlert(context, 'Peringatan pH', message, Colors.orange);
@@ -268,35 +270,55 @@ void _subscribeToTopic() {
   void _showAlert(BuildContext context, String title, String message, Color color) {
     final alertId = DateTime.now().millisecondsSinceEpoch.toString();
     
-    final alert = Positioned(
-      top: MediaQuery.of(context).padding.top + 10,
-      left: 16,
-      right: 16,
-      child: Dismissible(
-        key: Key(alertId),
-        direction: DismissDirection.up,
-        onDismissed: (direction) {
-          setState(() {
-            _alertIds.remove(alertId);
-            _alerts.removeWhere((element) => (element as Dismissible).key == Key(alertId));
-          });
-        },
-        child: Material(
-          elevation: 4,
+    setState(() {
+      _notifications.add({
+        'id': alertId,
+        'widget': _buildNotificationCard(
+          context: context,
+          id: alertId,
+          title: title,
+          message: message,
+          color: color,
+        ),
+      });
+    });
+
+    Future.delayed(const Duration(seconds: 10), () {
+      if (mounted && _notifications.any((n) => n['id'] == alertId)) {
+        _removeNotification(alertId);
+      }
+    });
+  }
+
+  Widget _buildNotificationCard({
+    required BuildContext context,
+    required String id,
+    required String title,
+    required String message,
+    required Color color,
+  }) {
+    return Dismissible(
+      key: Key(id),
+      direction: DismissDirection.up,
+      onDismissed: (direction) => _removeNotification(id),
+      child: Container(
+        width: MediaQuery.of(context).size.width * 0.9,
+        margin: const EdgeInsets.only(bottom: 8),
+        decoration: BoxDecoration(
+          color: color,
           borderRadius: BorderRadius.circular(8),
-          child: Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: color,
-              borderRadius: BorderRadius.circular(8),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
-                  blurRadius: 10,
-                  offset: const Offset(0, 4),
-                ),
-              ],
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
             ),
+          ],
+        ),
+        child: Material(
+          type: MaterialType.transparency,
+          child: Padding(
+            padding: const EdgeInsets.all(12),
             child: Row(
               children: [
                 Icon(
@@ -329,13 +351,10 @@ void _subscribeToTopic() {
                   ),
                 ),
                 IconButton(
-                  icon: const Icon(Icons.close, color: Colors.white, size: 20),
-                  onPressed: () {
-                    setState(() {
-                      _alertIds.remove(alertId);
-                      _alerts.removeWhere((element) => (element as Dismissible).key == Key(alertId));
-                    });
-                  },
+                  icon: const Icon(Icons.close, 
+                    color: Colors.white, 
+                    size: 20),
+                  onPressed: () => _removeNotification(id),
                 ),
               ],
             ),
@@ -343,20 +362,14 @@ void _subscribeToTopic() {
         ),
       ),
     );
+  }
 
-    setState(() {
-      _alertIds.add(alertId);
-      _alerts.add(alert);
-    });
-
-    Future.delayed(const Duration(seconds: 10), () {
-      if (mounted && _alertIds.contains(alertId)) {
-        setState(() {
-          _alertIds.remove(alertId);
-          _alerts.removeWhere((element) => (element as Dismissible).key == Key(alertId));
-        });
-      }
-    });
+  void _removeNotification(String id) {
+    if (mounted) {
+      setState(() {
+        _notifications.removeWhere((n) => n['id'] == id);
+      });
+    }
   }
 
   IconData _getAlertIcon(String title) {
@@ -427,8 +440,18 @@ void _subscribeToTopic() {
             ),
           ),
           
-          // Notifikasi di bagian atas
-          ..._alerts,
+          // Notifikasi overlay
+          if (_notifications.isNotEmpty)
+            Positioned(
+              top: MediaQuery.of(context).padding.top + 10,
+              left: 0,
+              right: 0,
+              child: Column(
+                children: _notifications
+                    .map((n) => Center(child: n['widget'] as Widget))
+                    .toList(),
+              ),
+            ),
         ],
       ),
       bottomNavigationBar: _buildBottomNavigation(),

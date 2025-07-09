@@ -193,13 +193,13 @@ class _GamifikasiPageState extends State<GamifikasiPage>
 
     // Untuk debugging, bisa ditambahkan snackbar
     //if (mounted) {
-     // ScaffoldMessenger.of(context).showSnackBar(
-      //  SnackBar(
-      //    content: Text('Mengirim perintah: $device $message'),
-      //    duration: const Duration(seconds: 1),
-      //  ),
-     // );
-   // }
+    // ScaffoldMessenger.of(context).showSnackBar(
+    //  SnackBar(
+    //    content: Text('Mengirim perintah: $device $message'),
+    //    duration: const Duration(seconds: 1),
+    //  ),
+    // );
+    // }
   }
 
   void _triggerControlAnimation(String controlName) {

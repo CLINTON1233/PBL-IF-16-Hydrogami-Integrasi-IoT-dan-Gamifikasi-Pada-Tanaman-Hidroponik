@@ -668,7 +668,7 @@ class _MonitoringPageState extends State<MonitoringPage> {
           ),
           const SizedBox(height: 8),
           Text(
-            'Current: ${currentValue.toStringAsFixed(1)} $unit',
+            'Terkini: ${currentValue.toStringAsFixed(1)} $unit',
             style: GoogleFonts.poppins(
               fontSize: 14,
               color: Colors.grey[700],

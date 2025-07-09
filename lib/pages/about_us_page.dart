@@ -474,7 +474,7 @@ class _AboutUsPageState extends State<AboutUsPage> {
                   fontWeight: FontWeight.w600,
                 ),
               ),
-              subtitle: const Text('hydrogami@polibatam.ac.id'),
+              subtitle: const Text('clintonalfaro@gmail.com'),
               onTap: _launchEmail,
             ),
             const Divider(height: 1),

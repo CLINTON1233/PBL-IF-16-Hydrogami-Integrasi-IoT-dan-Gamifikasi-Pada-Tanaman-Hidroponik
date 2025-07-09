@@ -29,29 +29,29 @@ class _AboutUsPageState extends State<AboutUsPage> {
       'name': 'Clinton Alfaro',
       'position': 'Fullstack Developer',
       'avatar': 'assets/clinton.jpg',
-      'desc': 'Mengembangkan sistem backend dan integrasi dengan aplikasi mobile',
-      'color': const Color(0xFF1565C0),
+      'desc': 'Mengembangkan aplikasi mobile dan integrasi perangkat keras',
+      'color': const Color.fromARGB(255, 235, 143, 5),
+    },
+    {
+      'name': 'Nania Prima Citra A',
+      'position': 'Website Developer',
+      'avatar': 'assets/nania.jpg',
+      'desc': 'Mengembangkan aplikasi web dan mobile yang ramah pengguna',
+      'color': const Color.fromARGB(255, 192, 14, 14),
     },
     {
       'name': 'Citra Miranda P.S',
-      'position': 'Website Developer',
+      'position': 'Mobile Developer',
       'avatar': 'assets/citra.jpg',
-      'desc': 'Mengembangkan antarmuka website dan integrasi API',
-      'color': const Color(0xFF6A1B9A),
+      'desc': 'Mengembangkan aplikasi web dan integrasi perangkat keras',
+      'color': const Color.fromARGB(255, 20, 221, 204),
     },
     {
       'name': 'Yurisha Anindya',
       'position': 'Mobile Developer',
       'avatar': 'assets/yurisha.jpg',
       'desc': 'Mengembangkan aplikasi mobile dan desain antarmuka pengguna',
-      'color': const Color(0xFFE65100),
-    },
-    {
-      'name': 'Nania Prima Citra A',
-      'position': 'Mobile Developer',
-      'avatar': 'assets/nania.jpg',
-      'desc': 'Mengimplementasikan fitur gamifikasi dan pengalaman pengguna',
-      'color': const Color(0xFF455A64),
+      'color': const Color.fromARGB(255, 51, 88, 255),
     },
   ];
 
@@ -277,9 +277,9 @@ class _AboutUsPageState extends State<AboutUsPage> {
 
   Widget _buildFeaturesGrid() {
     final List<Map<String, dynamic>> features = [
-      {'icon': Icons.sensors, 'title': 'Monitoring Real-time', 'desc': 'Pantau kondisi tanaman secara real-time'},
+      {'icon': Icons.sensors, 'title': 'Monitoring Real-time', 'desc': 'Pantau kondisi tanaman'},
       {'icon': Icons.auto_awesome, 'title': 'Otomatisasi', 'desc': 'Sistem nutrisi dan penyiraman otomatis'},
-      {'icon': Icons.notifications, 'title': 'Notifikasi', 'desc': 'Peringatan kondisi tanaman yang tidak normal'},
+      {'icon': Icons.notifications, 'title': 'Notifikasi', 'desc': 'Peringatan kondisi tanaman'},
       {'icon': Icons.analytics, 'title': 'Analisis Data', 'desc': 'Statistik pertumbuhan tanaman'},
       {'icon': Icons.games, 'title': 'Gamifikasi', 'desc': 'Sistem reward untuk motivasi pengguna'},
       {'icon': Icons.school, 'title': 'Edukasi', 'desc': 'Panduan lengkap bercocok tanam'},

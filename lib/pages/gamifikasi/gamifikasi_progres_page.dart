@@ -633,7 +633,7 @@ class _GamifikasiProgresPageState extends State<GamifikasiProgresPage>
 
       for (var mission in misi) {
         if (completedMissions.contains(mission.namaMisi)) {
-          mission.statusMisi = 'completed';
+          mission.statusMisi = 'selesai';
         }
       }
 
@@ -727,9 +727,8 @@ class _GamifikasiProgresPageState extends State<GamifikasiProgresPage>
 
   List<Misi> _sortMissions(List<Misi> missions) {
     final incomplete =
-        missions.where((m) => m.statusMisi != 'completed').toList();
-    final completed =
-        missions.where((m) => m.statusMisi == 'completed').toList();
+        missions.where((m) => m.statusMisi != 'selesai').toList();
+    final completed = missions.where((m) => m.statusMisi == 'selesai').toList();
     return [...incomplete, ...completed];
   }
 
@@ -741,7 +740,7 @@ class _GamifikasiProgresPageState extends State<GamifikasiProgresPage>
   }
 
   Future<void> _completeMission(Misi misi) async {
-    if (misi.statusMisi == 'completed') return;
+    if (misi.statusMisi == 'selesai') return;
 
     final prefs = await SharedPreferences.getInstance();
     final today = DateTime.now().toIso8601String().substring(0, 10);
@@ -782,7 +781,7 @@ class _GamifikasiProgresPageState extends State<GamifikasiProgresPage>
     }
 
     setState(() {
-      misi.statusMisi = 'completed';
+      misi.statusMisi = 'selesai';
       _misiList = _sortMissions(_misiList);
       _currentExp = newExp;
       _totalCoins = newCoins;
@@ -949,7 +948,7 @@ class _GamifikasiProgresPageState extends State<GamifikasiProgresPage>
         _misiList.where((m) => m.tipeMisi == 'mingguan').toList();
     for (var mission in weeklyMissions) {
       completedMissions.remove(mission.namaMisi);
-      mission.statusMisi = 'pending';
+      mission.statusMisi = 'belum selesai';
     }
 
     await _saveCompletedMissions(completedMissions);
@@ -1293,16 +1292,13 @@ class _GamifikasiProgresPageState extends State<GamifikasiProgresPage>
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              // Widget penyeimbang (tetap ada meskipun reset button tidak muncul)
-              _currentLevel >= _maxLevel
-                  ? IconButton(
-                      onPressed: _resetMascot,
-                      icon: const Icon(Icons.refresh),
-                      color: Colors.white,
-                      tooltip: 'Reset Maskot',
-                    )
-                  : const SizedBox(
-                      width: 48), // Sesuaikan lebar dengan icon button
+              // Reset button is now always visible
+              IconButton(
+                onPressed: _resetMascot,
+                icon: const Icon(Icons.refresh),
+                color: Colors.white,
+                tooltip: 'Reset Maskot',
+              ),
               Row(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
@@ -1644,15 +1640,15 @@ class _GamifikasiProgresPageState extends State<GamifikasiProgresPage>
   }
 
   Widget _missionCard({required Misi misi}) {
-    bool isCompleted = misi.statusMisi == 'completed';
+    bool isCompleted = misi.statusMisi == 'selesai';
 
     IconData getIconForStatus(String status) {
       switch (status.toLowerCase()) {
-        case 'completed':
+        case 'selesai':
           return Icons.check_circle;
         case 'in progress':
           return Icons.hourglass_empty;
-        case 'pending':
+        case 'belum selesai':
           return Icons.schedule;
         default:
           return Icons.assignment;
@@ -1661,11 +1657,11 @@ class _GamifikasiProgresPageState extends State<GamifikasiProgresPage>
 
     Color getColorForStatus(String status) {
       switch (status.toLowerCase()) {
-        case 'completed':
+        case 'selesai':
           return const Color(0xFF24D17E);
         case 'in progress':
           return Colors.blue;
-        case 'pending':
+        case 'belum selesai':
           return Colors.orange;
         default:
           return Colors.grey;

@@ -12,6 +12,8 @@ import 'package:mqtt_client/mqtt_server_client.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:application_hydrogami/services/gamifikasi_services.dart';
 import 'package:application_hydrogami/services/reward_services.dart';
+import 'dart:convert'; // Add this line
+
 
 class GamifikasiPage extends StatefulWidget {
   const GamifikasiPage({super.key});
@@ -114,6 +116,7 @@ class _GamifikasiPageState extends State<GamifikasiPage>
 
     connectMQTT(); // MQTT
     _loadUserData(); // Load user data
+    _loadRelayStates(); // Add this line
   }
 
   @override
@@ -228,71 +231,63 @@ class _GamifikasiPageState extends State<GamifikasiPage>
     });
   }
 
+  
+
   // Method untuk menangani perubahan kontrol otomatis
   void _handleAutomaticControlToggle() {
-    setState(() {
-      isAutomaticControl = !isAutomaticControl;
+  setState(() {
+    isAutomaticControl = !isAutomaticControl;
 
-      if (isAutomaticControl) {
-        // Jika kontrol otomatis aktif, nyalakan semua kontrol
-        controls = {
-          "A MIX": true,
-          "B MIX": true,
-          "PH UP": true,
-          "PH DOWN": true,
-        };
+    if (isAutomaticControl) {
+      controls = {
+        "A MIX": true,
+        "B MIX": true,
+        "PH UP": true,
+        "PH DOWN": true,
+      };
+      controls.forEach((key, value) {
+        publishControl(key, value);
+      });
+      _triggerControlAnimation("AUTO_ALL");
+    } else {
+      controls = {
+        "A MIX": false,
+        "B MIX": false,
+        "PH UP": false,
+        "PH DOWN": false,
+      };
+      controls.forEach((key, value) {
+        publishControl(key, value);
+      });
+    }
+  });
+  _saveRelayStates(); // Add this line
+  publishControl("AUTO", isAutomaticControl);
+}
 
-        // Publish semua kontrol sebagai ON
-        controls.forEach((key, value) {
-          publishControl(key, value);
-        });
-
-        // Trigger animation untuk semua kontrol
-        _triggerControlAnimation("AUTO_ALL");
-      } else {
-        // Jika kontrol otomatis nonaktif, matikan semua kontrol
-        controls = {
-          "A MIX": false,
-          "B MIX": false,
-          "PH UP": false,
-          "PH DOWN": false,
-        };
-
-        // Publish semua kontrol sebagai OFF
-        controls.forEach((key, value) {
-          publishControl(key, value);
-        });
-      }
-    });
-
-    // Publish status kontrol otomatis
-    publishControl("AUTO", isAutomaticControl);
-  }
 
   // Method untuk menangani kontrol individual
   void _handleIndividualControl(String controlName) {
-    // Hanya bisa mengubah kontrol individual jika kontrol otomatis nonaktif
-    if (!isAutomaticControl) {
-      setState(() {
-        controls[controlName] = !controls[controlName]!;
-      });
-      publishControl(controlName, controls[controlName]!);
+  if (!isAutomaticControl) {
+    setState(() {
+      controls[controlName] = !controls[controlName]!;
+    });
+    publishControl(controlName, controls[controlName]!);
+    _saveRelayStates(); // Add this line
 
-      // Trigger animation jika kontrol dinyalakan
-      if (controls[controlName]!) {
-        _triggerControlAnimation(controlName);
-      }
-    } else {
-      // Tampilkan pesan jika mencoba mengubah kontrol saat mode otomatis aktif
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Matikan untuk mengontrol manual'),
-          duration: Duration(seconds: 2),
-          backgroundColor: Colors.orange,
-        ),
-      );
+    if (controls[controlName]!) {
+      _triggerControlAnimation(controlName);
     }
+  } else {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Matikan untuk mengontrol manual'),
+        duration: Duration(seconds: 2),
+        backgroundColor: Colors.orange,
+      ),
+    );
   }
+}
 
   Future<void> _handleRefresh() async {
     try {
@@ -351,6 +346,28 @@ class _GamifikasiPageState extends State<GamifikasiPage>
       print('Error loading user data: $e');
     }
   }
+
+  Future<void> _saveRelayStates() async {
+  final prefs = await SharedPreferences.getInstance();
+  final relayStates = controls.map((key, value) => MapEntry(key, value.toString()));
+  await prefs.setString('relay_states', jsonEncode(relayStates));
+  await prefs.setBool('automatic_control', isAutomaticControl);
+}
+
+Future<void> _loadRelayStates() async {
+  final prefs = await SharedPreferences.getInstance();
+  final relayStatesString = prefs.getString('relay_states');
+  final automaticControl = prefs.getBool('automatic_control') ?? false;
+  
+  if (relayStatesString != null) {
+    final relayStates = Map<String, String>.from(jsonDecode(relayStatesString));
+    setState(() {
+      controls = relayStates.map((key, value) => MapEntry(key, value == 'true'));
+      isAutomaticControl = automaticControl;
+    });
+  }
+}
+
 
   @override
   Widget build(BuildContext context) {

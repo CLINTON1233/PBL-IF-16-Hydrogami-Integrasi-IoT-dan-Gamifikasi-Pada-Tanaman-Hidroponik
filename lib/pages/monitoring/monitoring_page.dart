@@ -11,6 +11,7 @@ import 'package:application_hydrogami/models/sensor_data_model.dart';
 import 'dart:convert';
 import 'package:mqtt_client/mqtt_client.dart';
 import 'package:mqtt_client/mqtt_server_client.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class MonitoringPage extends StatefulWidget {
   const MonitoringPage({super.key});
@@ -26,12 +27,10 @@ class _MonitoringPageState extends State<MonitoringPage> {
 
   // MQTT Client Configuration
   late MqttServerClient client;
-  final String broker = 'broker.hivemq.com'; // Broker online gratis
+  final String broker = 'broker.hivemq.com';
   final int port = 1883;
-  final String clientIdentifier =
-      'hydrogami_flutter_client_${DateTime.now().millisecondsSinceEpoch}'; // Client ID unik
-  final String topic =
-      'hydrogami/sensor/data'; // Sesuai dengan topik di Arduino
+  final String clientIdentifier = 'hydrogami_flutter_client_${DateTime.now().millisecondsSinceEpoch}';
+  final String topic = 'hydrogami/sensor/data';
 
   // Data sensor real-time
   double currentTDS = 0;
@@ -49,6 +48,9 @@ class _MonitoringPageState extends State<MonitoringPage> {
 
   int timeCounter = 0;
   final int maxDataPoints = 10;
+
+  // Sistem notifikasi baru
+  final List<Map<String, dynamic>> _notifications = [];
 
   @override
   void initState() {
@@ -69,7 +71,6 @@ class _MonitoringPageState extends State<MonitoringPage> {
     super.dispose();
   }
 
-  // Inisialisasi MQTT Client
   void _initMqttClient() {
     client = MqttServerClient(broker, clientIdentifier);
     client.port = port;
@@ -87,8 +88,7 @@ class _MonitoringPageState extends State<MonitoringPage> {
     } catch (e) {
       print('Exception: $e');
       client.disconnect();
-      // Coba reconnect setelah 5 detik
-      await Future.delayed(Duration(seconds: 5));
+      await Future.delayed(const Duration(seconds: 5));
       _connectToBroker();
       return;
     }
@@ -108,8 +108,7 @@ class _MonitoringPageState extends State<MonitoringPage> {
 
   void _onDisconnected() {
     print('Disconnected from MQTT broker');
-    // Coba reconnect setelah 3 detik
-    Future.delayed(Duration(seconds: 3), () {
+    Future.delayed(const Duration(seconds: 3), () {
       _connectToBroker();
     });
   }
@@ -127,16 +126,13 @@ class _MonitoringPageState extends State<MonitoringPage> {
 
     client.updates?.listen((List<MqttReceivedMessage<MqttMessage>> c) async {
       final MqttPublishMessage message = c[0].payload as MqttPublishMessage;
-      final payload =
-          MqttPublishPayload.bytesToStringAsString(message.payload.message);
+      final payload = MqttPublishPayload.bytesToStringAsString(message.payload.message);
 
-      print('Received MQTT message: $payload'); // Debug logging
+      print('Received MQTT message: $payload');
 
       try {
-        // Parse JSON data
         Map<String, dynamic> data = jsonDecode(payload);
 
-        // Update state dengan data baru
         setState(() {
           currentTDS = data['tds']?.toDouble() ?? 0;
           currentPH = data['ph']?.toDouble() ?? 0;
@@ -145,11 +141,13 @@ class _MonitoringPageState extends State<MonitoringPage> {
           currentLight = data['light']?.toDouble() ?? 0;
           currentSoilMoisture = data['soil_moisture']?.toInt() ?? 0;
 
-          // Update grafik
           _updateCharts();
         });
 
-        // Buat objek SensorData dari data yang diterima
+        // Simpan data TDS ke SharedPreferences
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setDouble('current_tds', currentTDS);
+
         final sensorData = SensorData(
           temperature: currentTemp,
           humidity: currentHumidity,
@@ -159,58 +157,22 @@ class _MonitoringPageState extends State<MonitoringPage> {
           ph: currentPH,
         );
 
-        // Kirim data ke API (dengan error handling)
         try {
           final success = await _sensorDataService.sendSensorData(sensorData);
           if (success) {
             print('Data successfully sent to API');
-            // if (mounted) {
-            //   ScaffoldMessenger.of(context).showSnackBar(
-            //     SnackBar(
-            //       content: Text('Data terkirim ke server'),
-            //       backgroundColor: Colors.green,
-            //       duration: Duration(seconds: 2),
-            //     ),
-            //   );
-            // }
           } else {
             print('Failed to send data to API');
-            // if (mounted) {
-            //   ScaffoldMessenger.of(context).showSnackBar(
-            //     SnackBar(
-            //       content: Text('Gagal mengirim data ke server'),
-            //       backgroundColor: Colors.red,
-            //       duration: Duration(seconds: 2),
-            //     ),
-            //   );
-            // }
           }
         } catch (apiError) {
           print('API Error: $apiError');
-          // if (mounted) {
-          //   ScaffoldMessenger.of(context).showSnackBar(
-          //     SnackBar(
-          //       content: Text('Error API: $apiError'),
-          //       duration: Duration(seconds: 3),
-          //     ),
-          //   );
-          // }
         }
 
-        // Cek notifikasi alert
         if (mounted) {
           _checkForAlerts(context);
         }
       } catch (e) {
         print('Error processing MQTT message: $e');
-        // if (mounted) {
-        //   ScaffoldMessenger.of(context).showSnackBar(
-        //     SnackBar(
-        //       content: Text('Format data sensor tidak valid'),
-        //       duration: Duration(seconds: 2),
-        //     ),
-        //   );
-        // }
       }
     });
   }
@@ -241,7 +203,6 @@ class _MonitoringPageState extends State<MonitoringPage> {
     setState(() {
       timeCounter++;
 
-      // Geser data ke kiri
       for (int i = 0; i < maxDataPoints - 1; i++) {
         chartDataTDS[i] = FlSpot(i.toDouble(), chartDataTDS[i + 1].y);
         chartDataPH[i] = FlSpot(i.toDouble(), chartDataPH[i + 1].y);
@@ -249,56 +210,48 @@ class _MonitoringPageState extends State<MonitoringPage> {
         chartDataHumidity[i] = FlSpot(i.toDouble(), chartDataHumidity[i + 1].y);
       }
 
-      // Tambahkan data baru di akhir
-      chartDataTDS[maxDataPoints - 1] =
-          FlSpot((maxDataPoints - 1).toDouble(), currentTDS);
-      chartDataPH[maxDataPoints - 1] =
-          FlSpot((maxDataPoints - 1).toDouble(), currentPH);
-      chartDataTemp[maxDataPoints - 1] =
-          FlSpot((maxDataPoints - 1).toDouble(), currentTemp);
-      chartDataHumidity[maxDataPoints - 1] =
-          FlSpot((maxDataPoints - 1).toDouble(), currentHumidity);
+      chartDataTDS[maxDataPoints - 1] = FlSpot((maxDataPoints - 1).toDouble(), currentTDS);
+      chartDataPH[maxDataPoints - 1] = FlSpot((maxDataPoints - 1).toDouble(), currentPH);
+      chartDataTemp[maxDataPoints - 1] = FlSpot((maxDataPoints - 1).toDouble(), currentTemp);
+      chartDataHumidity[maxDataPoints - 1] = FlSpot((maxDataPoints - 1).toDouble(), currentHumidity);
     });
   }
 
   void _checkForAlerts(BuildContext context) {
     final now = DateTime.now();
-    if (_lastAlertTime != null &&
-        now.difference(_lastAlertTime!) < Duration(seconds: 30)) {
-      return; // Jangan tampilkan alert terlalu sering
+    if (_lastAlertTime != null && now.difference(_lastAlertTime!) < const Duration(seconds: 30)) {
+      return;
     }
 
+    // Batasi jumlah notifikasi maksimal
+    if (_notifications.length >= 3) return;
+
     if (currentPH < 5.0 || currentPH > 7.0) {
-      final message =
-          'Nilai pH ${currentPH.toStringAsFixed(1)} di luar range optimal (5.5-6.5)!';
+      final message = 'Nilai pH ${currentPH.toStringAsFixed(1)} di luar range optimal (5.5-6.5)!';
       _showAlert(context, 'Peringatan pH', message, Colors.orange);
       _sendNotification('pH Sensor', message, 'warning');
       _lastAlertTime = now;
     }
 
     if (currentTDS < 300 || currentTDS > 1500) {
-      final message =
-          'Nilai TDS ${currentTDS.toStringAsFixed(0)} ppm di luar range optimal (800-1500 ppm)!';
+      final message = 'Nilai TDS ${currentTDS.toStringAsFixed(0)} ppm di luar range optimal (800-1500 ppm)!';
       _showAlert(context, 'Peringatan Nutrisi', message, Colors.orange);
       _sendNotification('TDS Sensor', message, 'warning');
       _lastAlertTime = now;
     }
 
     if (currentTemp < 15 || currentTemp > 35) {
-      final message =
-          'Suhu ${currentTemp.toStringAsFixed(1)}°C di luar range optimal (20-30°C)!';
+      final message = 'Suhu ${currentTemp.toStringAsFixed(1)}°C di luar range optimal (20-30°C)!';
       _showAlert(context, 'Peringatan Suhu', message, Colors.orange);
       _sendNotification('Suhu Sensor', message, 'danger');
       _lastAlertTime = now;
     }
   }
 
-// Fungsi baru untuk mengirim notifikasi
-  Future<void> _sendNotification(
-      String sensorType, String message, String status) async {
+  Future<void> _sendNotification(String sensorType, String message, String status) async {
     try {
       final success = await LayananNotifikasi.kirimNotifikasi(
-        idSensor: '1', // Anda bisa menyesuaikan ID sensor
+        idSensor: '1',
         jenisSensor: sensorType,
         pesan: message,
         status: status,
@@ -314,59 +267,116 @@ class _MonitoringPageState extends State<MonitoringPage> {
     }
   }
 
-  List<SnackBar> _snackBarQueue = [];
-  bool _isSnackBarShowing = false;
-
-  void _showAlert(
-      BuildContext context, String title, String message, Color color) {
-    final snackBar = SnackBar(
-      content: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: color.withOpacity(0.9),
-          borderRadius: BorderRadius.circular(10),
+  void _showAlert(BuildContext context, String title, String message, Color color) {
+    final alertId = DateTime.now().millisecondsSinceEpoch.toString();
+    
+    setState(() {
+      _notifications.add({
+        'id': alertId,
+        'widget': _buildNotificationCard(
+          context: context,
+          id: alertId,
+          title: title,
+          message: message,
+          color: color,
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              title,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              message,
-              style: const TextStyle(color: Colors.white),
+      });
+    });
+
+    Future.delayed(const Duration(seconds: 10), () {
+      if (mounted && _notifications.any((n) => n['id'] == alertId)) {
+        _removeNotification(alertId);
+      }
+    });
+  }
+
+  Widget _buildNotificationCard({
+    required BuildContext context,
+    required String id,
+    required String title,
+    required String message,
+    required Color color,
+  }) {
+    return Dismissible(
+      key: Key(id),
+      direction: DismissDirection.up,
+      onDismissed: (direction) => _removeNotification(id),
+      child: Container(
+        width: MediaQuery.of(context).size.width * 0.9,
+        margin: const EdgeInsets.only(bottom: 8),
+        decoration: BoxDecoration(
+          color: color,
+          borderRadius: BorderRadius.circular(8),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
             ),
           ],
         ),
+        child: Material(
+          type: MaterialType.transparency,
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Row(
+              children: [
+                Icon(
+                  _getAlertIcon(title),
+                  color: Colors.white,
+                  size: 24,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        style: GoogleFonts.poppins(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        message,
+                        style: GoogleFonts.poppins(
+                          color: Colors.white,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.close, 
+                    color: Colors.white, 
+                    size: 20),
+                  onPressed: () => _removeNotification(id),
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
-      backgroundColor: Colors.transparent,
-      elevation: 0,
-      duration: const Duration(seconds: 10),
-      behavior: SnackBarBehavior.floating,
-      margin: const EdgeInsets.all(16),
     );
-
-    _snackBarQueue.add(snackBar);
-    _processSnackBarQueue(context);
   }
 
-  void _processSnackBarQueue(BuildContext context) {
-    if (!_isSnackBarShowing && _snackBarQueue.isNotEmpty) {
-      _isSnackBarShowing = true;
-      final snackBar = _snackBarQueue.removeAt(0);
-
-      ScaffoldMessenger.of(context).showSnackBar(snackBar).closed.then((_) {
-        _isSnackBarShowing = false;
-        _processSnackBarQueue(context);
+  void _removeNotification(String id) {
+    if (mounted) {
+      setState(() {
+        _notifications.removeWhere((n) => n['id'] == id);
       });
     }
+  }
+
+  IconData _getAlertIcon(String title) {
+    if (title.contains('pH')) return Icons.water_drop;
+    if (title.contains('Nutrisi')) return Icons.opacity;
+    if (title.contains('Suhu')) return Icons.thermostat;
+    return Icons.warning_amber;
   }
 
   @override
@@ -406,10 +416,11 @@ class _MonitoringPageState extends State<MonitoringPage> {
           },
         ),
       ),
-      body: SafeArea(
-        child: Stack(
-          children: [
-            ListView(
+      body: Stack(
+        children: [
+          // Konten utama
+          SafeArea(
+            child: ListView(
               padding: const EdgeInsets.only(
                 left: 16.0,
                 right: 16.0,
@@ -427,8 +438,21 @@ class _MonitoringPageState extends State<MonitoringPage> {
                 const SizedBox(height: 16),
               ],
             ),
-          ],
-        ),
+          ),
+          
+          // Notifikasi overlay
+          if (_notifications.isNotEmpty)
+            Positioned(
+              top: MediaQuery.of(context).padding.top + 10,
+              left: 0,
+              right: 0,
+              child: Column(
+                children: _notifications
+                    .map((n) => Center(child: n['widget'] as Widget))
+                    .toList(),
+              ),
+            ),
+        ],
       ),
       bottomNavigationBar: _buildBottomNavigation(),
     );
@@ -519,10 +543,10 @@ class _MonitoringPageState extends State<MonitoringPage> {
                 ),
                 titlesData: FlTitlesData(
                   show: true,
-                  rightTitles: AxisTitles(
+                  rightTitles: const AxisTitles(
                     sideTitles: SideTitles(showTitles: false),
                   ),
-                  topTitles: AxisTitles(
+                  topTitles: const AxisTitles(
                     sideTitles: SideTitles(showTitles: false),
                   ),
                   bottomTitles: AxisTitles(
@@ -532,9 +556,7 @@ class _MonitoringPageState extends State<MonitoringPage> {
                       interval: 2,
                       getTitlesWidget: (value, meta) {
                         final index = value.toInt();
-                        if (index >= 0 &&
-                            index < maxDataPoints &&
-                            index % 2 == 0) {
+                        if (index >= 0 && index < maxDataPoints && index % 2 == 0) {
                           return SideTitleWidget(
                             axisSide: meta.axisSide,
                             child: Text(
@@ -668,7 +690,7 @@ class _MonitoringPageState extends State<MonitoringPage> {
           ),
           const SizedBox(height: 8),
           Text(
-            'Current: ${currentValue.toStringAsFixed(1)} $unit',
+            'Terkini: ${currentValue.toStringAsFixed(1)} $unit',
             style: GoogleFonts.poppins(
               fontSize: 14,
               color: Colors.grey[700],
@@ -699,10 +721,10 @@ class _MonitoringPageState extends State<MonitoringPage> {
                 ),
                 titlesData: FlTitlesData(
                   show: true,
-                  rightTitles: AxisTitles(
+                  rightTitles: const AxisTitles(
                     sideTitles: SideTitles(showTitles: false),
                   ),
-                  topTitles: AxisTitles(
+                  topTitles: const AxisTitles(
                     sideTitles: SideTitles(showTitles: false),
                   ),
                   bottomTitles: AxisTitles(
@@ -712,9 +734,7 @@ class _MonitoringPageState extends State<MonitoringPage> {
                       interval: 2,
                       getTitlesWidget: (value, meta) {
                         final index = value.toInt();
-                        if (index >= 0 &&
-                            index < maxDataPoints &&
-                            index % 2 == 0) {
+                        if (index >= 0 && index < maxDataPoints && index % 2 == 0) {
                           return SideTitleWidget(
                             axisSide: meta.axisSide,
                             child: Text(
@@ -843,8 +863,7 @@ class _MonitoringPageState extends State<MonitoringPage> {
               icon: Icons.water_drop,
               color: Colors.teal.shade50,
               iconColor: Colors.teal,
-              status:
-                  determineSensorStatus('Kelembaban Udara', currentHumidity),
+              status: determineSensorStatus('Kelembaban Udara', currentHumidity),
             ),
             _buildSensorDetailCard(
               title: 'Kelembaban Tanah',
@@ -853,8 +872,7 @@ class _MonitoringPageState extends State<MonitoringPage> {
               icon: Icons.landscape,
               color: Colors.brown.shade50,
               iconColor: Colors.brown,
-              status: determineSensorStatus(
-                  'Kelembaban Tanah', currentSoilMoisture.toDouble()),
+              status: determineSensorStatus('Kelembaban Tanah', currentSoilMoisture.toDouble()),
             ),
             _buildSensorDetailCard(
               title: 'Intensitas Cahaya',
@@ -1105,10 +1123,4 @@ class _MonitoringPageState extends State<MonitoringPage> {
         return Colors.black;
     }
   }
-}
-
-class _ChartData {
-  _ChartData(this.x, this.y);
-  final int x;
-  final double y;
 }

@@ -284,28 +284,11 @@ class _GamifikasiProgresPageState extends State<GamifikasiProgresPage>
       _updateProgressAnimation();
       _controlBounceAnimation();
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Row(
-            children: [
-              Icon(Icons.check_circle, color: Colors.white),
-              SizedBox(width: 8),
-              Text('Maskot berhasil direset! Mulai petualangan baru!'),
-            ],
-          ),
-          backgroundColor: Colors.green,
-          duration: Duration(seconds: 3),
-        ),
-      );
+      _showCustomSnackBar(context, 'Maskot berhasil direset', Colors.green);
 
       _debugUserData();
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Gagal mereset maskot: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      _showCustomSnackBar(context, 'Gagal mereset maskot: $e', Colors.red);
     }
   }
 
@@ -511,23 +494,14 @@ class _GamifikasiProgresPageState extends State<GamifikasiProgresPage>
         _isLoading = false;
       });
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Data berhasil disinkronisasi dengan server'),
-          backgroundColor: Colors.green,
-        ),
-      );
+      _showCustomSnackBar(
+          context, 'Data berhasil disinkronisasi', Colors.green);
     } catch (e) {
       setState(() {
         _isLoading = false;
       });
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Gagal sinkronisasi: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      _showCustomSnackBar(context, 'Gagal sinkronisasi: $e', Colors.red);
     }
   }
 
@@ -643,12 +617,12 @@ class _GamifikasiProgresPageState extends State<GamifikasiProgresPage>
       });
 
       if (_misiList.isEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Tidak ada misi tersedia saat ini'),
-            backgroundColor: Colors.orange,
-          ),
-        );
+        // ScaffoldMessenger.of(context).showSnackBar(
+        //  const SnackBar(
+        //     content: Text('Tidak ada misi tersedia saat ini'),
+        //      backgroundColor: Colors.orange,
+        //  ),
+        // );
       }
     } catch (e) {
       print('Error in _loadMisiData: $e');
@@ -685,17 +659,7 @@ class _GamifikasiProgresPageState extends State<GamifikasiProgresPage>
         _isLoading = false;
       });
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Row(
-            children: [
-              Text('Data berhasil diperbarui'),
-            ],
-          ),
-          backgroundColor: Colors.green,
-          duration: Duration(seconds: 2),
-        ),
-      );
+      _showCustomSnackBar(context, 'Data berhasil diperbarui', Colors.green);
     } catch (e) {
       setState(() {
         _errorMessage = "Gagal memuat data: ${e.toString()}";
@@ -829,18 +793,10 @@ class _GamifikasiProgresPageState extends State<GamifikasiProgresPage>
     Color messageColor = newLevel >= _maxLevel
         ? Color.fromARGB(255, 148, 115, 115)
         : Colors.green;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
-          children: [
-            const Icon(Icons.check_circle, color: Colors.white),
-            const SizedBox(width: 8),
-            Expanded(child: Text(expMessage)),
-          ],
-        ),
-        backgroundColor: Colors.green,
-        duration: const Duration(seconds: 2),
-      ),
+    _showCustomSnackBar(
+      context,
+      expMessage,
+      messageColor,
     );
 
     _debugUserData();
@@ -1118,6 +1074,79 @@ class _GamifikasiProgresPageState extends State<GamifikasiProgresPage>
         );
       },
     );
+  }
+
+  void _showCustomSnackBar(BuildContext context, String message, Color color) {
+    final overlay = Overlay.of(context);
+    late OverlayEntry overlayEntry;
+
+    overlayEntry = OverlayEntry(
+      builder: (context) => Positioned(
+        // Hitung posisi di bawah AppBar
+        top: MediaQuery.of(context).padding.top +
+            kToolbarHeight +
+            10, // kToolbarHeight adalah tinggi default AppBar
+        left: 0,
+        right: 0,
+        child: Material(
+          color: Colors.transparent,
+          child: Center(
+            child: Container(
+              width: MediaQuery.of(context).size.width * 0.9,
+              margin: const EdgeInsets.only(bottom: 8),
+              decoration: BoxDecoration(
+                color: color,
+                borderRadius: BorderRadius.circular(8),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.1),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.info_outline,
+                      color: Colors.white,
+                      size: 24,
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        message,
+                        style: GoogleFonts.poppins(
+                          color: Colors.white,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.close,
+                          color: Colors.white, size: 20),
+                      onPressed: () {
+                        overlayEntry.remove();
+                      },
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    overlay.insert(overlayEntry);
+
+    Future.delayed(const Duration(seconds: 3), () {
+      if (overlayEntry.mounted) {
+        overlayEntry.remove();
+      }
+    });
   }
 
   Widget _buildUserInfoItem(String label, String value, IconData icon) {

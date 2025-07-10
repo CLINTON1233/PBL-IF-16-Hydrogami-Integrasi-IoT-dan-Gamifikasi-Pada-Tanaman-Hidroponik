@@ -39,17 +39,18 @@ class RegistrasiPageState extends State<RegistrasiPage> {
         email.isEmpty ||
         password.isEmpty ||
         confirmPassword.isEmpty) {
-      errorSnackBar(context, 'Semua form harus diisi!');
+      _showCustomSnackBar(context, 'Semua field harus diisi', Colors.red);
       return;
     }
 
     if (password.length < 6) {
-      errorSnackBar(context, 'Kata sandi harus lebih dari 6 karakter!');
+      _showCustomSnackBar(
+          context, 'Password harus lebih dari 6 karakter', Colors.red);
       return;
     }
 
     if (password != confirmPassword) {
-      errorSnackBar(context, 'Kata sandi dan konfirmasi tidak cocok!');
+      _showCustomSnackBar(context, 'Password tidak sama', Colors.red);
       return;
     }
 
@@ -58,7 +59,7 @@ class RegistrasiPageState extends State<RegistrasiPage> {
             .hasMatch(email);
 
     if (!emailValid) {
-      errorSnackBar(context, 'Email tidak valid!');
+      _showCustomSnackBar(context, 'Email tidak valid', Colors.red);
       return;
     }
 
@@ -70,7 +71,7 @@ class RegistrasiPageState extends State<RegistrasiPage> {
 
       if (response.statusCode == 200) {
         // Gunakan fungsi successSnackBar untuk notifikasi berhasil
-        successSnackBar(context, 'Pendaftaran berhasil!');
+        _showCustomSnackBar(context, 'Pendaftaran berhasil', Colors.green);
         Future.delayed(const Duration(seconds: 2), () {
           Navigator.push(
             context,
@@ -78,186 +79,254 @@ class RegistrasiPageState extends State<RegistrasiPage> {
           );
         });
       } else {
-        errorSnackBar(
-            context, responseMap['message'] ?? 'Terjadi kesalahan, coba lagi!');
+        _showCustomSnackBar(
+          context,
+          responseMap['message'] ?? 'Terjadi kesalahan, coba lagi!',
+          Colors.red,
+        );
       }
     } catch (e) {
-      errorSnackBar(
-          context, 'Gagal terhubung ke server. Periksa koneksi internet Anda.');
+      _showCustomSnackBar(
+        context,
+        'Gagal terhubung ke server. Periksa koneksi internet Anda.',
+        Colors.red,
+      );
     }
+  }
+
+  void _showCustomSnackBar(BuildContext context, String message, Color color) {
+    final overlay = Overlay.of(context);
+    late OverlayEntry overlayEntry;
+
+    overlayEntry = OverlayEntry(
+      builder: (context) => Positioned(
+        top: MediaQuery.of(context).padding.top + 10,
+        left: 0,
+        right: 0,
+        child: Material(
+          color: Colors.transparent,
+          child: Center(
+            child: Container(
+              width: MediaQuery.of(context).size.width * 0.9,
+              margin: const EdgeInsets.only(bottom: 8),
+              decoration: BoxDecoration(
+                color: color,
+                borderRadius: BorderRadius.circular(8),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.1),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.info_outline,
+                      color: Colors.white,
+                      size: 24,
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        message,
+                        style: GoogleFonts.poppins(
+                          color: Colors.white,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.close,
+                          color: Colors.white, size: 20),
+                      onPressed: () {
+                        overlayEntry.remove();
+                      },
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    overlay.insert(overlayEntry);
+
+    Future.delayed(const Duration(seconds: 3), () {
+      if (overlayEntry.mounted) {
+        overlayEntry.remove();
+      }
+    });
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      resizeToAvoidBottomInset: false,
-      backgroundColor: Colors.white,
-      appBar: AppBar(
-        backgroundColor: const Color.fromARGB(255, 36, 209, 126),
-        elevation: 0,
-        toolbarHeight: 0,
-      ),
-      body: SafeArea(
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            return SingleChildScrollView(
-              physics: const ClampingScrollPhysics(),
-              child: ConstrainedBox(
-                constraints: BoxConstraints(minHeight: constraints.maxHeight),
-                child: IntrinsicHeight(
-                  child: Column(
-                    children: [
-                      const SizedBox(height: 10),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 12.0),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                ElevatedButton(
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: const Color(0xFF29CC74),
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 8, vertical: 4),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(10),
-                                    ),
-                                  ),
-                                  onPressed: () {
-                                    Navigator.pop(context);
-                                  },
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Image.asset(
-                                        'assets/ic_back.png',
-                                        width: 16,
-                                        height: 14,
-                                        color: Colors.white,
-                                      ),
-                                      const SizedBox(width: 5),
-                                      Text(
-                                        'Kembali',
-                                        style: GoogleFonts.poppins(
-                                          fontSize: 14,
-                                          fontWeight: FontWeight.bold,
-                                          color: Colors.white,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
-                            Text(
-                              "Registrasi",
-                              style: GoogleFonts.poppins(
-                                fontSize: 20.0,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.black,
-                              ),
-                            ),
-                            const SizedBox(height: 5.0),
-                            Text(
-                              "Buat akun anda - Nikmati layanan kami dengan fitur-fitur terkini",
-                              style: GoogleFonts.poppins(
-                                fontSize: 13.0,
-                                color: Colors.black,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 10),
-                      Image.asset(
-                        'assets/logo.png',
-                        height: 120.0,
-                      ),
-                      const SizedBox(height: 5),
-                      Expanded(
-                        child: Container(
-                          padding: const EdgeInsets.all(30),
-                          decoration: const BoxDecoration(
-                            color: Color(0xFF29CC74),
-                            borderRadius: BorderRadius.only(
-                              topLeft: Radius.circular(60),
+    return GestureDetector(
+      onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
+      child: Scaffold(
+        resizeToAvoidBottomInset:
+            false, // Prevent resizing when keyboard appears
+        backgroundColor: Colors.white,
+        appBar: AppBar(
+          backgroundColor: const Color.fromARGB(255, 36, 209, 126),
+          elevation: 0,
+          toolbarHeight: 0,
+        ),
+        body: SafeArea(
+          bottom:
+              false, // Disable bottom padding to allow container to touch bottom
+          child: Column(
+            children: [
+              const SizedBox(height: 10),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 12.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF29CC74),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 8, vertical: 4),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
                             ),
                           ),
-                          child: SingleChildScrollView(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                          onPressed: () {
+                            Navigator.pop(context);
+                          },
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Image.asset(
+                                'assets/ic_back.png',
+                                width: 16,
+                                height: 14,
+                                color: Colors.white,
+                              ),
+                              const SizedBox(width: 5),
+                              Text(
+                                'Kembali',
+                                style: GoogleFonts.poppins(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    Text(
+                      "Registrasi",
+                      style: GoogleFonts.poppins(
+                        fontSize: 20.0,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black,
+                      ),
+                    ),
+                    const SizedBox(height: 5.0),
+                    Text(
+                      "Buat akun anda - Nikmati layanan kami dengan fitur-fitur terkini",
+                      style: GoogleFonts.poppins(
+                        fontSize: 13.0,
+                        color: Colors.black,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 10),
+              Image.asset(
+                'assets/logo.png',
+                height: 120.0,
+              ),
+              const SizedBox(height: 5),
+              Expanded(
+                child: Container(
+                  padding: const EdgeInsets.all(30),
+                  decoration: const BoxDecoration(
+                    color: Color(0xFF29CC74),
+                    borderRadius: BorderRadius.only(
+                      topLeft: Radius.circular(60),
+                    ),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      _buildTextField(
+                        controller: _usernameController,
+                        label: "Username",
+                        hint: "Masukkan Username",
+                      ),
+                      const SizedBox(height: 10),
+                      _buildTextField(
+                        controller: _emailController,
+                        label: "Email",
+                        hint: "Masukkan Email Anda",
+                      ),
+                      const SizedBox(height: 10),
+                      _buildPasswordField(
+                        controller: _passwordController,
+                        label: "Kata Sandi",
+                        hint: "Masukkan Kata Sandi",
+                        isPasswordVisible: _isPasswordVisible,
+                        toggleVisibility: () {
+                          setState(() {
+                            _isPasswordVisible = !_isPasswordVisible;
+                          });
+                        },
+                      ),
+                      const SizedBox(height: 10),
+                      _buildPasswordField(
+                        controller: _confirmPasswordController,
+                        label: "Konfirmasi Kata Sandi",
+                        hint: "Konfirmasi Kata Sandi",
+                        isPasswordVisible: _isConfirmPasswordVisible,
+                        toggleVisibility: () {
+                          setState(() {
+                            _isConfirmPasswordVisible =
+                                !_isConfirmPasswordVisible;
+                          });
+                        },
+                      ),
+                      const SizedBox(height: 20),
+                      RoundedButton(
+                        btnText: 'Daftar',
+                        onBtnPressed: createAccountPressed,
+                      ),
+                      const SizedBox(height: 10),
+                      Center(
+                        child: GestureDetector(
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) => const LoginPage()),
+                            );
+                          },
+                          child: RichText(
+                            text: TextSpan(
+                              text: 'Sudah memiliki akun? ',
+                              style: GoogleFonts.poppins(
+                                fontSize: 14,
+                                color: Colors.white,
+                              ),
                               children: [
-                                _buildTextField(
-                                  controller: _usernameController,
-                                  label: "Username",
-                                  hint: "Masukkan Username",
-                                ),
-                                const SizedBox(height: 10),
-                                _buildTextField(
-                                  controller: _emailController,
-                                  label: "Email",
-                                  hint: "Masukkan Email Anda",
-                                ),
-                                const SizedBox(height: 10),
-                                _buildPasswordField(
-                                  controller: _passwordController,
-                                  label: "Kata Sandi",
-                                  hint: "Masukkan Kata Sandi",
-                                  isPasswordVisible: _isPasswordVisible,
-                                  toggleVisibility: () {
-                                    setState(() {
-                                      _isPasswordVisible = !_isPasswordVisible;
-                                    });
-                                  },
-                                ),
-                                const SizedBox(height: 10),
-                                _buildPasswordField(
-                                  controller: _confirmPasswordController,
-                                  label: "Konfirmasi Kata Sandi",
-                                  hint: "Konfirmasi Kata Sandi",
-                                  isPasswordVisible: _isConfirmPasswordVisible,
-                                  toggleVisibility: () {
-                                    setState(() {
-                                      _isConfirmPasswordVisible =
-                                          !_isConfirmPasswordVisible;
-                                    });
-                                  },
-                                ),
-                                const SizedBox(height: 20),
-                                RoundedButton(
-                                    btnText: 'Daftar',
-                                    onBtnPressed: createAccountPressed),
-                                const SizedBox(height: 10),
-                                Center(
-                                  child: GestureDetector(
-                                    onTap: () {
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                            builder: (context) =>
-                                                const LoginPage()),
-                                      );
-                                    },
-                                    child: RichText(
-                                      text: TextSpan(
-                                        text: 'Sudah memiliki akun? ',
-                                        style: GoogleFonts.poppins(
-                                          fontSize: 14,
-                                          color: Colors.white,
-                                        ),
-                                        children: [
-                                          TextSpan(
-                                            text: 'Login',
-                                            style: GoogleFonts.poppins(
-                                              fontSize: 14,
-                                              color: Colors.white,
-                                              fontWeight: FontWeight.bold,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
+                                TextSpan(
+                                  text: 'Login',
+                                  style: GoogleFonts.poppins(
+                                    fontSize: 14,
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
                                   ),
                                 ),
                               ],
@@ -269,8 +338,8 @@ class RegistrasiPageState extends State<RegistrasiPage> {
                   ),
                 ),
               ),
-            );
-          },
+            ],
+          ),
         ),
       ),
     );

@@ -49,9 +49,7 @@ class _ProfilPageState extends State<ProfilPage> {
         final token = prefs.getString('token');
 
         if (token == null || token.isEmpty) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Please login again')),
-          );
+          _showCustomSnackBar(context, 'Tolong login kembali', Colors.amber);
           return;
         }
 
@@ -74,11 +72,8 @@ class _ProfilPageState extends State<ProfilPage> {
         String? newPassword;
         if (_newPasswordController.text.isNotEmpty) {
           if (_currentPasswordController.text.isEmpty) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                  content:
-                      Text('Current password is required to update password')),
-            );
+            _showCustomSnackBar(
+                context, 'Perlu memperbarui kata sandi', Colors.red);
             return;
           }
           newPassword = _newPasswordController.text;
@@ -105,36 +100,106 @@ class _ProfilPageState extends State<ProfilPage> {
             await prefs.setString('email', updates['email']);
           }
 
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Profil berhasil diperbarui')),
-          );
+          _showCustomSnackBar(
+              context, 'Profil berhasil diperbarui', Colors.green);
 
           // Clear password fields after successful update
           _currentPasswordController.clear();
           _newPasswordController.clear();
           // Tambahkan navigasi ke BerandaPage
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (context) => const BerandaPage()),
-          );
+          //Navigator.pushReplacement(
+          // context,
+          // MaterialPageRoute(builder: (context) => const BerandaPage()),
+          // );
         } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-                content: Text(
-                    'Failed to update profile: ${responseBody['message']}')),
-          );
+          _showCustomSnackBar(
+              context,
+              'Gagal memperbarui profil: ${responseBody['message']}',
+              Colors.red);
         }
       } catch (e) {
         print('Error updating profile: $e');
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e')),
-        );
+        _showCustomSnackBar(
+          context, 'Terjadi error: $e', Colors.red);
       } finally {
         setState(() {
           _isLoading = false;
         });
       }
     }
+  }
+
+  void _showCustomSnackBar(BuildContext context, String message, Color color) {
+    final overlay = Overlay.of(context);
+    late OverlayEntry overlayEntry;
+
+    overlayEntry = OverlayEntry(
+      builder: (context) => Positioned(
+        // Hitung posisi di bawah AppBar
+        top: MediaQuery.of(context).padding.top +
+            kToolbarHeight +
+            10, // kToolbarHeight adalah tinggi default AppBar
+        left: 0,
+        right: 0,
+        child: Material(
+          color: Colors.transparent,
+          child: Center(
+            child: Container(
+              width: MediaQuery.of(context).size.width * 0.9,
+              margin: const EdgeInsets.only(bottom: 8),
+              decoration: BoxDecoration(
+                color: color,
+                borderRadius: BorderRadius.circular(8),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.1),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.info_outline,
+                      color: Colors.white,
+                      size: 24,
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        message,
+                        style: GoogleFonts.poppins(
+                          color: Colors.white,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.close,
+                          color: Colors.white, size: 20),
+                      onPressed: () {
+                        overlayEntry.remove();
+                      },
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    overlay.insert(overlayEntry);
+
+    Future.delayed(const Duration(seconds: 3), () {
+      if (overlayEntry.mounted) {
+        overlayEntry.remove();
+      }
+    });
   }
 
   @override
@@ -192,7 +257,7 @@ class _ProfilPageState extends State<ProfilPage> {
                   _usernameController,
                   (value) {
                     if (value == null || value.isEmpty) {
-                      return 'Please enter your name';
+                      return 'Masukkan nama Anda';
                     }
                     return null;
                   },
@@ -204,10 +269,10 @@ class _ProfilPageState extends State<ProfilPage> {
                   _emailController,
                   (value) {
                     if (value == null || value.isEmpty) {
-                      return 'Please enter your email';
+                      return 'Masukkan email Anda';
                     }
                     if (!value.contains('@')) {
-                      return 'Please enter a valid email';
+                      return 'Masukkan email yang valid';
                     }
                     return null;
                   },
@@ -220,7 +285,7 @@ class _ProfilPageState extends State<ProfilPage> {
                   (value) {
                     if (_newPasswordController.text.isNotEmpty &&
                         (value == null || value.isEmpty)) {
-                      return 'Current password is required to set new password';
+                      return 'isi untuk memperbarui password baru';
                     }
                     return null;
                   },
@@ -232,7 +297,7 @@ class _ProfilPageState extends State<ProfilPage> {
                   _newPasswordController,
                   (value) {
                     if (value != null && value.isNotEmpty && value.length < 6) {
-                      return 'Password must be at least 6 characters';
+                      return 'Password baru harus minimal 6 karakter';
                     }
                     return null;
                   },

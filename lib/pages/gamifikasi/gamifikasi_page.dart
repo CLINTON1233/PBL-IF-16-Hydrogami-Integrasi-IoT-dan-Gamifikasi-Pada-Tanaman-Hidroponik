@@ -14,7 +14,6 @@ import 'package:application_hydrogami/services/gamifikasi_services.dart';
 import 'package:application_hydrogami/services/reward_services.dart';
 import 'dart:convert'; // Add this line
 
-
 class GamifikasiPage extends StatefulWidget {
   const GamifikasiPage({super.key});
 
@@ -231,63 +230,55 @@ class _GamifikasiPageState extends State<GamifikasiPage>
     });
   }
 
-  
-
   // Method untuk menangani perubahan kontrol otomatis
   void _handleAutomaticControlToggle() {
-  setState(() {
-    isAutomaticControl = !isAutomaticControl;
+    setState(() {
+      isAutomaticControl = !isAutomaticControl;
 
-    if (isAutomaticControl) {
-      controls = {
-        "A MIX": true,
-        "B MIX": true,
-        "PH UP": true,
-        "PH DOWN": true,
-      };
-      controls.forEach((key, value) {
-        publishControl(key, value);
-      });
-      _triggerControlAnimation("AUTO_ALL");
-    } else {
-      controls = {
-        "A MIX": false,
-        "B MIX": false,
-        "PH UP": false,
-        "PH DOWN": false,
-      };
-      controls.forEach((key, value) {
-        publishControl(key, value);
-      });
-    }
-  });
-  _saveRelayStates(); // Add this line
-  publishControl("AUTO", isAutomaticControl);
-}
-
+      if (isAutomaticControl) {
+        controls = {
+          "A MIX": true,
+          "B MIX": true,
+          "PH UP": true,
+          "PH DOWN": true,
+        };
+        controls.forEach((key, value) {
+          publishControl(key, value);
+        });
+        _triggerControlAnimation("AUTO_ALL");
+      } else {
+        controls = {
+          "A MIX": false,
+          "B MIX": false,
+          "PH UP": false,
+          "PH DOWN": false,
+        };
+        controls.forEach((key, value) {
+          publishControl(key, value);
+        });
+      }
+    });
+    _saveRelayStates(); // Add this line
+    publishControl("AUTO", isAutomaticControl);
+  }
 
   // Method untuk menangani kontrol individual
   void _handleIndividualControl(String controlName) {
-  if (!isAutomaticControl) {
-    setState(() {
-      controls[controlName] = !controls[controlName]!;
-    });
-    publishControl(controlName, controls[controlName]!);
-    _saveRelayStates(); // Add this line
+    if (!isAutomaticControl) {
+      setState(() {
+        controls[controlName] = !controls[controlName]!;
+      });
+      publishControl(controlName, controls[controlName]!);
+      _saveRelayStates(); // Add this line
 
-    if (controls[controlName]!) {
-      _triggerControlAnimation(controlName);
+      if (controls[controlName]!) {
+        _triggerControlAnimation(controlName);
+      }
+    } else {
+      _showCustomSnackBar(
+          context, 'Matikan untuk mengontrol manual', Colors.amber);
     }
-  } else {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Matikan untuk mengontrol manual'),
-        duration: Duration(seconds: 2),
-        backgroundColor: Colors.orange,
-      ),
-    );
   }
-}
 
   Future<void> _handleRefresh() async {
     try {
@@ -300,20 +291,11 @@ class _GamifikasiPageState extends State<GamifikasiPage>
       await _loadUserData();
 
       // Show success message
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Data berhasil diperbarui'),
-          backgroundColor: Colors.green,
-          duration: Duration(seconds: 2),
-        ),
-      );
+      _showCustomSnackBar(
+          context, 'Data berhasil diperbarui', Colors.green);
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Gagal memperbarui data: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      _showCustomSnackBar(context, 'Gagal memperbarui data: $e', Colors.red);
+
     }
   }
 
@@ -348,26 +330,101 @@ class _GamifikasiPageState extends State<GamifikasiPage>
   }
 
   Future<void> _saveRelayStates() async {
-  final prefs = await SharedPreferences.getInstance();
-  final relayStates = controls.map((key, value) => MapEntry(key, value.toString()));
-  await prefs.setString('relay_states', jsonEncode(relayStates));
-  await prefs.setBool('automatic_control', isAutomaticControl);
-}
+    final prefs = await SharedPreferences.getInstance();
+    final relayStates =
+        controls.map((key, value) => MapEntry(key, value.toString()));
+    await prefs.setString('relay_states', jsonEncode(relayStates));
+    await prefs.setBool('automatic_control', isAutomaticControl);
+  }
 
-Future<void> _loadRelayStates() async {
-  final prefs = await SharedPreferences.getInstance();
-  final relayStatesString = prefs.getString('relay_states');
-  final automaticControl = prefs.getBool('automatic_control') ?? false;
-  
-  if (relayStatesString != null) {
-    final relayStates = Map<String, String>.from(jsonDecode(relayStatesString));
-    setState(() {
-      controls = relayStates.map((key, value) => MapEntry(key, value == 'true'));
-      isAutomaticControl = automaticControl;
+  Future<void> _loadRelayStates() async {
+    final prefs = await SharedPreferences.getInstance();
+    final relayStatesString = prefs.getString('relay_states');
+    final automaticControl = prefs.getBool('automatic_control') ?? false;
+
+    if (relayStatesString != null) {
+      final relayStates =
+          Map<String, String>.from(jsonDecode(relayStatesString));
+      setState(() {
+        controls =
+            relayStates.map((key, value) => MapEntry(key, value == 'true'));
+        isAutomaticControl = automaticControl;
+      });
+    }
+  }
+
+  void _showCustomSnackBar(BuildContext context, String message, Color color) {
+    final overlay = Overlay.of(context);
+    late OverlayEntry overlayEntry;
+
+    overlayEntry = OverlayEntry(
+      builder: (context) => Positioned(
+        // Hitung posisi di bawah AppBar
+        top: MediaQuery.of(context).padding.top +
+            kToolbarHeight +
+            10, // kToolbarHeight adalah tinggi default AppBar
+        left: 0,
+        right: 0,
+        child: Material(
+          color: Colors.transparent,
+          child: Center(
+            child: Container(
+              width: MediaQuery.of(context).size.width * 0.9,
+              margin: const EdgeInsets.only(bottom: 8),
+              decoration: BoxDecoration(
+                color: color,
+                borderRadius: BorderRadius.circular(8),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.1),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.info_outline,
+                      color: Colors.white,
+                      size: 24,
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        message,
+                        style: GoogleFonts.poppins(
+                          color: Colors.white,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.close,
+                          color: Colors.white, size: 20),
+                      onPressed: () {
+                        overlayEntry.remove();
+                      },
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    overlay.insert(overlayEntry);
+
+    Future.delayed(const Duration(seconds: 3), () {
+      if (overlayEntry.mounted) {
+        overlayEntry.remove();
+      }
     });
   }
-}
-
 
   @override
   Widget build(BuildContext context) {
@@ -995,9 +1052,8 @@ Future<void> _loadRelayStates() async {
   Widget _buildLevelWidget({required int level}) {
     return InkWell(
       onTap: () {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Anda telah mencapai Level $level!')),
-        );
+        _showCustomSnackBar(
+            context, 'Anda telah mencapai Level $level!', Colors.green);
       },
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),

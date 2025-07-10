@@ -59,15 +59,12 @@ class _LoginPageState extends State<LoginPage>
           );
         }
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-              content: Text('Login gagal. Periksa kredensial Anda.')),
-        );
+        _showCustomSnackBar(
+            context, 'Login gagal. Periksa kredensial anda', Colors.red);
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Terjadi kesalahan saat login')),
-      );
+      _showCustomSnackBar(
+          context, 'Terjadi kesalahan saat login', Colors.green);
     }
   }
 
@@ -117,19 +114,92 @@ class _LoginPageState extends State<LoginPage>
           }
         } else {
           if (responseMap.containsKey('email')) {
-            errorSnackBar(context, 'Email tidak valid');
+            _showCustomSnackBar(context, 'Email tidak valid', Colors.red);
           } else if (responseMap.containsKey('password')) {
-            errorSnackBar(context, 'Password salah');
+            _showCustomSnackBar(context, 'Password salah', Colors.red);
           } else {
-            errorSnackBar(context, 'Terjadi kesalahan, coba lagi');
+            _showCustomSnackBar(
+                context, 'Terjadi kesalahan, coba lagi', Colors.red);
           }
         }
       } catch (e) {
-        errorSnackBar(context, 'Terjadi kesalahan, coba lagi');
+        _showCustomSnackBar(
+            context, 'Terjadi kesalahan, coba lagi', Colors.red);
       }
     } else {
-      errorSnackBar(context, 'Isi Semua Field');
+      _showCustomSnackBar(context, 'Isi Semua Field', Colors.red);
     }
+  }
+
+  void _showCustomSnackBar(BuildContext context, String message, Color color) {
+    final overlay = Overlay.of(context);
+    late OverlayEntry overlayEntry;
+
+    overlayEntry = OverlayEntry(
+      builder: (context) => Positioned(
+        top: MediaQuery.of(context).padding.top + 
+            10, 
+        left: 0,
+        right: 0,
+        child: Material(
+          color: Colors.transparent,
+          child: Center(
+            child: Container(
+              width: MediaQuery.of(context).size.width * 0.9,
+              margin: const EdgeInsets.only(bottom: 8),
+              decoration: BoxDecoration(
+                color: color,
+                borderRadius: BorderRadius.circular(8),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.1),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.info_outline,
+                      color: Colors.white,
+                      size: 24,
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        message,
+                        style: GoogleFonts.poppins(
+                          color: Colors.white,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.close,
+                          color: Colors.white, size: 20),
+                      onPressed: () {
+                        overlayEntry.remove();
+                      },
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    overlay.insert(overlayEntry);
+
+    Future.delayed(const Duration(seconds: 3), () {
+      if (overlayEntry.mounted) {
+        overlayEntry.remove();
+      }
+    });
   }
 
   @override
@@ -159,7 +229,7 @@ class _LoginPageState extends State<LoginPage>
                 child: IntrinsicHeight(
                   child: Column(
                     children: [
-                      Container(height: 25, color: const Color(0xFF2ABD77)),
+                      Container(height: 55, color: const Color(0xFF2ABD77)),
                       const SizedBox(height: 15),
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 12.0),

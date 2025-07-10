@@ -14,7 +14,7 @@ class Awal2Page extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Container(
-            height: 25,
+            height: 55,
             color: const Color.fromARGB(255, 36, 209, 126),
           ),
           const SizedBox(height: 50),

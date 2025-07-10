@@ -163,9 +163,7 @@ class _RewardPageState extends State<RewardPage>
         _isLoading = false;
         _errorMessage = 'Failed to load rewards: ${e.toString()}';
       });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error loading rewards: $e')),
-      );
+      _showCustomSnackBar(context, 'Gagal memuat rewards: $e', Colors.red);
     }
   }
 
@@ -356,17 +354,13 @@ class _RewardPageState extends State<RewardPage>
 
   void _spinWheel() {
     if (_gachaRewards.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Gacha tidak tersedia.')),
-      );
+      _showCustomSnackBar(context, 'Gacha tidak tersedia', Colors.amber);
       return;
     }
 
     if (_userCoins < 10) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Koin tidak cukup! Butuh 10 koin.'),
-        backgroundColor: Colors.red),
-      );
+      _showCustomSnackBar(
+          context, 'Koin tidak cukup. Butuh 10 koin', Colors.red);
       return;
     }
 
@@ -401,12 +395,7 @@ class _RewardPageState extends State<RewardPage>
     final requiredCoins = selectedReward.koinDibutuhkan ?? 0;
 
     if (_userCoins < requiredCoins) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Koin tidak cukup! Butuh $requiredCoins koin.'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      _showCustomSnackBar(context, 'Koin tidak cukup. Butuh $requiredCoins koin', Colors.red);
       return;
     }
 
@@ -502,13 +491,7 @@ class _RewardPageState extends State<RewardPage>
     await _loadRewards();
 
     // Show success message
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Data berhasil diperbarui'),
-        backgroundColor: Colors.green,
-        duration: Duration(seconds: 2),
-      ),
-    );
+    _showCustomSnackBar(context, 'Data berhasil diperbarui', Colors.green);
   }
 
   Widget _buildUserStats() {
@@ -535,6 +518,76 @@ class _RewardPageState extends State<RewardPage>
         ],
       ),
     );
+  }
+
+  void _showCustomSnackBar(BuildContext context, String message, Color color) {
+    final overlay = Overlay.of(context);
+    late OverlayEntry overlayEntry;
+
+    overlayEntry = OverlayEntry(
+      builder: (context) => Positioned(
+        top: MediaQuery.of(context).padding.top + kToolbarHeight + 10,
+        left: 0,
+        right: 0,
+        child: Material(
+          color: Colors.transparent,
+          child: Center(
+            child: Container(
+              width: MediaQuery.of(context).size.width * 0.9,
+              margin: const EdgeInsets.only(bottom: 8),
+              decoration: BoxDecoration(
+                color: color,
+                borderRadius: BorderRadius.circular(8),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.1),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.info_outline,
+                      color: Colors.white,
+                      size: 24,
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        message,
+                        style: GoogleFonts.poppins(
+                          color: Colors.white,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.close,
+                          color: Colors.white, size: 20),
+                      onPressed: () {
+                        overlayEntry.remove();
+                      },
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    overlay.insert(overlayEntry);
+
+    Future.delayed(const Duration(seconds: 3), () {
+      if (overlayEntry.mounted) {
+        overlayEntry.remove();
+      }
+    });
   }
 
   Widget _buildStatItem(

@@ -107,9 +107,12 @@ class _LeaderboardPageState extends State<LeaderboardPage>
       if (mounted) {
         setState(() {
           _currentUserName = prefs.getString('username') ?? 'Guest';
-          _currentUserCoins = prefs.getInt('${_currentUserId}_total_coins') ?? 0;
-          _currentUserPoints = prefs.getInt('${_currentUserId}_current_exp') ?? 0;
-          _currentUserLevel = prefs.getInt('${_currentUserId}_current_level') ?? 1;
+          _currentUserCoins =
+              prefs.getInt('${_currentUserId}_total_coins') ?? 0;
+          _currentUserPoints =
+              prefs.getInt('${_currentUserId}_current_exp') ?? 0;
+          _currentUserLevel =
+              prefs.getInt('${_currentUserId}_current_level') ?? 1;
         });
       }
     } catch (e) {
@@ -134,7 +137,7 @@ class _LeaderboardPageState extends State<LeaderboardPage>
       }
 
       final leaderboard = await _leaderboardService!.getLeaderboard();
-      
+
       if (mounted) {
         setState(() {
           _leaderboardData = leaderboard;
@@ -149,7 +152,7 @@ class _LeaderboardPageState extends State<LeaderboardPage>
           _isLoading = false;
           _errorMessage = 'Gagal memuat leaderboard: ${e.toString()}';
         });
-        
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(_errorMessage),
@@ -176,14 +179,78 @@ class _LeaderboardPageState extends State<LeaderboardPage>
     await _loadLeaderboardData();
 
     if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Data berhasil diperbarui'),
-          backgroundColor: Colors.green,
-          duration: Duration(seconds: 2),
-        ),
-      );
+      _showCustomSnackBar(context, 'Data berhasil diperbarui', Colors.green);
     }
+  }
+
+  void _showCustomSnackBar(BuildContext context, String message, Color color) {
+    final overlay = Overlay.of(context);
+    late OverlayEntry overlayEntry;
+
+    overlayEntry = OverlayEntry(
+      builder: (context) => Positioned(
+        top: MediaQuery.of(context).padding.top + kToolbarHeight + 10,
+        left: 0,
+        right: 0,
+        child: Material(
+          color: Colors.transparent,
+          child: Center(
+            child: Container(
+              width: MediaQuery.of(context).size.width * 0.9,
+              margin: const EdgeInsets.only(bottom: 8),
+              decoration: BoxDecoration(
+                color: color,
+                borderRadius: BorderRadius.circular(8),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.1),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.info_outline,
+                      color: Colors.white,
+                      size: 24,
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        message,
+                        style: GoogleFonts.poppins(
+                          color: Colors.white,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.close,
+                          color: Colors.white, size: 20),
+                      onPressed: () {
+                        overlayEntry.remove();
+                      },
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    overlay.insert(overlayEntry);
+
+    Future.delayed(const Duration(seconds: 3), () {
+      if (overlayEntry.mounted) {
+        overlayEntry.remove();
+      }
+    });
   }
 
   int _findCurrentUserRank() {
@@ -235,7 +302,7 @@ class _LeaderboardPageState extends State<LeaderboardPage>
 
   void _navigateToPage(int index) {
     if (!mounted) return;
-    
+
     setState(() {
       _bottomNavCurrentIndex = index;
     });
@@ -305,8 +372,7 @@ class _LeaderboardPageState extends State<LeaderboardPage>
       ),
       body: _isLoading
           ? const Center(
-              child: CircularProgressIndicator(color: Color(0xFF24D17E))
-            )
+              child: CircularProgressIndicator(color: Color(0xFF24D17E)))
           : _errorMessage.isNotEmpty
               ? Center(
                   child: Column(
@@ -385,7 +451,8 @@ class _LeaderboardPageState extends State<LeaderboardPage>
                                             ),
                                             boxShadow: [
                                               BoxShadow(
-                                                color: Colors.black.withOpacity(0.2),
+                                                color: Colors.black
+                                                    .withOpacity(0.2),
                                                 blurRadius: 8,
                                                 offset: const Offset(0, 4),
                                               ),
@@ -393,9 +460,12 @@ class _LeaderboardPageState extends State<LeaderboardPage>
                                           ),
                                           child: CircleAvatar(
                                             radius: 40,
-                                            backgroundImage: const AssetImage('assets/profile.jpg'),
-                                            onBackgroundImageError: (exception, stackTrace) {
-                                              debugPrint('Error loading profile image: $exception');
+                                            backgroundImage: const AssetImage(
+                                                'assets/profile.jpg'),
+                                            onBackgroundImageError:
+                                                (exception, stackTrace) {
+                                              debugPrint(
+                                                  'Error loading profile image: $exception');
                                             },
                                             child: const Icon(
                                               Icons.person,
@@ -408,7 +478,8 @@ class _LeaderboardPageState extends State<LeaderboardPage>
                                           Container(
                                             padding: const EdgeInsets.all(6),
                                             decoration: BoxDecoration(
-                                              color: _getRankColor(_currentUserRank),
+                                              color: _getRankColor(
+                                                  _currentUserRank),
                                               shape: BoxShape.circle,
                                               border: Border.all(
                                                 color: Colors.white,
@@ -420,7 +491,8 @@ class _LeaderboardPageState extends State<LeaderboardPage>
                                               style: GoogleFonts.poppins(
                                                 fontSize: 14,
                                                 fontWeight: FontWeight.bold,
-                                                color: _getRankTextColor(_currentUserRank),
+                                                color: _getRankTextColor(
+                                                    _currentUserRank),
                                               ),
                                             ),
                                           ),
@@ -485,18 +557,22 @@ class _LeaderboardPageState extends State<LeaderboardPage>
                               delegate: SliverChildBuilderDelegate(
                                 (context, index) {
                                   final user = _leaderboardData[index];
-                                  final isCurrentUser = user.id.toString() == _currentUserId;
+                                  final isCurrentUser =
+                                      user.id.toString() == _currentUserId;
                                   return AnimatedOpacity(
                                     opacity: _isLoading ? 0.0 : 1.0,
-                                    duration: Duration(milliseconds: 300 + (index * 100)),
+                                    duration: Duration(
+                                        milliseconds: 300 + (index * 100)),
                                     child: Padding(
-                                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 16, vertical: 4),
                                       child: Container(
                                         decoration: BoxDecoration(
                                           gradient: index < 3
                                               ? LinearGradient(
                                                   colors: [
-                                                    _getRankColor(index + 1).withOpacity(0.2),
+                                                    _getRankColor(index + 1)
+                                                        .withOpacity(0.2),
                                                     Colors.white,
                                                   ],
                                                   begin: Alignment.topLeft,
@@ -508,10 +584,12 @@ class _LeaderboardPageState extends State<LeaderboardPage>
                                               : index < 3
                                                   ? null
                                                   : Colors.white,
-                                          borderRadius: BorderRadius.circular(12),
+                                          borderRadius:
+                                              BorderRadius.circular(12),
                                           boxShadow: [
                                             BoxShadow(
-                                              color: Colors.grey.withOpacity(0.2),
+                                              color:
+                                                  Colors.grey.withOpacity(0.2),
                                               blurRadius: 4,
                                               offset: const Offset(0, 2),
                                             ),
@@ -520,24 +598,29 @@ class _LeaderboardPageState extends State<LeaderboardPage>
                                         child: Material(
                                           color: Colors.transparent,
                                           child: InkWell(
-                                            borderRadius: BorderRadius.circular(12),
+                                            borderRadius:
+                                                BorderRadius.circular(12),
                                             onTap: () {
                                               // Optional: Add tap feedback or user profile view
                                             },
                                             child: ListTile(
-                                              contentPadding: const EdgeInsets.symmetric(
-                                                  horizontal: 16, vertical: 8),
+                                              contentPadding:
+                                                  const EdgeInsets.symmetric(
+                                                      horizontal: 16,
+                                                      vertical: 8),
                                               leading: Container(
                                                 width: 40,
                                                 height: 40,
                                                 decoration: BoxDecoration(
                                                   shape: BoxShape.circle,
-                                                  color: _getRankColor(index + 1),
+                                                  color:
+                                                      _getRankColor(index + 1),
                                                 ),
                                                 child: Center(
                                                   child: Icon(
                                                     _getRankIcon(index + 1),
-                                                    color: _getRankTextColor(index + 1),
+                                                    color: _getRankTextColor(
+                                                        index + 1),
                                                     size: 20,
                                                   ),
                                                 ),
@@ -547,19 +630,24 @@ class _LeaderboardPageState extends State<LeaderboardPage>
                                                   Expanded(
                                                     child: Text(
                                                       user.username,
-                                                      style: GoogleFonts.poppins(
+                                                      style:
+                                                          GoogleFonts.poppins(
                                                         fontSize: 16,
-                                                        fontWeight: FontWeight.w600,
+                                                        fontWeight:
+                                                            FontWeight.w600,
                                                         color: Colors.black,
                                                       ),
-                                                      overflow: TextOverflow.ellipsis,
+                                                      overflow:
+                                                          TextOverflow.ellipsis,
                                                     ),
                                                   ),
                                                   if (isCurrentUser)
                                                     const Padding(
-                                                      padding: EdgeInsets.only(left: 8.0),
+                                                      padding: EdgeInsets.only(
+                                                          left: 8.0),
                                                       child: Icon(Icons.star,
-                                                          color: Colors.amber, size: 16),
+                                                          color: Colors.amber,
+                                                          size: 16),
                                                     ),
                                                 ],
                                               ),
@@ -575,7 +663,8 @@ class _LeaderboardPageState extends State<LeaderboardPage>
                                                 style: GoogleFonts.poppins(
                                                   fontSize: 14,
                                                   fontWeight: FontWeight.bold,
-                                                  color: const Color(0xFF24D17E),
+                                                  color:
+                                                      const Color(0xFF24D17E),
                                                 ),
                                               ),
                                             ),

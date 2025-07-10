@@ -248,7 +248,10 @@ class _LoginPageState extends State<LoginPage>
                                     ),
                                   ),
                                   onPressed: () {
-                                    Navigator.pop(context);
+                                    Navigator.push(context, 
+                                      MaterialPageRoute(
+                                          builder: (context) =>
+                                              const RegistrasiPage()));
                                   },
                                   child: Row(
                                     mainAxisSize: MainAxisSize.min,

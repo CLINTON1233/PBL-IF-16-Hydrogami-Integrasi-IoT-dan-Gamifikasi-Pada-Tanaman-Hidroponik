@@ -25,46 +25,41 @@ class _LoginPageState extends State<LoginPage>
   String email = '';
   String password = '';
 
-  // Tambahkan TextEditingController untuk email dan password
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
 
-  void loginUser(String email, String password) async {
-    try {
-      final response = await http.post(
-        Uri.parse('https://admin-hydrogami.up.railway.app/api/auth/login'),
-        body: {
-          'email': email,
-          'password': password,
-        },
-      );
+  // Fungsi untuk menyimpan data user termasuk tanggal bergabung
+  Future<void> _saveUserData(Map<String, dynamic> userData) async {
+    final prefs = await SharedPreferences.getInstance();
+    
+    // Simpan data user
+    await prefs.setString('username', userData['username'] ?? '');
+    await prefs.setString('email', userData['email'] ?? '');
+    
+    // Simpan tanggal bergabung (jika belum ada)
+    final existingJoinDate = prefs.getString('join_date');
+    if (existingJoinDate == null || existingJoinDate.isEmpty) {
+      final now = DateTime.now();
+      final formattedDate = "${now.day} ${_getMonthName(now.month)} ${now.year}";
+      await prefs.setString('join_date', formattedDate);
+    }
+  }
 
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setString('token', data['token']);
-        // Cek apakah user sudah memilih tanaman dan skala
-        final hasPlant = prefs.getString('selected_plant') != null;
-        final hasScale =
-            prefs.getString('selected_scale') != null; // Simpan token
-        if (hasPlant && hasScale) {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (context) => const BerandaPage()),
-          );
-        } else {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (context) => const PilihPage()),
-          );
-        }
-      } else {
-        _showCustomSnackBar(
-            context, 'Login gagal. Periksa kredensial anda', Colors.red);
-      }
-    } catch (e) {
-      _showCustomSnackBar(
-          context, 'Terjadi kesalahan saat login', Colors.green);
+  String _getMonthName(int month) {
+    switch (month) {
+      case 1: return 'Januari';
+      case 2: return 'Februari';
+      case 3: return 'Maret';
+      case 4: return 'April';
+      case 5: return 'Mei';
+      case 6: return 'Juni';
+      case 7: return 'Juli';
+      case 8: return 'Agustus';
+      case 9: return 'September';
+      case 10: return 'Oktober';
+      case 11: return 'November';
+      case 12: return 'Desember';
+      default: return '';
     }
   }
 
@@ -80,6 +75,10 @@ class _LoginPageState extends State<LoginPage>
 
         if (response.statusCode == 200) {
           final prefs = await SharedPreferences.getInstance();
+          
+          // Simpan data user termasuk email dan tanggal bergabung
+          await _saveUserData(responseMap['user']);
+          
           await prefs.setString('username', responseMap['user']['username']);
 
           // Cek tokennya ada atau ngga
@@ -137,8 +136,7 @@ class _LoginPageState extends State<LoginPage>
 
     overlayEntry = OverlayEntry(
       builder: (context) => Positioned(
-        top: MediaQuery.of(context).padding.top + 
-            10, 
+        top: MediaQuery.of(context).padding.top + 10, 
         left: 0,
         right: 0,
         child: Material(
@@ -316,8 +314,7 @@ class _LoginPageState extends State<LoginPage>
                                 ),
                               ),
                               TextFormField(
-                                controller:
-                                    emailController, // Tambahkan controller
+                                controller: emailController,
                                 style: GoogleFonts.poppins(
                                   color: Colors.black,
                                   fontSize: 12.0,
@@ -348,8 +345,7 @@ class _LoginPageState extends State<LoginPage>
                                 ),
                               ),
                               TextFormField(
-                                controller:
-                                    passwordController, // Tambahkan controller
+                                controller: passwordController,
                                 obscureText: !_isPasswordVisible,
                                 style: GoogleFonts.poppins(
                                   color: Colors.black,

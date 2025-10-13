@@ -1281,37 +1281,25 @@ class _GamifikasiProgresPageState extends State<GamifikasiProgresPage>
   }
 
   Widget _buildAppBar() {
-    return AppBar(
-      backgroundColor: const Color(0xFF24D17E),
-      elevation: 2,
-      centerTitle: false,
-      title: Row(
-        children: [
-          Image.asset(
-            'assets/logo.png',
-            width: 40,
-            height: 40,
-          ),
-          const SizedBox(width: 10),
-          Text(
-            'Gamifikasi Progress',
-            style: GoogleFonts.poppins(
-              fontSize: 20,
-              fontWeight: FontWeight.w600,
-              color: Colors.black,
-            ),
-          ),
-        ],
+  return AppBar(
+    backgroundColor: const Color(0xFF24D17E),
+    elevation: 2,
+    title: Text(
+      'Misi',
+      style: GoogleFonts.poppins(
+        fontSize: 20,
+        fontWeight: FontWeight.w600,
+        color: Colors.white,
       ),
-      leading: IconButton(
-        icon: const Icon(Icons.arrow_back_sharp),
-        iconSize: 20.0,
-        onPressed: () {
-          Navigator.pop(context);
-        },
-      ),
-    );
-  }
+    ),
+    leading: IconButton(
+      icon: const Icon(Icons.arrow_back, color: Colors.white),
+      onPressed: () {
+        Navigator.pop(context);
+      },
+    ),
+  );
+}
 
   Widget _buildHeaderSection() {
     return Column(
@@ -1863,70 +1851,96 @@ class _GamifikasiProgresPageState extends State<GamifikasiProgresPage>
   }
 
   Widget _buildBottomNavigation() {
-    return ClipRRect(
-      borderRadius: const BorderRadius.only(
-        topLeft: Radius.circular(10),
-        topRight: Radius.circular(10),
-      ),
-      child: BottomNavigationBar(
-        type: BottomNavigationBarType.fixed,
-        backgroundColor: const Color(0xFF24D17E),
-        currentIndex: _bottomNavCurrentIndex,
-        selectedItemColor: Colors.black,
-        unselectedItemColor: Colors.white,
-        onTap: (index) {
-          setState(() {
-            _bottomNavCurrentIndex = index;
-          });
-
-          switch (index) {
-            case 0:
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(builder: (context) => const BerandaPage()),
-              );
-              break;
-            case 1:
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(builder: (context) => const NotifikasiPage()),
-              );
-              break;
-            case 2:
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(builder: (context) => const PanduanPage()),
-              );
-              break;
-            case 3:
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(builder: (context) => const ProfilPage()),
-              );
-              break;
-          }
-        },
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: 'Beranda',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.notifications),
-            label: 'Notifikasi',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.assignment),
-            label: 'Panduan',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person),
-            label: 'Akun',
+    return Container(
+      decoration: BoxDecoration(
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 20,
+            offset: const Offset(0, -5),
           ),
         ],
       ),
+      child: ClipRRect(
+        borderRadius: const BorderRadius.only(
+          topLeft: Radius.circular(24),
+          topRight: Radius.circular(24),
+        ),
+        child: BottomNavigationBar(
+          type: BottomNavigationBarType.fixed,
+          backgroundColor: Colors.white,
+          onTap: (index) {
+            setState(() {
+              _bottomNavCurrentIndex = index;
+            });
+
+            switch (index) {
+              case 0:
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(builder: (context) => const BerandaPage()),
+                );
+                break;
+              case 1:
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(
+                      builder: (context) => const NotifikasiPage()),
+                );
+                break;
+              case 2:
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(builder: (context) => const PanduanPage()),
+                );
+                break;
+              case 3:
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(builder: (context) => const ProfilPage()),
+                );
+                break;
+            }
+          },
+          currentIndex: _bottomNavCurrentIndex,
+          items: const [
+            BottomNavigationBarItem(
+              activeIcon: Icon(Icons.home_rounded),
+              icon: Icon(Icons.home_outlined),
+              label: 'Beranda',
+            ),
+            BottomNavigationBarItem(
+              activeIcon: Icon(Icons.notifications_rounded),
+              icon: Icon(Icons.notifications_outlined),
+              label: 'Notifikasi',
+            ),
+            BottomNavigationBarItem(
+              activeIcon: Icon(Icons.book_rounded),
+              icon: Icon(Icons.book_outlined),
+              label: 'Panduan',
+            ),
+            BottomNavigationBarItem(
+              activeIcon: Icon(Icons.person_rounded),
+              icon: Icon(Icons.person_outline_rounded),
+              label: 'Akun',
+            ),
+          ],
+          selectedItemColor: const Color(0xFF24D17E),
+          unselectedItemColor: Colors.grey[400],
+          selectedLabelStyle: GoogleFonts.poppins(
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+          ),
+          unselectedLabelStyle: GoogleFonts.poppins(
+            fontSize: 11,
+            fontWeight: FontWeight.w500,
+          ),
+          elevation: 0,
+        ),
+      ),
     );
   }
+
 
   Widget _buildRewardWidget({required int coins}) {
     return Material(

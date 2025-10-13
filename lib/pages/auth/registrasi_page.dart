@@ -1,5 +1,4 @@
 import 'dart:convert';
-// import 'dart:ffi';
 import 'package:application_hydrogami/pages/widgets/rounded_button.dart';
 import 'package:application_hydrogami/services/auth_services.dart';
 import 'package:application_hydrogami/services/globals.dart';
@@ -7,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:application_hydrogami/pages/auth/login_page.dart';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 
 class RegistrasiPage extends StatefulWidget {
   const RegistrasiPage({super.key});
@@ -25,6 +25,38 @@ class RegistrasiPageState extends State<RegistrasiPage> {
 
   bool _isPasswordVisible = false;
   bool _isConfirmPasswordVisible = false;
+
+  // Fungsi untuk menyimpan data user termasuk tanggal bergabung
+  Future<void> _saveUserData(String username, String email) async {
+    final prefs = await SharedPreferences.getInstance();
+    
+    // Simpan data user
+    await prefs.setString('username', username);
+    await prefs.setString('email', email);
+    
+    // Simpan tanggal bergabung saat registrasi
+    final now = DateTime.now();
+    final formattedDate = "${now.day} ${_getMonthName(now.month)} ${now.year}";
+    await prefs.setString('join_date', formattedDate);
+  }
+
+  String _getMonthName(int month) {
+    switch (month) {
+      case 1: return 'Januari';
+      case 2: return 'Februari';
+      case 3: return 'Maret';
+      case 4: return 'April';
+      case 5: return 'Mei';
+      case 6: return 'Juni';
+      case 7: return 'Juli';
+      case 8: return 'Agustus';
+      case 9: return 'September';
+      case 10: return 'Oktober';
+      case 11: return 'November';
+      case 12: return 'Desember';
+      default: return '';
+    }
+  }
 
   void createAccountPressed() async {
     String username = _usernameController.text.trim();
@@ -70,7 +102,9 @@ class RegistrasiPageState extends State<RegistrasiPage> {
       Map responseMap = jsonDecode(response.body);
 
       if (response.statusCode == 200) {
-        // Gunakan fungsi successSnackBar untuk notifikasi berhasil
+        // Simpan data user ke SharedPreferences
+        await _saveUserData(username, email);
+        
         _showCustomSnackBar(context, 'Pendaftaran berhasil', Colors.green);
         Future.delayed(const Duration(seconds: 2), () {
           Navigator.push(
@@ -169,8 +203,7 @@ class RegistrasiPageState extends State<RegistrasiPage> {
     return GestureDetector(
       onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
       child: Scaffold(
-        resizeToAvoidBottomInset:
-            false, // Prevent resizing when keyboard appears
+        resizeToAvoidBottomInset: false,
         backgroundColor: Colors.white,
         appBar: AppBar(
           backgroundColor: const Color.fromARGB(255, 36, 209, 126),
@@ -178,8 +211,7 @@ class RegistrasiPageState extends State<RegistrasiPage> {
           toolbarHeight: 0,
         ),
         body: SafeArea(
-          bottom:
-              false, // Disable bottom padding to allow container to touch bottom
+          bottom: false,
           child: Column(
             children: [
               const SizedBox(height: 10),

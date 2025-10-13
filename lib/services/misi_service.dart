@@ -3,7 +3,7 @@ import 'package:http/http.dart' as http;
 import '../models/misi_model.dart';
 
 class MisiService {
-  static const String baseUrl = 'https://admin-hydrogami.up.railway.app/api/user';
+  static const String baseUrl = 'http://10.0.2.2:8000/api/user';
 
   Future<List<Misi>> getAllMisi() async {
     try {

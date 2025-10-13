@@ -395,7 +395,8 @@ class _RewardPageState extends State<RewardPage>
     final requiredCoins = selectedReward.koinDibutuhkan ?? 0;
 
     if (_userCoins < requiredCoins) {
-      _showCustomSnackBar(context, 'Koin tidak cukup. Butuh $requiredCoins koin', Colors.red);
+      _showCustomSnackBar(
+          context, 'Koin tidak cukup. Butuh $requiredCoins koin', Colors.red);
       return;
     }
 
@@ -1176,95 +1177,92 @@ class _RewardPageState extends State<RewardPage>
   }
 
   Widget _buildBottomNavigation() {
-    return ClipRRect(
-      borderRadius: const BorderRadius.only(
-        topLeft: Radius.circular(10),
-        topRight: Radius.circular(10),
-      ),
-      child: BottomNavigationBar(
-        type: BottomNavigationBarType.fixed,
-        backgroundColor: const Color(0xFF24D17E),
-        onTap: (index) {
-          setState(() {
-            _bottomNavCurrentIndex = index;
-          });
-
-          switch (index) {
-            case 0:
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(builder: (context) => const BerandaPage()),
-              );
-              break;
-            case 1:
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(builder: (context) => const NotifikasiPage()),
-              );
-              break;
-            case 2:
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(builder: (context) => const PanduanPage()),
-              );
-              break;
-            case 3:
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(builder: (context) => const ProfilPage()),
-              );
-              break;
-          }
-        },
-        currentIndex: _bottomNavCurrentIndex,
-        items: const [
-          BottomNavigationBarItem(
-            activeIcon: Icon(
-              Icons.home,
-              color: Colors.black,
-            ),
-            icon: Icon(
-              Icons.home,
-              color: Colors.white,
-            ),
-            label: 'Beranda',
-          ),
-          BottomNavigationBarItem(
-            activeIcon: Icon(
-              Icons.notification_add,
-              color: Colors.black,
-            ),
-            icon: Icon(
-              Icons.notification_add,
-              color: Colors.white,
-            ),
-            label: 'Notifikasi',
-          ),
-          BottomNavigationBarItem(
-            activeIcon: Icon(
-              Icons.assignment,
-              color: Colors.black,
-            ),
-            icon: Icon(
-              Icons.assignment,
-              color: Colors.white,
-            ),
-            label: 'Panduan',
-          ),
-          BottomNavigationBarItem(
-            activeIcon: Icon(
-              Icons.person,
-              color: Colors.black,
-            ),
-            icon: Icon(
-              Icons.person,
-              color: Colors.white,
-            ),
-            label: 'Akun',
+    return Container(
+      decoration: BoxDecoration(
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 20,
+            offset: const Offset(0, -5),
           ),
         ],
-        selectedItemColor: Colors.black,
-        unselectedItemColor: Colors.white,
+      ),
+      child: ClipRRect(
+        borderRadius: const BorderRadius.only(
+          topLeft: Radius.circular(24),
+          topRight: Radius.circular(24),
+        ),
+        child: BottomNavigationBar(
+          type: BottomNavigationBarType.fixed,
+          backgroundColor: Colors.white,
+          onTap: (index) {
+            setState(() {
+              _bottomNavCurrentIndex = index;
+            });
+
+            switch (index) {
+              case 0:
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(builder: (context) => const BerandaPage()),
+                );
+                break;
+              case 1:
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(
+                      builder: (context) => const NotifikasiPage()),
+                );
+                break;
+              case 2:
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(builder: (context) => const PanduanPage()),
+                );
+                break;
+              case 3:
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(builder: (context) => const ProfilPage()),
+                );
+                break;
+            }
+          },
+          currentIndex: _bottomNavCurrentIndex,
+          items: const [
+            BottomNavigationBarItem(
+              activeIcon: Icon(Icons.home_rounded),
+              icon: Icon(Icons.home_outlined),
+              label: 'Beranda',
+            ),
+            BottomNavigationBarItem(
+              activeIcon: Icon(Icons.notifications_rounded),
+              icon: Icon(Icons.notifications_outlined),
+              label: 'Notifikasi',
+            ),
+            BottomNavigationBarItem(
+              activeIcon: Icon(Icons.book_rounded),
+              icon: Icon(Icons.book_outlined),
+              label: 'Panduan',
+            ),
+            BottomNavigationBarItem(
+              activeIcon: Icon(Icons.person_rounded),
+              icon: Icon(Icons.person_outline_rounded),
+              label: 'Akun',
+            ),
+          ],
+          selectedItemColor: const Color(0xFF24D17E),
+          unselectedItemColor: Colors.grey[400],
+          selectedLabelStyle: GoogleFonts.poppins(
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+          ),
+          unselectedLabelStyle: GoogleFonts.poppins(
+            fontSize: 11,
+            fontWeight: FontWeight.w500,
+          ),
+          elevation: 0,
+        ),
       ),
     );
   }
@@ -1275,28 +1273,16 @@ class _RewardPageState extends State<RewardPage>
       appBar: AppBar(
         backgroundColor: const Color(0xFF24D17E),
         elevation: 2,
-        centerTitle: false,
-        title: Row(
-          children: [
-            Image.asset(
-              'assets/logo.png',
-              width: 40,
-              height: 40,
-            ),
-            const SizedBox(width: 10),
-            Text(
-              'Reward',
-              style: GoogleFonts.poppins(
-                fontSize: 20,
-                fontWeight: FontWeight.w600,
-                color: Colors.black,
-              ),
-            ),
-          ],
+        title: Text(
+          'Reward',
+          style: GoogleFonts.poppins(
+            fontSize: 20,
+            fontWeight: FontWeight.w600,
+            color: Colors.white,
+          ),
         ),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_sharp),
-          iconSize: 20.0,
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () {
             Navigator.pop(context);
           },

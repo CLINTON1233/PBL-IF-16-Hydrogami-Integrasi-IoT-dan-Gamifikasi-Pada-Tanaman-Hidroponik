@@ -97,7 +97,8 @@ class _NotifikasiPageState extends State<NotifikasiPage> {
       final success = await LayananNotifikasi.tandaiDibaca(notification.id);
       if (success) {
         setState(() {
-          final index = notifications.indexWhere((n) => n.id == notification.id);
+          final index =
+              notifications.indexWhere((n) => n.id == notification.id);
           if (index != -1) {
             notifications[index] = NotifikasiModel(
               id: notification.id,
@@ -120,7 +121,8 @@ class _NotifikasiPageState extends State<NotifikasiPage> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Hapus Semua Notifikasi'),
-        content: const Text('Apakah Anda yakin ingin menghapus semua notifikasi?'),
+        content:
+            const Text('Apakah Anda yakin ingin menghapus semua notifikasi?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
@@ -128,7 +130,8 @@ class _NotifikasiPageState extends State<NotifikasiPage> {
           ),
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Hapus Semua', style: TextStyle(color: Colors.red)),
+            child:
+                const Text('Hapus Semua', style: TextStyle(color: Colors.red)),
           ),
         ],
       ),
@@ -246,45 +249,20 @@ class _NotifikasiPageState extends State<NotifikasiPage> {
       appBar: AppBar(
         backgroundColor: const Color(0xFF24D17E),
         elevation: 2,
-        title: Row(
-          children: [
-            Image.asset('assets/logo.png', width: 40, height: 40),
-            const SizedBox(width: 10),
-            Text(
-              'Notifikasi',
-              style: GoogleFonts.poppins(
-                fontSize: 20,
-                fontWeight: FontWeight.w600,
-                color: Colors.black,
-              ),
-            ),
-            if (hasNewNotifications)
-              Padding(
-                padding: const EdgeInsets.only(left: 8.0),
-                child: Container(
-                  padding: const EdgeInsets.all(4),
-                  decoration: const BoxDecoration(
-                    color: Colors.red,
-                    shape: BoxShape.circle,
-                  ),
-                ),
-              ),
-          ],
-        ),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (context) => const BerandaPage()),
+        title: Text(
+          'Notifikasi',
+          style: GoogleFonts.poppins(
+            fontSize: 20,
+            fontWeight: FontWeight.w600,
+            color: Colors.white,
           ),
         ),
-        actions: [
-          if (notifications.isNotEmpty)
-            IconButton(
-              icon: const Icon(Icons.delete_sweep),
-              onPressed: () => _showDeleteAllConfirmation(),
-            ),
-        ],
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () {
+            Navigator.pop(context);
+          },
+        ),
       ),
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -462,51 +440,93 @@ class _NotifikasiPageState extends State<NotifikasiPage> {
   }
 
   Widget _buildBottomNavigation() {
-    return BottomNavigationBar(
-      currentIndex: _bottomNavCurrentIndex,
-      type: BottomNavigationBarType.fixed,
-      backgroundColor: const Color(0xFF24D17E),
-      selectedItemColor: Colors.black,
-      unselectedItemColor: Colors.white,
-      onTap: (index) {
-        setState(() => _bottomNavCurrentIndex = index);
-        switch (index) {
-          case 0:
-            Navigator.pushReplacement(context,
-                MaterialPageRoute(builder: (context) => const BerandaPage()));
-            break;
-          case 1:
-            Navigator.pushReplacement(context,
-                MaterialPageRoute(builder: (context) => const NotifikasiPage()));
-            break;
-          case 2:
-            Navigator.pushReplacement(context,
-                MaterialPageRoute(builder: (context) => const PanduanPage()));
-            break;
-          case 3:
-            Navigator.pushReplacement(context,
-                MaterialPageRoute(builder: (context) => const ProfilPage()));
-            break;
-        }
-      },
-      items: const [
-        BottomNavigationBarItem(
-          icon: Icon(Icons.home),
-          label: 'Beranda',
+    return Container(
+      decoration: BoxDecoration(
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 20,
+            offset: const Offset(0, -5),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: const BorderRadius.only(
+          topLeft: Radius.circular(24),
+          topRight: Radius.circular(24),
         ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.notifications),
-          label: 'Notifikasi',
+        child: BottomNavigationBar(
+          type: BottomNavigationBarType.fixed,
+          backgroundColor: Colors.white,
+          onTap: (index) {
+            setState(() {
+              _bottomNavCurrentIndex = index;
+            });
+
+            switch (index) {
+              case 0:
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(builder: (context) => const BerandaPage()),
+                );
+                break;
+              case 1:
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(
+                      builder: (context) => const NotifikasiPage()),
+                );
+                break;
+              case 2:
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(builder: (context) => const PanduanPage()),
+                );
+                break;
+              case 3:
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(builder: (context) => const ProfilPage()),
+                );
+                break;
+            }
+          },
+          currentIndex: _bottomNavCurrentIndex,
+          items: const [
+            BottomNavigationBarItem(
+              activeIcon: Icon(Icons.home_rounded),
+              icon: Icon(Icons.home_outlined),
+              label: 'Beranda',
+            ),
+            BottomNavigationBarItem(
+              activeIcon: Icon(Icons.notifications_rounded),
+              icon: Icon(Icons.notifications_outlined),
+              label: 'Notifikasi',
+            ),
+            BottomNavigationBarItem(
+              activeIcon: Icon(Icons.book_rounded),
+              icon: Icon(Icons.book_outlined),
+              label: 'Panduan',
+            ),
+            BottomNavigationBarItem(
+              activeIcon: Icon(Icons.person_rounded),
+              icon: Icon(Icons.person_outline_rounded),
+              label: 'Akun',
+            ),
+          ],
+          selectedItemColor: const Color(0xFF24D17E),
+          unselectedItemColor: Colors.grey[400],
+          selectedLabelStyle: GoogleFonts.poppins(
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+          ),
+          unselectedLabelStyle: GoogleFonts.poppins(
+            fontSize: 11,
+            fontWeight: FontWeight.w500,
+          ),
+          elevation: 0,
         ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.assignment),
-          label: 'Panduan',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.person),
-          label: 'Profil',
-        ),
-      ],
+      ),
     );
   }
 }

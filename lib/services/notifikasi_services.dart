@@ -5,7 +5,7 @@ import 'package:application_hydrogami/services/globals.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class LayananNotifikasi {
-  static const String baseURL = 'https://admin-hydrogami.up.railway.app/api/';
+  static const String baseURL = 'http://10.0.2.2:8000/api/';
   static const bool debugMode = true;
 
   // Method untuk mendapatkan headers dengan auth token dan logging

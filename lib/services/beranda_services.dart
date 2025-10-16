@@ -3,7 +3,7 @@ import 'package:http/http.dart' as http;
 
 class BerandaServices {
   static Future<String> getUserDetails(String token) async {
-    final url = Uri.parse('https://admin-hydrogami.up.railway.app/api/user');
+    final url = Uri.parse('http://10.0.2.2:8000/api/user');
     final response = await http.get(
       url,
       headers: {

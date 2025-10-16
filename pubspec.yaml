@@ -30,6 +30,7 @@ dependencies:
   confetti: ^0.8.0
   simple_animations: ^5.2.0
   flutter_spin_wheel_menu: ^0.0.4
+  image_picker: ^1.0.4
 
 
 dev_dependencies:

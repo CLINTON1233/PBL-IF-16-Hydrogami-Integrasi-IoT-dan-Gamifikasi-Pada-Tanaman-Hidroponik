@@ -27,9 +27,10 @@ class _MonitoringPageState extends State<MonitoringPage> {
 
   // MQTT Client Configuration
   late MqttServerClient client;
-  final String broker = 'broker.hivemq.com';
+  final String broker = '10.0.2.2';
   final int port = 1883;
-  final String clientIdentifier = 'hydrogami_flutter_client_${DateTime.now().millisecondsSinceEpoch}';
+  final String clientIdentifier =
+      'hydrogami_flutter_client_${DateTime.now().millisecondsSinceEpoch}';
   final String topic = 'hydrogami/sensor/data';
 
   // Data sensor real-time
@@ -126,7 +127,8 @@ class _MonitoringPageState extends State<MonitoringPage> {
 
     client.updates?.listen((List<MqttReceivedMessage<MqttMessage>> c) async {
       final MqttPublishMessage message = c[0].payload as MqttPublishMessage;
-      final payload = MqttPublishPayload.bytesToStringAsString(message.payload.message);
+      final payload =
+          MqttPublishPayload.bytesToStringAsString(message.payload.message);
 
       print('Received MQTT message: $payload');
 
@@ -210,16 +212,21 @@ class _MonitoringPageState extends State<MonitoringPage> {
         chartDataHumidity[i] = FlSpot(i.toDouble(), chartDataHumidity[i + 1].y);
       }
 
-      chartDataTDS[maxDataPoints - 1] = FlSpot((maxDataPoints - 1).toDouble(), currentTDS);
-      chartDataPH[maxDataPoints - 1] = FlSpot((maxDataPoints - 1).toDouble(), currentPH);
-      chartDataTemp[maxDataPoints - 1] = FlSpot((maxDataPoints - 1).toDouble(), currentTemp);
-      chartDataHumidity[maxDataPoints - 1] = FlSpot((maxDataPoints - 1).toDouble(), currentHumidity);
+      chartDataTDS[maxDataPoints - 1] =
+          FlSpot((maxDataPoints - 1).toDouble(), currentTDS);
+      chartDataPH[maxDataPoints - 1] =
+          FlSpot((maxDataPoints - 1).toDouble(), currentPH);
+      chartDataTemp[maxDataPoints - 1] =
+          FlSpot((maxDataPoints - 1).toDouble(), currentTemp);
+      chartDataHumidity[maxDataPoints - 1] =
+          FlSpot((maxDataPoints - 1).toDouble(), currentHumidity);
     });
   }
 
   void _checkForAlerts(BuildContext context) {
     final now = DateTime.now();
-    if (_lastAlertTime != null && now.difference(_lastAlertTime!) < const Duration(seconds: 30)) {
+    if (_lastAlertTime != null &&
+        now.difference(_lastAlertTime!) < const Duration(seconds: 30)) {
       return;
     }
 
@@ -227,28 +234,32 @@ class _MonitoringPageState extends State<MonitoringPage> {
     if (_notifications.length >= 3) return;
 
     if (currentPH < 5.0 || currentPH > 7.0) {
-      final message = 'Nilai pH ${currentPH.toStringAsFixed(1)} di luar range optimal (5.5-6.5)!';
+      final message =
+          'Nilai pH ${currentPH.toStringAsFixed(1)} di luar range optimal (5.5-6.5)!';
       _showAlert(context, 'Peringatan pH', message, Colors.orange);
       _sendNotification('pH Sensor', message, 'warning');
       _lastAlertTime = now;
     }
 
     if (currentTDS < 300 || currentTDS > 1500) {
-      final message = 'Nilai TDS ${currentTDS.toStringAsFixed(0)} ppm di luar range optimal (800-1500 ppm)!';
+      final message =
+          'Nilai TDS ${currentTDS.toStringAsFixed(0)} ppm di luar range optimal (800-1500 ppm)!';
       _showAlert(context, 'Peringatan Nutrisi', message, Colors.orange);
       _sendNotification('TDS Sensor', message, 'warning');
       _lastAlertTime = now;
     }
 
     if (currentTemp < 15 || currentTemp > 35) {
-      final message = 'Suhu ${currentTemp.toStringAsFixed(1)}°C di luar range optimal (20-30°C)!';
+      final message =
+          'Suhu ${currentTemp.toStringAsFixed(1)}°C di luar range optimal (20-30°C)!';
       _showAlert(context, 'Peringatan Suhu', message, Colors.orange);
       _sendNotification('Suhu Sensor', message, 'danger');
       _lastAlertTime = now;
     }
   }
 
-  Future<void> _sendNotification(String sensorType, String message, String status) async {
+  Future<void> _sendNotification(
+      String sensorType, String message, String status) async {
     try {
       final success = await LayananNotifikasi.kirimNotifikasi(
         idSensor: '1',
@@ -267,9 +278,10 @@ class _MonitoringPageState extends State<MonitoringPage> {
     }
   }
 
-  void _showAlert(BuildContext context, String title, String message, Color color) {
+  void _showAlert(
+      BuildContext context, String title, String message, Color color) {
     final alertId = DateTime.now().millisecondsSinceEpoch.toString();
-    
+
     setState(() {
       _notifications.add({
         'id': alertId,
@@ -351,9 +363,7 @@ class _MonitoringPageState extends State<MonitoringPage> {
                   ),
                 ),
                 IconButton(
-                  icon: const Icon(Icons.close, 
-                    color: Colors.white, 
-                    size: 20),
+                  icon: const Icon(Icons.close, color: Colors.white, size: 20),
                   onPressed: () => _removeNotification(id),
                 ),
               ],
@@ -386,33 +396,18 @@ class _MonitoringPageState extends State<MonitoringPage> {
       appBar: AppBar(
         backgroundColor: const Color(0xFF24D17E),
         elevation: 2,
-        centerTitle: false,
-        title: Row(
-          children: [
-            Image.asset(
-              'assets/logo.png',
-              width: 45,
-              height: 45,
-            ),
-            const SizedBox(width: 10),
-            Text(
-              'Monitoring Real-Time',
-              style: GoogleFonts.poppins(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-                color: Colors.black,
-              ),
-            ),
-          ],
+        title: Text(
+          'Monitoring Real-Time',
+          style: GoogleFonts.poppins(
+            fontSize: 20,
+            fontWeight: FontWeight.w600,
+            color: Colors.white,
+          ),
         ),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_sharp),
-          iconSize: 20.0,
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => const BerandaPage()),
-            );
+            Navigator.pop(context);
           },
         ),
       ),
@@ -439,7 +434,7 @@ class _MonitoringPageState extends State<MonitoringPage> {
               ],
             ),
           ),
-          
+
           // Notifikasi overlay
           if (_notifications.isNotEmpty)
             Positioned(
@@ -466,7 +461,7 @@ class _MonitoringPageState extends State<MonitoringPage> {
       chartData: chartDataPH,
       color: Colors.purple,
       minY: 0,
-      maxY: 14,
+      maxY: 8,
       interval: 2,
     );
   }
@@ -527,7 +522,7 @@ class _MonitoringPageState extends State<MonitoringPage> {
                   show: true,
                   drawVerticalLine: true,
                   drawHorizontalLine: true,
-                  horizontalInterval: 10,
+                  horizontalInterval: 20,
                   getDrawingHorizontalLine: (value) {
                     return FlLine(
                       color: Colors.grey.withOpacity(0.2),
@@ -556,7 +551,9 @@ class _MonitoringPageState extends State<MonitoringPage> {
                       interval: 2,
                       getTitlesWidget: (value, meta) {
                         final index = value.toInt();
-                        if (index >= 0 && index < maxDataPoints && index % 2 == 0) {
+                        if (index >= 0 &&
+                            index < maxDataPoints &&
+                            index % 2 == 0) {
                           return SideTitleWidget(
                             axisSide: meta.axisSide,
                             child: Text(
@@ -575,16 +572,19 @@ class _MonitoringPageState extends State<MonitoringPage> {
                   leftTitles: AxisTitles(
                     sideTitles: SideTitles(
                       showTitles: true,
-                      reservedSize: 40,
-                      interval: 10,
+                      reservedSize: 50,
+                      interval: 20,
                       getTitlesWidget: (value, meta) {
-                        return SideTitleWidget(
-                          axisSide: meta.axisSide,
-                          child: Text(
-                            value.toInt().toString(),
-                            style: GoogleFonts.poppins(
-                              fontSize: 10,
-                              color: Colors.grey,
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 4),
+                          child: SideTitleWidget(
+                            axisSide: meta.axisSide,
+                            child: Text(
+                              value.toInt().toString(),
+                              style: GoogleFonts.poppins(
+                                fontSize: 10,
+                                color: Colors.grey,
+                              ),
                             ),
                           ),
                         );
@@ -730,11 +730,13 @@ class _MonitoringPageState extends State<MonitoringPage> {
                   bottomTitles: AxisTitles(
                     sideTitles: SideTitles(
                       showTitles: true,
-                      reservedSize: 30,
+                      reservedSize: 40,
                       interval: 2,
                       getTitlesWidget: (value, meta) {
                         final index = value.toInt();
-                        if (index >= 0 && index < maxDataPoints && index % 2 == 0) {
+                        if (index >= 0 &&
+                            index < maxDataPoints &&
+                            index % 2 == 0) {
                           return SideTitleWidget(
                             axisSide: meta.axisSide,
                             child: Text(
@@ -863,7 +865,8 @@ class _MonitoringPageState extends State<MonitoringPage> {
               icon: Icons.water_drop,
               color: Colors.teal.shade50,
               iconColor: Colors.teal,
-              status: determineSensorStatus('Kelembaban Udara', currentHumidity),
+              status:
+                  determineSensorStatus('Kelembaban Udara', currentHumidity),
             ),
             _buildSensorDetailCard(
               title: 'Kelembaban Tanah',
@@ -872,7 +875,8 @@ class _MonitoringPageState extends State<MonitoringPage> {
               icon: Icons.landscape,
               color: Colors.brown.shade50,
               iconColor: Colors.brown,
-              status: determineSensorStatus('Kelembaban Tanah', currentSoilMoisture.toDouble()),
+              status: determineSensorStatus(
+                  'Kelembaban Tanah', currentSoilMoisture.toDouble()),
             ),
             _buildSensorDetailCard(
               title: 'Intensitas Cahaya',
@@ -982,95 +986,92 @@ class _MonitoringPageState extends State<MonitoringPage> {
   }
 
   Widget _buildBottomNavigation() {
-    return ClipRRect(
-      borderRadius: const BorderRadius.only(
-        topLeft: Radius.circular(10),
-        topRight: Radius.circular(10),
-      ),
-      child: BottomNavigationBar(
-        type: BottomNavigationBarType.fixed,
-        backgroundColor: const Color(0xFF24D17E),
-        onTap: (index) {
-          setState(() {
-            _bottomNavCurrentIndex = index;
-          });
-
-          switch (index) {
-            case 0:
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(builder: (context) => const BerandaPage()),
-              );
-              break;
-            case 1:
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(builder: (context) => const NotifikasiPage()),
-              );
-              break;
-            case 2:
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(builder: (context) => const PanduanPage()),
-              );
-              break;
-            case 3:
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(builder: (context) => const ProfilPage()),
-              );
-              break;
-          }
-        },
-        currentIndex: _bottomNavCurrentIndex,
-        items: const [
-          BottomNavigationBarItem(
-            activeIcon: Icon(
-              Icons.home,
-              color: Colors.black,
-            ),
-            icon: Icon(
-              Icons.home,
-              color: Colors.white,
-            ),
-            label: 'Beranda',
-          ),
-          BottomNavigationBarItem(
-            activeIcon: Icon(
-              Icons.notification_add,
-              color: Colors.black,
-            ),
-            icon: Icon(
-              Icons.notifications,
-              color: Colors.white,
-            ),
-            label: 'Notifikasi',
-          ),
-          BottomNavigationBarItem(
-            activeIcon: Icon(
-              Icons.assignment,
-              color: Colors.black,
-            ),
-            icon: Icon(
-              Icons.assignment,
-              color: Colors.white,
-            ),
-            label: 'Panduan',
-          ),
-          BottomNavigationBarItem(
-            activeIcon: Icon(
-              Icons.person,
-              color: Colors.black,
-            ),
-            icon: Icon(
-              Icons.person,
-              color: Colors.white,
-            ),
-            label: 'Akun',
+    return Container(
+      decoration: BoxDecoration(
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 20,
+            offset: const Offset(0, -5),
           ),
         ],
-        selectedItemColor: Colors.black,
-        unselectedItemColor: Colors.white,
+      ),
+      child: ClipRRect(
+        borderRadius: const BorderRadius.only(
+          topLeft: Radius.circular(24),
+          topRight: Radius.circular(24),
+        ),
+        child: BottomNavigationBar(
+          type: BottomNavigationBarType.fixed,
+          backgroundColor: Colors.white,
+          onTap: (index) {
+            setState(() {
+              _bottomNavCurrentIndex = index;
+            });
+
+            switch (index) {
+              case 0:
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(builder: (context) => const BerandaPage()),
+                );
+                break;
+              case 1:
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(
+                      builder: (context) => const NotifikasiPage()),
+                );
+                break;
+              case 2:
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(builder: (context) => const PanduanPage()),
+                );
+                break;
+              case 3:
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(builder: (context) => const ProfilPage()),
+                );
+                break;
+            }
+          },
+          currentIndex: _bottomNavCurrentIndex,
+          items: const [
+            BottomNavigationBarItem(
+              activeIcon: Icon(Icons.home_rounded),
+              icon: Icon(Icons.home_outlined),
+              label: 'Beranda',
+            ),
+            BottomNavigationBarItem(
+              activeIcon: Icon(Icons.notifications_rounded),
+              icon: Icon(Icons.notifications_outlined),
+              label: 'Notifikasi',
+            ),
+            BottomNavigationBarItem(
+              activeIcon: Icon(Icons.book_rounded),
+              icon: Icon(Icons.book_outlined),
+              label: 'Panduan',
+            ),
+            BottomNavigationBarItem(
+              activeIcon: Icon(Icons.person_rounded),
+              icon: Icon(Icons.person_outline_rounded),
+              label: 'Akun',
+            ),
+          ],
+          selectedItemColor: const Color(0xFF24D17E),
+          unselectedItemColor: Colors.grey[400],
+          selectedLabelStyle: GoogleFonts.poppins(
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+          ),
+          unselectedLabelStyle: GoogleFonts.poppins(
+            fontSize: 11,
+            fontWeight: FontWeight.w500,
+          ),
+          elevation: 0,
+        ),
       ),
     );
   }

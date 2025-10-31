@@ -1,0 +1,2 @@
+D:/Hiliriset/PBL-IF-16-Hydrogami-Integrasi-IoT-dan-Gamifikasi-Pada-Tanaman-Hidroponik/android/app/.cxx/RelWithDebInfo/1g3d313m/x86_64/CMakeFiles/edit_cache.dir
+D:/Hiliriset/PBL-IF-16-Hydrogami-Integrasi-IoT-dan-Gamifikasi-Pada-Tanaman-Hidroponik/android/app/.cxx/RelWithDebInfo/1g3d313m/x86_64/CMakeFiles/rebuild_cache.dir

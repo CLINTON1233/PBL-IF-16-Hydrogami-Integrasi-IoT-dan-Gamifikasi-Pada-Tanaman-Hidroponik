@@ -12,7 +12,8 @@ import 'package:mqtt_client/mqtt_server_client.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:application_hydrogami/services/gamifikasi_services.dart';
 import 'package:application_hydrogami/services/reward_services.dart';
-import 'dart:convert'; // Add this line
+import 'package:application_hydrogami/services/auto_mission_service.dart';
+import 'dart:convert';
 
 class GamifikasiPage extends StatefulWidget {
   const GamifikasiPage({super.key});
@@ -23,21 +24,20 @@ class GamifikasiPage extends StatefulWidget {
 
 class _GamifikasiPageState extends State<GamifikasiPage>
     with TickerProviderStateMixin {
-  int _bottomNavCurrentIndex = 0;
-  bool isAutomaticControl = false;
-  Map<String, bool> controls = {
-    "A MIX": false,
-    "B MIX": false,
-    "PH UP": false,
-    "PH DOWN": false,
+  int _bottomNavCurrentIndex = 1;
+
+  // Power levels for each pump (0-100)
+  Map<String, double> pumpPower = {
+    "A MIX": 50.0,
+    "B MIX": 50.0,
+    "PH UP": 50.0,
+    "PH DOWN": 50.0,
   };
 
   // Animation controllers
   late AnimationController _pulseController;
-  late AnimationController _rotationController;
   late AnimationController _glowController;
   late Animation<double> _pulseAnimation;
-  late Animation<double> _rotationAnimation;
   late Animation<double> _glowAnimation;
 
   // User data variables
@@ -53,52 +53,42 @@ class _GamifikasiPageState extends State<GamifikasiPage>
   // Active control for animation
   String? _activeControl;
 
-  // Posisi maskot yang bisa digeser
-  Offset _mascotPosition = Offset(0, 0);
+  // ✅ VARIABLE BARU: Tracking untuk misi otomatis
+  final Map<String, bool> _missionCompletionInProgress = {
+    'pH': false,
+    'TDS': false,
+  };
 
   // Peta untuk warna aktif setiap kontrol
   final Map<String, Color> activeColors = {
     "A MIX": const Color(0xFF50B7F2),
     "B MIX": const Color(0xFF2AD5B6),
     "PH UP": const Color(0xFFFBBB00),
-    "PH DOWN": Colors.red,
+    "PH DOWN": const Color(0xFFFF5252),
   };
 
-  // MQTT Configuration
+  // MQTT Client Configuration
   late MqttServerClient client;
-  final String broker = '10.0.2.2';
+  final String broker = 'broker.hivemq.com';
   final int port = 1883;
   final String clientIdentifier =
-      'hydrogami_gamifikasi_${DateTime.now().millisecondsSinceEpoch}';
+      'hydrogami_flutter_client_${DateTime.now().millisecondsSinceEpoch}';
   final String topic = 'gamifikasi/control';
 
   @override
   void initState() {
     super.initState();
 
-    // Initialize animation controllers
     _pulseController = AnimationController(
       duration: const Duration(milliseconds: 1000),
       vsync: this,
     );
     _pulseAnimation = Tween<double>(
       begin: 1.0,
-      end: 1.1,
+      end: 1.05,
     ).animate(CurvedAnimation(
       parent: _pulseController,
       curve: Curves.easeInOut,
-    ));
-
-    _rotationController = AnimationController(
-      duration: const Duration(milliseconds: 2000),
-      vsync: this,
-    );
-    _rotationAnimation = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
-    ).animate(CurvedAnimation(
-      parent: _rotationController,
-      curve: Curves.linear,
     ));
 
     _glowController = AnimationController(
@@ -113,16 +103,15 @@ class _GamifikasiPageState extends State<GamifikasiPage>
       curve: Curves.easeInOut,
     ));
 
-    connectMQTT(); // MQTT
-    _loadUserData(); // Load user data
-    _loadRelayStates(); // Add this line
+    connectMQTT();
+    _loadUserData();
+    _loadPumpPower();
   }
 
   @override
   void dispose() {
     client.disconnect();
     _pulseController.dispose();
-    _rotationController.dispose();
     _glowController.dispose();
     super.dispose();
   }
@@ -141,7 +130,6 @@ class _GamifikasiPageState extends State<GamifikasiPage>
     } catch (e) {
       print('Exception: $e');
       client.disconnect();
-      // Coba reconnect setelah 5 detik
       await Future.delayed(const Duration(seconds: 5));
       connectMQTT();
       return;
@@ -161,7 +149,6 @@ class _GamifikasiPageState extends State<GamifikasiPage>
 
   void _onDisconnected() {
     print('Disconnected from MQTT broker');
-    // Coba reconnect setelah 3 detik
     Future.delayed(const Duration(seconds: 3), () {
       connectMQTT();
     });
@@ -175,7 +162,7 @@ class _GamifikasiPageState extends State<GamifikasiPage>
     print('Ping response received');
   }
 
-  void publishControl(String device, bool isActive) {
+  void publishPower(String device, double power) {
     if (client.connectionStatus?.state != MqttConnectionState.connected) {
       print('MQTT not connected, trying to reconnect...');
       connectMQTT();
@@ -183,25 +170,11 @@ class _GamifikasiPageState extends State<GamifikasiPage>
     }
 
     final builder = MqttClientPayloadBuilder();
-    String message = isActive ? "ON" : "OFF";
-
-    // Mapping nama kontrol yang sesuai dengan ESP32
     String mqttDeviceName = device.replaceAll(" ", "_");
-    String specificTopic = "$topic/$mqttDeviceName";
-
-    builder.addString(message);
+    String specificTopic = "$topic/$mqttDeviceName/power";
+    builder.addString(power.toInt().toString());
     client.publishMessage(specificTopic, MqttQos.atLeastOnce, builder.payload!);
-    print('Published to $specificTopic: $message');
-
-    // Untuk debugging, bisa ditambahkan snackbar
-    //if (mounted) {
-    // ScaffoldMessenger.of(context).showSnackBar(
-    //  SnackBar(
-    //    content: Text('Mengirim perintah: $device $message'),
-    //    duration: const Duration(seconds: 1),
-    //  ),
-    // );
-    // }
+    print('Published to $specificTopic: ${power.toInt()}');
   }
 
   void _triggerControlAnimation(String controlName) {
@@ -209,19 +182,13 @@ class _GamifikasiPageState extends State<GamifikasiPage>
       _activeControl = controlName;
     });
 
-    // Start animations
     _pulseController.forward().then((_) {
       _pulseController.reverse();
     });
 
-    _rotationController.forward().then((_) {
-      _rotationController.reset();
-    });
-
     _glowController.repeat(reverse: true);
 
-    // Stop glow after 3 seconds
-    Future.delayed(const Duration(seconds: 3), () {
+    Future.delayed(const Duration(seconds: 2), () {
       _glowController.stop();
       _glowController.reset();
       setState(() {
@@ -230,70 +197,85 @@ class _GamifikasiPageState extends State<GamifikasiPage>
     });
   }
 
-  // Method untuk menangani perubahan kontrol otomatis
-  void _handleAutomaticControlToggle() {
-    setState(() {
-      isAutomaticControl = !isAutomaticControl;
+  // ✅ METHOD BARU: Cek apakah kontrol ini menyelesaikan misi otomatis
+  Future<void> _checkMissionCompletion(String controlName) async {
+    String? missionParameter;
 
-      if (isAutomaticControl) {
-        controls = {
-          "A MIX": true,
-          "B MIX": true,
-          "PH UP": true,
-          "PH DOWN": true,
-        };
-        controls.forEach((key, value) {
-          publishControl(key, value);
-        });
-        _triggerControlAnimation("AUTO_ALL");
-      } else {
-        controls = {
-          "A MIX": false,
-          "B MIX": false,
-          "PH UP": false,
-          "PH DOWN": false,
-        };
-        controls.forEach((key, value) {
-          publishControl(key, value);
-        });
+    try {
+      // Tentukan parameter misi berdasarkan kontrol yang ditekan
+      if (controlName == "PH UP" || controlName == "PH DOWN") {
+        missionParameter = 'pH';
+      } else if (controlName == "A MIX" || controlName == "B MIX") {
+        missionParameter = 'TDS';
       }
-    });
-    _saveRelayStates(); // Add this line
-    publishControl("AUTO", isAutomaticControl);
+
+      // Jika kontrol tidak terkait misi, skip
+      if (missionParameter == null) return;
+
+      if (!_missionCompletionInProgress[missionParameter]!) {
+        _missionCompletionInProgress[missionParameter] = true;
+
+        // Cek apakah ada misi aktif untuk parameter ini
+        final activeMission =
+            await AutoMissionService.getActiveMission(missionParameter);
+
+        if (activeMission != null && activeMission['id'] != null) {
+          // Tandai misi sebagai selesai
+          bool success =
+              await AutoMissionService.completeMission(activeMission['id']);
+
+          if (success) {
+            _showCustomSnackBar(
+                context,
+                'Misi ${activeMission['nama_misi']} selesai! +50 EXP',
+                Colors.green);
+
+            // Update user data setelah dapat EXP
+            await _loadUserData();
+
+            print('✅ Mission completed via control: $controlName');
+          }
+        }
+
+        _missionCompletionInProgress[missionParameter] = false;
+      }
+    } catch (e) {
+      print('❌ Error checking mission completion: $e');
+      // Reset state jika error
+      if (missionParameter != null) {
+        _missionCompletionInProgress[missionParameter] = false;
+      }
+    }
   }
 
-  // Method untuk menangani kontrol individual
-  void _handleIndividualControl(String controlName) {
-    if (!isAutomaticControl) {
-      setState(() {
-        controls[controlName] = !controls[controlName]!;
-      });
-      publishControl(controlName, controls[controlName]!);
-      _saveRelayStates(); // Add this line
+  // ✅ UPDATE METHOD: Tambah mission completion check
+  void _handlePowerChange(String controlName, double newPower) {
+    setState(() {
+      pumpPower[controlName] = newPower;
+    });
 
-      if (controls[controlName]!) {
-        _triggerControlAnimation(controlName);
-      }
-    } else {
-      _showCustomSnackBar(
-          context, 'Matikan untuk mengontrol manual', Colors.amber);
+    publishPower(controlName, newPower);
+    _savePumpPower();
+    _triggerControlAnimation(controlName);
+
+    // ✅ CEK APAKAH INI MENYELESAIKAN MISI OTOMATIS
+    if (newPower > 0) {
+      // Hanya jika pompa diaktifkan (bukan dimatikan)
+      _checkMissionCompletion(controlName);
     }
   }
 
   Future<void> _handleRefresh() async {
     try {
-      // Reconnect MQTT if needed
       if (client.connectionStatus?.state != MqttConnectionState.connected) {
         await connectMQTT();
       }
 
-      // Reload user data
       await _loadUserData();
-
-      // Show success message
-      _showCustomSnackBar(context, 'Data berhasil diperbarui', Colors.green);
+      _showCustomSnackBar(context, 'Data berhasil diperbarui',
+          const Color.fromARGB(255, 8, 143, 78));
     } catch (e) {
-      _showCustomSnackBar(context, 'Gagal memperbarui data: $e', Colors.red);
+      _showCustomSnackBar(context, 'Gagal memperbarui data', Colors.red);
     }
   }
 
@@ -311,7 +293,6 @@ class _GamifikasiPageState extends State<GamifikasiPage>
         _currentLevel = prefs.getInt('${_userId}_current_level') ?? 1;
       });
 
-      // Try to get fresh data from API
       try {
         final gamificationData = await _gamificationService.getGamification();
         setState(() {
@@ -327,109 +308,63 @@ class _GamifikasiPageState extends State<GamifikasiPage>
     }
   }
 
-  Future<void> _saveRelayStates() async {
+  Future<void> _savePumpPower() async {
     final prefs = await SharedPreferences.getInstance();
-    final relayStates =
-        controls.map((key, value) => MapEntry(key, value.toString()));
-    await prefs.setString('relay_states', jsonEncode(relayStates));
-    await prefs.setBool('automatic_control', isAutomaticControl);
+    final powerStates =
+        pumpPower.map((key, value) => MapEntry(key, value.toString()));
+    await prefs.setString('pump_power', jsonEncode(powerStates));
   }
 
-  Future<void> _loadRelayStates() async {
+  Future<void> _loadPumpPower() async {
     final prefs = await SharedPreferences.getInstance();
-    final relayStatesString = prefs.getString('relay_states');
-    final automaticControl = prefs.getBool('automatic_control') ?? false;
+    final powerStatesString = prefs.getString('pump_power');
 
-    if (relayStatesString != null) {
-      final relayStates =
-          Map<String, String>.from(jsonDecode(relayStatesString));
+    if (powerStatesString != null) {
+      final powerStates =
+          Map<String, String>.from(jsonDecode(powerStatesString));
       setState(() {
-        controls =
-            relayStates.map((key, value) => MapEntry(key, value == 'true'));
-        isAutomaticControl = automaticControl;
+        pumpPower =
+            powerStates.map((key, value) => MapEntry(key, double.parse(value)));
       });
     }
   }
 
+  // Custom SnackBar function like in profil_page.dart
   void _showCustomSnackBar(BuildContext context, String message, Color color) {
-    final overlay = Overlay.of(context);
-    late OverlayEntry overlayEntry;
-
-    overlayEntry = OverlayEntry(
-      builder: (context) => Positioned(
-        // Hitung posisi di bawah AppBar
-        top: MediaQuery.of(context).padding.top +
-            kToolbarHeight +
-            10, // kToolbarHeight adalah tinggi default AppBar
-        left: 0,
-        right: 0,
-        child: Material(
-          color: Colors.transparent,
-          child: Center(
-            child: Container(
-              width: MediaQuery.of(context).size.width * 0.9,
-              margin: const EdgeInsets.only(bottom: 8),
-              decoration: BoxDecoration(
-                color: color,
-                borderRadius: BorderRadius.circular(8),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(12),
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.info_outline,
-                      color: Colors.white,
-                      size: 24,
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        message,
-                        style: GoogleFonts.poppins(
-                          color: Colors.white,
-                          fontSize: 14,
-                        ),
-                      ),
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.close,
-                          color: Colors.white, size: 20),
-                      onPressed: () {
-                        overlayEntry.remove();
-                      },
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          message,
+          style: GoogleFonts.poppins(fontWeight: FontWeight.w500),
         ),
+        backgroundColor: color,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        margin: const EdgeInsets.all(16),
       ),
     );
-
-    overlay.insert(overlayEntry);
-
-    Future.delayed(const Duration(seconds: 3), () {
-      if (overlayEntry.mounted) {
-        overlayEntry.remove();
-      }
-    });
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: AppBar(
-        backgroundColor: const Color(0xFF24D17E),
-        elevation: 2,
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        centerTitle: true,
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                const Color.fromARGB(255, 8, 143, 78),
+                const Color.fromARGB(255, 8, 143, 78)
+              ],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+        ),
         title: Text(
           'Kontrol Pompa',
           style: GoogleFonts.poppins(
@@ -439,60 +374,104 @@ class _GamifikasiPageState extends State<GamifikasiPage>
           ),
         ),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white),
           onPressed: () {
-            Navigator.pop(context);
+            // Navigate to BerandaPage instead of popping
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => const BerandaPage()),
+            );
           },
         ),
       ),
       body: RefreshIndicator(
         onRefresh: _handleRefresh,
-        color: const Color(0xFF24D17E),
+        color: const Color.fromARGB(255, 8, 143, 78),
         child: SingleChildScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
-          child: Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  const Color(0xFF24D17E).withOpacity(0.1),
-                  Colors.white,
-                  const Color(0xFF24D17E).withOpacity(0.05),
-                ],
-              ),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Bagian Level, Reward dan Leaderboard
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Header Section - Plain white
+              Container(
+                color: Colors.white,
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(
+                      16, 16, 16, 16), // Reduced bottom padding
+                  child: Column(
                     children: [
-                      _buildLevelWidget(level: _currentLevel),
-                      _buildRewardWidget(coins: _userCoins),
-                      _buildLeaderboardWidget(),
+                      // Level, Reward and Leaderboard
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          _buildLevelWidget(level: _currentLevel),
+                          _buildRewardWidget(coins: _userCoins),
+                          _buildLeaderboardWidget(),
+                        ],
+                      ),
                     ],
                   ),
-                  const SizedBox(height: 20),
-
-                  // Enhanced Gamification Graphic with animations
-                  _buildEnhancedGameArea(),
-
-                  const SizedBox(height: 20),
-
-                  // Control Automatic Switch with enhanced design
-                  _buildAutomaticControlSection(),
-
-                  const SizedBox(height: 20),
-
-                  // Enhanced Control Buttons Section
-                  _buildEnhancedControlButtons(),
-                ],
+                ),
               ),
-            ),
+
+              // Main Content
+              Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Mascot Button for Mission/Progress
+                    _buildMascotButton(),
+
+                    const SizedBox(height: 16), // Reduced spacing
+
+                    // Header with icon
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: const Color.fromARGB(255, 8, 143, 78)
+                                .withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: const Icon(
+                            Icons.tune_rounded,
+                            color: const Color.fromARGB(255, 8, 143, 78),
+                            size: 24,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Text(
+                          'Kontrol Kekuatan Pompa',
+                          style: GoogleFonts.poppins(
+                            fontSize: 20,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.black87,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    Padding(
+                      padding: const EdgeInsets.only(left: 52),
+                      child: Text(
+                        'Atur kekuatan setiap pompa sesuai kebutuhan',
+                        style: GoogleFonts.poppins(
+                          fontSize: 13,
+                          color: Colors.grey.shade600,
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(height: 16), // Reduced spacing
+
+                    // Enhanced Control Buttons Section
+                    _buildEnhancedControlButtons(),
+                  ],
+                ),
+              ),
+            ],
           ),
         ),
       ),
@@ -500,390 +479,126 @@ class _GamifikasiPageState extends State<GamifikasiPage>
     );
   }
 
-  Widget _buildEnhancedGameArea() {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(20),
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Colors.white,
-            const Color(0xFF24D17E).withOpacity(0.1),
+  Widget _buildMascotButton() {
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => const GamifikasiProgresPage(),
+          ),
+        );
+      },
+      child: Container(
+        padding: const EdgeInsets.all(16), // Reduced padding
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: const Color.fromARGB(255, 8, 143, 78).withOpacity(0.3),
+            width: 2,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+            ),
           ],
         ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 20,
-            offset: const Offset(0, 10),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          // Status indicator
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            decoration: BoxDecoration(
-              color: _activeControl != null
-                  ? (isAutomaticControl
-                      ? const Color(0xFF24D17E).withOpacity(0.2)
-                      : activeColors[_activeControl!]!.withOpacity(0.2))
-                  : Colors.grey.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Text(
-              _activeControl != null
-                  ? (isAutomaticControl
-                      ? 'Mode Kontrol Semua Aktif'
-                      : 'Kontrol $_activeControl Aktif')
-                  : 'Sistem Siap',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                color: _activeControl != null
-                    ? (isAutomaticControl
-                        ? const Color(0xFF24D17E)
-                        : activeColors[_activeControl!])
-                    : Colors.grey,
-              ),
-            ),
-          ),
-          const SizedBox(height: 20),
-
-          // Main game area with animations using AspectRatio
-          AspectRatio(
-            aspectRatio: 1.0, // Square aspect ratio
-            child: Stack(
-              children: [
-                // Background glow effect
-                if (_activeControl != null) ...[
-                  AnimatedBuilder(
-                    animation: _glowAnimation,
-                    builder: (context, child) {
-                      return Container(
-                        width: double.infinity,
-                        height: double.infinity,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          gradient: RadialGradient(
-                            colors: [
-                              (isAutomaticControl
-                                      ? const Color(0xFF24D17E)
-                                      : activeColors[_activeControl!]!)
-                                  .withOpacity(_glowAnimation.value * 0.3),
-                              Colors.transparent,
-                            ],
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                ],
-
-                // Main image with pulse animation
-                Center(
-                  child: AnimatedBuilder(
-                    animation: _pulseAnimation,
-                    builder: (context, child) {
-                      return Transform.scale(
-                        scale: _pulseAnimation.value,
-                        child: Container(
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(200),
-                            boxShadow: [
-                              BoxShadow(
-                                color: const Color(0xFF24D17E).withOpacity(0.2),
-                                blurRadius: 30,
-                                offset: const Offset(0, 10),
-                              ),
-                            ],
-                          ),
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(200),
-                            child: Image.asset(
-                              'assets/skala_easy.png',
-                              width: 450,
-                              height: 450,
-                              fit: BoxFit.cover,
-                            ),
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                ),
-
-                // Draggable Mascot
-                Positioned(
-                  left: _mascotPosition.dx,
-                  top: _mascotPosition.dy,
-                  child: Draggable(
-                    feedback: Container(
-                      width: 58,
-                      height: 58,
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: isAutomaticControl
-                              ? const Color(0xFF24D17E)
-                              : (_activeControl != null
-                                  ? activeColors[_activeControl!]!
-                                  : const Color(0xFF24D17E)),
-                          width: 4,
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: (isAutomaticControl
-                                    ? const Color(0xFF24D17E)
-                                    : (_activeControl != null
-                                        ? activeColors[_activeControl!]!
-                                        : const Color(0xFF24D17E)))
-                                .withOpacity(0.4),
-                            blurRadius: 20,
-                            offset: const Offset(0, 5),
-                            spreadRadius: 2,
-                          ),
-                        ],
-                      ),
-                      child: Container(
-                        margin: const EdgeInsets.all(3),
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: [
-                              const Color(0xFFF8FFF9),
-                              isAutomaticControl
-                                  ? const Color(0xFF24D17E).withOpacity(0.1)
-                                  : (_activeControl != null
-                                      ? activeColors[_activeControl!]!
-                                          .withOpacity(0.1)
-                                      : const Color(0xFFE8F8ED))
-                            ],
-                            begin: Alignment.topCenter,
-                            end: Alignment.bottomCenter,
-                          ),
-                          shape: BoxShape.circle,
-                        ),
-                        child: Image.asset(
-                          'assets/maskot_head.png',
-                          width: 100,
-                          height: 100,
-                          fit: BoxFit.contain,
-                        ),
-                      ),
-                    ),
-                    childWhenDragging: Container(), // Kosongkan saat didrag
-                    onDragEnd: (details) {
-                      setState(() {
-                        // Update posisi maskot berdasarkan posisi drag
-                        RenderBox renderBox =
-                            context.findRenderObject() as RenderBox;
-                        Offset localOffset =
-                            renderBox.globalToLocal(details.offset);
-                        _mascotPosition = localOffset;
-                      });
-                    },
-                    child: AnimatedBuilder(
-                      animation: _rotationAnimation,
-                      builder: (context, child) {
-                        return Transform.rotate(
-                          angle: _rotationAnimation.value * 2 * 3.14159,
-                          child: Container(
-                            width: 58,
-                            height: 58,
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              shape: BoxShape.circle,
-                              border: Border.all(
-                                color: isAutomaticControl
-                                    ? const Color(0xFF24D17E)
-                                    : (_activeControl != null
-                                        ? activeColors[_activeControl!]!
-                                        : const Color(0xFF24D17E)),
-                                width: 4,
-                              ),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: (isAutomaticControl
-                                          ? const Color(0xFF24D17E)
-                                          : (_activeControl != null
-                                              ? activeColors[_activeControl!]!
-                                              : const Color(0xFF24D17E)))
-                                      .withOpacity(0.4),
-                                  blurRadius: 20,
-                                  offset: const Offset(0, 5),
-                                  spreadRadius: 2,
-                                ),
-                              ],
-                            ),
-                            child: Container(
-                              margin: const EdgeInsets.all(3),
-                              decoration: BoxDecoration(
-                                gradient: LinearGradient(
-                                  colors: [
-                                    const Color(0xFFF8FFF9),
-                                    isAutomaticControl
-                                        ? const Color(0xFF24D17E)
-                                            .withOpacity(0.1)
-                                        : (_activeControl != null
-                                            ? activeColors[_activeControl!]!
-                                                .withOpacity(0.1)
-                                            : const Color(0xFFE8F8ED))
-                                  ],
-                                  begin: Alignment.topCenter,
-                                  end: Alignment.bottomCenter,
-                                ),
-                                shape: BoxShape.circle,
-                              ),
-                              child: IconButton(
-                                icon: Image.asset(
-                                  'assets/maskot_head.png',
-                                  width: 100,
-                                  height: 100,
-                                  fit: BoxFit.contain,
-                                ),
-                                onPressed: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) =>
-                                          const GamifikasiProgresPage(),
-                                    ),
-                                  );
-                                },
-                              ),
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-                ),
-
-                // Floating particles effect
-                if (_activeControl != null) ...[
-                  ...List.generate(6, (index) {
-                    return Positioned(
-                      left: 50 + (index * 40.0),
-                      top: 100 + (index % 2 * 80.0),
-                      child: AnimatedBuilder(
-                        animation: _glowAnimation,
-                        builder: (context, child) {
-                          return Transform.translate(
-                            offset: Offset(0, -20 * _glowAnimation.value),
-                            child: Opacity(
-                              opacity: (1 - _glowAnimation.value) * 0.8,
-                              child: Container(
-                                width: 8,
-                                height: 8,
-                                decoration: BoxDecoration(
-                                  color: isAutomaticControl
-                                      ? const Color(0xFF24D17E)
-                                      : activeColors[_activeControl!],
-                                  shape: BoxShape.circle,
-                                ),
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-                    );
-                  }),
-                ],
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildAutomaticControlSection() {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(15),
-        border: isAutomaticControl
-            ? Border.all(color: const Color(0xFF24D17E), width: 2)
-            : null,
-        boxShadow: [
-          BoxShadow(
-            color: isAutomaticControl
-                ? const Color(0xFF24D17E).withOpacity(0.2)
-                : Colors.black.withOpacity(0.1),
-            blurRadius: isAutomaticControl ? 15 : 10,
-            offset: const Offset(0, 5),
-          ),
-        ],
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                "Kontrol Semua Pompa",
-                style: GoogleFonts.poppins(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.black87,
-                ),
-              ),
-              Text(
-                isAutomaticControl
-                    ? "Aktif - Semua kontrol menyala"
-                    : "Nonaktif - Kontrol manual tersedia",
-                style: TextStyle(
-                  fontSize: 12,
-                  color: isAutomaticControl ? Colors.green : Colors.grey,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ],
-          ),
-          GestureDetector(
-            onTap: _handleAutomaticControlToggle,
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 300),
-              width: 60,
-              height: 30,
+        child: Row(
+          children: [
+            // Mascot Image - No animation
+            Container(
+              width: 60, // Slightly smaller
+              height: 60, // Slightly smaller
               decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(15),
-                color:
-                    isAutomaticControl ? const Color(0xFF24D17E) : Colors.grey,
+                color: Colors.white,
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: const Color.fromARGB(255, 8, 143, 78),
+                  width: 2,
+                ),
                 boxShadow: [
                   BoxShadow(
-                    color: (isAutomaticControl
-                            ? const Color(0xFF24D17E)
-                            : Colors.grey)
-                        .withOpacity(0.3),
+                    color: Colors.black.withOpacity(0.1),
                     blurRadius: 8,
-                    offset: const Offset(0, 2),
+                    offset: const Offset(0, 3),
                   ),
                 ],
               ),
-              child: AnimatedAlign(
-                duration: const Duration(milliseconds: 300),
-                alignment: isAutomaticControl
-                    ? Alignment.centerRight
-                    : Alignment.centerLeft,
-                child: Container(
-                  width: 26,
-                  height: 26,
-                  margin: const EdgeInsets.all(2),
-                  decoration: const BoxDecoration(
-                    color: Colors.white,
-                    shape: BoxShape.circle,
-                  ),
+              child: Padding(
+                padding: const EdgeInsets.all(6), // Reduced padding
+                child: Image.asset(
+                  'assets/maskot_head.png',
+                  fit: BoxFit.contain,
                 ),
               ),
             ),
-          ),
-        ],
+            const SizedBox(width: 12), // Reduced spacing
+            // Text and description
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Text(
+                        'Misi & Progress',
+                        style: GoogleFonts.poppins(
+                          fontSize: 16, // Slightly smaller
+                          fontWeight: FontWeight.w600,
+                          color: Colors.black87,
+                        ),
+                      ),
+                      const SizedBox(width: 6), // Reduced spacing
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6, // Reduced padding
+                          vertical: 2,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.orange,
+                          borderRadius:
+                              BorderRadius.circular(6), // Smaller radius
+                        ),
+                        child: Text(
+                          'NEW',
+                          style: GoogleFonts.poppins(
+                            fontSize: 9, // Smaller font
+                            fontWeight: FontWeight.w600,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 2), // Reduced spacing
+                  Text(
+                    'Lihat misi otomatis & manual, raih poin EXP!',
+                    style: GoogleFonts.poppins(
+                      fontSize: 12, // Slightly smaller
+                      color: Colors.grey.shade600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            // Arrow icon
+            Container(
+              padding: const EdgeInsets.all(6), // Reduced padding
+              decoration: BoxDecoration(
+                color: const Color.fromARGB(255, 8, 143, 78).withOpacity(0.15),
+                borderRadius: BorderRadius.circular(8), // Smaller radius
+              ),
+              child: const Icon(
+                Icons.arrow_forward_ios_rounded,
+                color: const Color.fromARGB(255, 8, 143, 78),
+                size: 18, // Smaller icon
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -892,142 +607,205 @@ class _GamifikasiPageState extends State<GamifikasiPage>
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Tambahkan label "Kontrol Manual" di atas tombol-tombol
-        Padding(
-          padding: const EdgeInsets.only(bottom: 8.0),
-          child: Text(
-            'Kontrol Manual',
-            style: GoogleFonts.poppins(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-              color: Colors.black87,
-            ),
-          ),
-        ),
-
-        GridView.builder(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 2,
-            mainAxisSpacing: 15,
-            crossAxisSpacing: 15,
-            childAspectRatio: 2.2,
-          ),
-          itemCount: controls.keys.length,
-          itemBuilder: (context, index) {
-            String controlName = controls.keys.elementAt(index);
-            return _buildEnhancedControlButton(
-              name: controlName,
-              isActive: controls[controlName]!,
-              activeColor: activeColors[controlName]!,
-              isLocked: isAutomaticControl,
-              onTap: () => _handleIndividualControl(controlName),
-            );
-          },
-        ),
+        ...pumpPower.keys.map((controlName) {
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 12), // Reduced spacing
+            child: _buildPumpControlCard(controlName),
+          );
+        }).toList(),
       ],
     );
   }
 
-  // Peta untuk mencocokkan kontrol dengan ikon
   final Map<String, IconData> controlIcons = {
-    "A MIX": Icons.invert_colors,
+    "A MIX": Icons.opacity,
     "B MIX": Icons.water_drop,
-    "PH UP": Icons.arrow_upward,
-    "PH DOWN": Icons.arrow_downward,
+    "PH UP": Icons.arrow_circle_up,
+    "PH DOWN": Icons.arrow_circle_down,
   };
 
-  Widget _buildEnhancedControlButton({
-    required String name,
-    required bool isActive,
-    required Color activeColor,
-    required bool isLocked,
-    required VoidCallback onTap,
-  }) {
-    return GestureDetector(
-      onTap: isLocked ? null : onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 300),
-        decoration: BoxDecoration(
-          gradient: isActive
-              ? LinearGradient(
-                  colors: [activeColor, activeColor.withOpacity(0.8)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                )
-              : LinearGradient(
-                  colors: [Colors.grey.shade200, Colors.grey.shade300],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-          borderRadius: BorderRadius.circular(15),
-          boxShadow: [
-            BoxShadow(
-              color: isActive
-                  ? activeColor.withOpacity(0.4)
-                  : Colors.black.withOpacity(0.1),
-              blurRadius: isActive ? 15 : 5,
-              offset: const Offset(0, 5),
-            ),
-          ],
+  Widget _buildPumpControlCard(String controlName) {
+    double power = pumpPower[controlName]!;
+    Color color = activeColors[controlName]!;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: color.withOpacity(0.3),
+          width: 2,
         ),
-        child: Opacity(
-          opacity: isLocked ? 0.7 : 1.0,
-          child: Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.08),
+            blurRadius: 15,
+            offset: const Offset(0, 5),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          // Header
+          Padding(
+            padding: const EdgeInsets.all(16), // Reduced padding
+            child: Row(
               children: [
-                Stack(
-                  alignment: Alignment.center,
-                  children: [
-                    AnimatedContainer(
-                      duration: const Duration(milliseconds: 300),
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: isActive
-                            ? Colors.white.withOpacity(0.2)
-                            : Colors.transparent,
-                        shape: BoxShape.circle,
-                      ),
-                      child: Icon(
-                        controlIcons[name],
-                        color: isActive ? Colors.white : Colors.black54,
-                        size: 24,
-                      ),
-                    ),
-                    if (isLocked)
-                      Positioned(
-                        right: 0,
-                        top: 0,
-                        child: Container(
-                          padding: const EdgeInsets.all(2),
-                          decoration: const BoxDecoration(
-                            color: Colors.orange,
-                            shape: BoxShape.circle,
-                          ),
-                          child: const Icon(
-                            Icons.lock,
-                            color: Colors.white,
-                            size: 12,
-                          ),
+                Container(
+                  padding: const EdgeInsets.all(10), // Reduced padding
+                  decoration: BoxDecoration(
+                    color: color.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12), // Smaller radius
+                  ),
+                  child: Icon(
+                    controlIcons[controlName],
+                    color: color,
+                    size: 24, // Smaller icon
+                  ),
+                ),
+                const SizedBox(width: 12), // Reduced spacing
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        controlName,
+                        style: GoogleFonts.poppins(
+                          fontSize: 16, // Slightly smaller
+                          fontWeight: FontWeight.w600,
+                          color: Colors.black87,
                         ),
                       ),
-                  ],
+                      const SizedBox(height: 2),
+                      Text(
+                        power == 0 ? 'Pompa mati' : 'Pompa aktif',
+                        style: GoogleFonts.poppins(
+                          fontSize: 11,
+                          color: power == 0
+                              ? Colors.redAccent
+                              : Colors.grey.shade600,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  name,
-                  style: TextStyle(
-                    color: isActive ? Colors.white : Colors.black54,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 12,
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12, // Reduced padding
+                    vertical: 5,
+                  ),
+                  decoration: BoxDecoration(
+                    color: color,
+                    borderRadius: BorderRadius.circular(10), // Smaller radius
+                    boxShadow: [
+                      BoxShadow(
+                        color: color.withOpacity(0.3),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(
+                        Icons.bolt,
+                        color: Colors.white,
+                        size: 14, // Smaller icon
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        '${power.toInt()}%',
+                        style: GoogleFonts.poppins(
+                          fontSize: 14, // Slightly smaller
+                          fontWeight: FontWeight.w700,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],
             ),
           ),
-        ),
+
+          // Power slider section
+          Container(
+            padding:
+                const EdgeInsets.fromLTRB(16, 0, 16, 16), // Reduced padding
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.03),
+              borderRadius: const BorderRadius.only(
+                bottomLeft: Radius.circular(18),
+                bottomRight: Radius.circular(18),
+              ),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SizedBox(height: 4),
+                SliderTheme(
+                  data: SliderThemeData(
+                    trackHeight: 6,
+                    activeTrackColor: color,
+                    inactiveTrackColor: color.withOpacity(0.2),
+                    thumbColor: color,
+                    overlayColor: color.withOpacity(0.2),
+                    thumbShape: const RoundSliderThumbShape(
+                      enabledThumbRadius: 11,
+                      elevation: 3,
+                    ),
+                    overlayShape: const RoundSliderOverlayShape(
+                      overlayRadius: 22,
+                    ),
+                  ),
+                  child: Slider(
+                    value: power,
+                    min: 0,
+                    max: 100,
+                    divisions: 20,
+                    onChanged: (value) {
+                      _handlePowerChange(controlName, value);
+                    },
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 4),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Rendah',
+                        style: GoogleFonts.poppins(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w500,
+                          color: Colors.grey.shade600,
+                        ),
+                      ),
+                      Text(
+                        'Sedang',
+                        style: GoogleFonts.poppins(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w500,
+                          color: Colors.grey.shade600,
+                        ),
+                      ),
+                      Text(
+                        'Tinggi',
+                        style: GoogleFonts.poppins(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w500,
+                          color: Colors.grey.shade600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -1035,18 +813,18 @@ class _GamifikasiPageState extends State<GamifikasiPage>
   Widget _buildLevelWidget({required int level}) {
     return InkWell(
       onTap: () {
-        _showCustomSnackBar(
-            context, 'Anda telah mencapai Level $level!', Colors.green);
+        _showCustomSnackBar(context, 'Anda telah mencapai Level $level!',
+            const Color.fromARGB(255, 8, 143, 78));
       },
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(
-          color: const Color.fromARGB(192, 16, 134, 77),
+          color: const Color.fromARGB(255, 8, 143, 78),
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.1),
-              blurRadius: 5,
+              color: Colors.black.withOpacity(0.15),
+              blurRadius: 8,
               offset: const Offset(0, 3),
             ),
           ],
@@ -1057,7 +835,7 @@ class _GamifikasiPageState extends State<GamifikasiPage>
             const SizedBox(width: 6),
             Text(
               'Level $level',
-              style: const TextStyle(
+              style: GoogleFonts.poppins(
                 fontSize: 13,
                 fontWeight: FontWeight.bold,
                 color: Colors.white,
@@ -1080,16 +858,12 @@ class _GamifikasiPageState extends State<GamifikasiPage>
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            colors: [Color(0xFFFFC107), Color(0xFFFF9800)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
+          color: const Color(0xFFFF9800),
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.1),
-              blurRadius: 5,
+              color: Colors.black.withOpacity(0.15),
+              blurRadius: 8,
               offset: const Offset(0, 3),
             ),
           ],
@@ -1100,7 +874,7 @@ class _GamifikasiPageState extends State<GamifikasiPage>
             const SizedBox(width: 6),
             Text(
               'Koin: $coins',
-              style: const TextStyle(
+              style: GoogleFonts.poppins(
                 fontSize: 13,
                 fontWeight: FontWeight.bold,
                 color: Colors.white,
@@ -1123,27 +897,23 @@ class _GamifikasiPageState extends State<GamifikasiPage>
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            colors: [Colors.blue, Colors.green],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
+          color: Colors.blue,
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.1),
-              blurRadius: 5,
+              color: Colors.black.withOpacity(0.15),
+              blurRadius: 8,
               offset: const Offset(0, 3),
             ),
           ],
         ),
-        child: const Row(
+        child: Row(
           children: [
-            Icon(Icons.leaderboard, color: Colors.white, size: 20),
-            SizedBox(width: 6),
+            const Icon(Icons.leaderboard, color: Colors.white, size: 20),
+            const SizedBox(width: 6),
             Text(
               'Leaderboard',
-              style: TextStyle(
+              style: GoogleFonts.poppins(
                 fontSize: 13,
                 fontWeight: FontWeight.bold,
                 color: Colors.white,
@@ -1157,90 +927,95 @@ class _GamifikasiPageState extends State<GamifikasiPage>
 
   Widget _buildBottomNavigation() {
     return Container(
-      decoration: BoxDecoration(
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 20,
-            offset: const Offset(0, -5),
-          ),
-        ],
-      ),
-      child: ClipRRect(
-        borderRadius: const BorderRadius.only(
-          topLeft: Radius.circular(24),
-          topRight: Radius.circular(24),
-        ),
-        child: BottomNavigationBar(
-          type: BottomNavigationBarType.fixed,
-          backgroundColor: Colors.white,
-          onTap: (index) {
-            setState(() {
-              _bottomNavCurrentIndex = index;
-            });
-
-            switch (index) {
-              case 0:
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(builder: (context) => const BerandaPage()),
-                );
-                break;
-              case 1:
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(
-                      builder: (context) => const NotifikasiPage()),
-                );
-                break;
-              case 2:
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(builder: (context) => const PanduanPage()),
-                );
-                break;
-              case 3:
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(builder: (context) => const ProfilPage()),
-                );
-                break;
-            }
-          },
-          currentIndex: _bottomNavCurrentIndex,
-          items: const [
-            BottomNavigationBarItem(
-              activeIcon: Icon(Icons.home_rounded),
-              icon: Icon(Icons.home_outlined),
-              label: 'Beranda',
-            ),
-            BottomNavigationBarItem(
-              activeIcon: Icon(Icons.notifications_rounded),
-              icon: Icon(Icons.notifications_outlined),
-              label: 'Notifikasi',
-            ),
-            BottomNavigationBarItem(
-              activeIcon: Icon(Icons.book_rounded),
-              icon: Icon(Icons.book_outlined),
-              label: 'Panduan',
-            ),
-            BottomNavigationBarItem(
-              activeIcon: Icon(Icons.person_rounded),
-              icon: Icon(Icons.person_outline_rounded),
-              label: 'Akun',
+      color: Colors.white,
+      child: Container(
+        decoration: BoxDecoration(
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 20,
+              offset: const Offset(0, -5),
             ),
           ],
-          selectedItemColor: const Color(0xFF24D17E),
-          unselectedItemColor: Colors.grey[400],
-          selectedLabelStyle: GoogleFonts.poppins(
-            fontSize: 12,
-            fontWeight: FontWeight.w600,
+        ),
+        child: ClipRRect(
+          borderRadius: const BorderRadius.only(
+            topLeft: Radius.circular(24),
+            topRight: Radius.circular(24),
           ),
-          unselectedLabelStyle: GoogleFonts.poppins(
-            fontSize: 11,
-            fontWeight: FontWeight.w500,
+          child: BottomNavigationBar(
+            type: BottomNavigationBarType.fixed,
+            backgroundColor: Colors.white,
+            onTap: (index) {
+              setState(() {
+                _bottomNavCurrentIndex = index;
+              });
+
+              switch (index) {
+                case 0:
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => const BerandaPage()),
+                  );
+                  break;
+                case 1:
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => const GamifikasiPage()),
+                  );
+                  break;
+                case 2:
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => const PanduanPage()),
+                  );
+                  break;
+                case 3:
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(builder: (context) => const ProfilPage()),
+                  );
+                  break;
+              }
+            },
+            currentIndex: _bottomNavCurrentIndex,
+            items: const [
+              BottomNavigationBarItem(
+                activeIcon: Icon(Icons.home_rounded),
+                icon: Icon(Icons.home_outlined),
+                label: 'Beranda',
+              ),
+              BottomNavigationBarItem(
+                activeIcon: Icon(Icons.tune_rounded),
+                icon: Icon(Icons.tune_outlined),
+                label: 'Kontrol',
+              ),
+              BottomNavigationBarItem(
+                activeIcon: Icon(Icons.book_rounded),
+                icon: Icon(Icons.book_outlined),
+                label: 'Panduan',
+              ),
+              BottomNavigationBarItem(
+                activeIcon: Icon(Icons.person_rounded),
+                icon: Icon(Icons.person_outline_rounded),
+                label: 'Akun',
+              ),
+            ],
+            selectedItemColor: const Color.fromARGB(255, 8, 143, 78),
+            unselectedItemColor: Colors.grey[400],
+            selectedLabelStyle: GoogleFonts.poppins(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+            ),
+            unselectedLabelStyle: GoogleFonts.poppins(
+              fontSize: 11,
+              fontWeight: FontWeight.w500,
+            ),
+            elevation: 0,
           ),
-          elevation: 0,
         ),
       ),
     );

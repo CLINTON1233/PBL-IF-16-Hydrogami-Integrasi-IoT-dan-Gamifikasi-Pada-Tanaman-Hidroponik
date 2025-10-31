@@ -5,7 +5,7 @@ import 'package:application_hydrogami/pages/panduan/detail_panduan_tanaman_page.
 import 'package:application_hydrogami/pages/panduan/detail_panduan_nutrisi_page.dart';
 import 'package:application_hydrogami/pages/panduan/detail_panduan_panen_page.dart';
 import 'package:application_hydrogami/pages/panduan/detail_panduan_phupdown_page.dart';
-import 'package:application_hydrogami/pages/monitoring/notifikasi_page.dart';
+import 'package:application_hydrogami/pages/gamifikasi/gamifikasi_page.dart';
 import 'package:application_hydrogami/pages/profil_page.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -29,31 +29,21 @@ class _PanduanPageState extends State<PanduanPage>
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        backgroundColor: const Color(0xFF24D17E),
-        elevation: 2,
-        centerTitle: false,
-        title: Row(
-          children: [
-            
-            Text(
-              'Panduan',
-              style: GoogleFonts.poppins(
-                fontSize: 20,
-                fontWeight: FontWeight.w600,
-                color: Colors.white, 
-              ),
-            ),
-          ],
+        backgroundColor:const Color.fromARGB(255, 8, 143, 78),
+        elevation: 0,
+        centerTitle: true,
+        title: Text(
+          'Panduan',
+          style: GoogleFonts.poppins(
+            fontSize: 20,
+            fontWeight: FontWeight.w600,
+            color: Colors.white,
+          ),
         ),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back,
-              color:
-                  Colors.white), 
+          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white),
           onPressed: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => const BerandaPage()),
-            );
+            Navigator.pop(context);
           },
         ),
       ),
@@ -198,7 +188,7 @@ class _PanduanPageState extends State<PanduanPage>
               // Primary shadow - reduced intensity
               BoxShadow(
                 color:
-                    const Color(0xFF29CC74).withOpacity(isPressed ? 0.1 : 0.15),
+                   const Color.fromARGB(255, 8, 143, 78).withOpacity(isPressed ? 0.1 : 0.15),
                 spreadRadius: isPressed ? -2 : 0,
                 blurRadius: isPressed ? 15 : 25,
                 offset: Offset(0, isPressed ? 3 : 8),
@@ -263,9 +253,9 @@ class _PanduanPageState extends State<PanduanPage>
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
                           colors: [
-                            const Color(0xFF29CC74).withOpacity(0.08),
+                           const Color.fromARGB(255, 8, 143, 78).withOpacity(0.08),
                             Colors.transparent,
-                            const Color(0xFF20B863).withOpacity(0.12),
+                           const Color.fromARGB(255, 8, 143, 78).withOpacity(0.12),
                           ],
                         ),
                       ),
@@ -282,7 +272,7 @@ class _PanduanPageState extends State<PanduanPage>
                           color: Colors.white.withOpacity(0.95),
                           borderRadius: BorderRadius.circular(20),
                           border: Border.all(
-                            color: const Color(0xFF29CC74).withOpacity(0.3),
+                            color:const Color.fromARGB(255, 8, 143, 78).withOpacity(0.3),
                             width: 1,
                           ),
                           boxShadow: [
@@ -300,13 +290,13 @@ class _PanduanPageState extends State<PanduanPage>
                               width: 8,
                               height: 8,
                               decoration: BoxDecoration(
-                                color: const Color(0xFF29CC74),
+                                color:const Color.fromARGB(255, 8, 143, 78),
                                 borderRadius: BorderRadius.circular(4),
                               ),
                             ),
                             const SizedBox(width: 6),
                             Text(
-                              'PANDUAN',
+                              'Panduan',
                               style: GoogleFonts.poppins(
                                 fontSize: 10,
                                 fontWeight: FontWeight.w600,
@@ -374,19 +364,19 @@ class _PanduanPageState extends State<PanduanPage>
           end: Alignment.bottomRight,
           colors: isCardPressed
               ? [
-                  const Color(0xFF20B863),
-                  const Color(0xFF1DA554),
+                  const Color.fromARGB(255, 8, 176, 95),
+                  const Color.fromARGB(255, 8, 143, 78),
                 ]
               : [
-                  const Color(0xFF29CC74),
-                  const Color(0xFF20B863),
+                  const Color.fromARGB(255, 8, 176, 95),
+                  const Color.fromARGB(255, 8, 143, 78),
                 ],
         ),
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
             color:
-                const Color(0xFF29CC74).withOpacity(isCardPressed ? 0.2 : 0.3),
+                const Color.fromARGB(255, 8, 143, 78).withOpacity(isCardPressed ? 0.2 : 0.3),
             spreadRadius: 0,
             blurRadius: isCardPressed ? 4 : 8,
             offset: Offset(0, isCardPressed ? 1 : 3),
@@ -419,92 +409,98 @@ class _PanduanPageState extends State<PanduanPage>
     );
   }
 
+// Bottom Navigation Widget
   Widget _buildBottomNavigation() {
     return Container(
-      decoration: BoxDecoration(
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 20,
-            offset: const Offset(0, -5),
-          ),
-        ],
-      ),
-      child: ClipRRect(
-        borderRadius: const BorderRadius.only(
-          topLeft: Radius.circular(24),
-          topRight: Radius.circular(24),
-        ),
-        child: BottomNavigationBar(
-          type: BottomNavigationBarType.fixed,
-          backgroundColor: Colors.white,
-          onTap: (index) {
-            setState(() {
-              _bottomNavCurrentIndex = index;
-            });
-
-            switch (index) {
-              case 0:
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(builder: (context) => const BerandaPage()),
-                );
-                break;
-              case 1:
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(
-                      builder: (context) => const NotifikasiPage()),
-                );
-                break;
-              case 2:
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(builder: (context) => const PanduanPage()),
-                );
-                break;
-              case 3:
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(builder: (context) => const ProfilPage()),
-                );
-                break;
-            }
-          },
-          currentIndex: _bottomNavCurrentIndex,
-          items: const [
-            BottomNavigationBarItem(
-              activeIcon: Icon(Icons.home_rounded),
-              icon: Icon(Icons.home_outlined),
-              label: 'Beranda',
-            ),
-            BottomNavigationBarItem(
-              activeIcon: Icon(Icons.notifications_rounded),
-              icon: Icon(Icons.notifications_outlined),
-              label: 'Notifikasi',
-            ),
-            BottomNavigationBarItem(
-              activeIcon: Icon(Icons.book_rounded),
-              icon: Icon(Icons.book_outlined),
-              label: 'Panduan',
-            ),
-            BottomNavigationBarItem(
-              activeIcon: Icon(Icons.person_rounded),
-              icon: Icon(Icons.person_outline_rounded),
-              label: 'Akun',
+      color: Colors.white, // tambahin ini biar latar belakangnya full putih
+      child: Container(
+        decoration: BoxDecoration(
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 20,
+              offset: const Offset(0, -5),
             ),
           ],
-          selectedItemColor: const Color(0xFF24D17E),
-          unselectedItemColor: Colors.grey[400],
-          selectedLabelStyle: GoogleFonts.poppins(
-            fontSize: 12,
-            fontWeight: FontWeight.w600,
+        ),
+        child: ClipRRect(
+          borderRadius: const BorderRadius.only(
+            topLeft: Radius.circular(24),
+            topRight: Radius.circular(24),
           ),
-          unselectedLabelStyle: GoogleFonts.poppins(
-            fontSize: 11,
-            fontWeight: FontWeight.w500,
+          child: BottomNavigationBar(
+            type: BottomNavigationBarType.fixed,
+            backgroundColor: Colors.white,
+            onTap: (index) {
+              setState(() {
+                _bottomNavCurrentIndex = index;
+              });
+
+              switch (index) {
+                case 0:
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => const BerandaPage()),
+                  );
+                  break;
+                case 1:
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => const GamifikasiPage()),
+                  );
+                  break;
+                case 2:
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => const PanduanPage()),
+                  );
+                  break;
+                case 3:
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(builder: (context) => const ProfilPage()),
+                  );
+                  break;
+              }
+            },
+            currentIndex: _bottomNavCurrentIndex,
+            items: const [
+              BottomNavigationBarItem(
+                activeIcon: Icon(Icons.home_rounded),
+                icon: Icon(Icons.home_outlined),
+                label: 'Beranda',
+              ),
+              BottomNavigationBarItem(
+                activeIcon: Icon(Icons.tune_rounded),
+                icon: Icon(Icons.tune_outlined),
+                label: 'Kontrol',
+              ),
+              BottomNavigationBarItem(
+                activeIcon: Icon(Icons.book_rounded),
+                icon: Icon(Icons.book_outlined),
+                label: 'Panduan',
+              ),
+              BottomNavigationBarItem(
+                activeIcon: Icon(Icons.person_rounded),
+                icon: Icon(Icons.person_outline_rounded),
+                label: 'Akun',
+              ),
+            ],
+            selectedItemColor:const Color.fromARGB(255, 8, 143, 78),
+            unselectedItemColor: Colors.grey[400],
+            selectedLabelStyle: GoogleFonts.poppins(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+            ),
+            unselectedLabelStyle: GoogleFonts.poppins(
+              fontSize: 11,
+              fontWeight: FontWeight.w500,
+            ),
+            elevation: 0,
           ),
-          elevation: 0,
         ),
       ),
     );

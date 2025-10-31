@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:application_hydrogami/pages/beranda_page.dart';
-import 'package:application_hydrogami/pages/monitoring/notifikasi_page.dart';
+import 'package:application_hydrogami/pages/gamifikasi/gamifikasi_page.dart';
 import 'package:application_hydrogami/pages/panduan/panduan_page.dart';
 import 'package:application_hydrogami/pages/profil_page.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -115,7 +115,7 @@ class _DetailPanduanPhUpDownPageState extends State<DetailPanduanPhUpDownPage> {
                 leading: IconButton(
                   icon: const Icon(
                     Icons.arrow_back,
-                    color: Colors.white, 
+                    color: Colors.white,
                     size: 24,
                   ),
                   onPressed: () {
@@ -133,7 +133,7 @@ class _DetailPanduanPhUpDownPageState extends State<DetailPanduanPhUpDownPage> {
                       style: GoogleFonts.poppins(
                         fontSize: 18,
                         fontWeight: FontWeight.w600,
-                        color: Colors.white, 
+                        color: Colors.white,
                       ),
                     ),
                   ],
@@ -142,7 +142,7 @@ class _DetailPanduanPhUpDownPageState extends State<DetailPanduanPhUpDownPage> {
                   background: Stack(
                     fit: StackFit.expand,
                     children: [
-                      // Main Hero Image 
+                      // Main Hero Image
                       Container(
                         decoration: BoxDecoration(
                           gradient: LinearGradient(
@@ -157,7 +157,7 @@ class _DetailPanduanPhUpDownPageState extends State<DetailPanduanPhUpDownPage> {
                         child: panduan.gambar != null
                             ? ClipRect(
                                 child: Transform.scale(
-                                  scale: 1.0, 
+                                  scale: 1.0,
                                   child: Image.asset(
                                     'assets/phupdown.png',
                                     fit: BoxFit.cover,
@@ -274,7 +274,7 @@ class _DetailPanduanPhUpDownPageState extends State<DetailPanduanPhUpDownPage> {
 
                             const SizedBox(height: 20),
 
-                            // Main Title 
+                            // Main Title
                             Text(
                               panduan.judul ?? 'Judul tidak tersedia.',
                               style: GoogleFonts.poppins(
@@ -341,7 +341,7 @@ class _DetailPanduanPhUpDownPageState extends State<DetailPanduanPhUpDownPage> {
                         ),
                       ),
 
-                      // Main Content Card 
+                      // Main Content Card
                       Container(
                         margin: const EdgeInsets.symmetric(horizontal: 28),
                         padding: const EdgeInsets.all(32),
@@ -428,7 +428,7 @@ class _DetailPanduanPhUpDownPageState extends State<DetailPanduanPhUpDownPage> {
                                       ),
                                     ),
 
-                                    // Dark overlay 
+                                    // Dark overlay
                                     Container(
                                       decoration: BoxDecoration(
                                         gradient: LinearGradient(
@@ -598,7 +598,7 @@ class _DetailPanduanPhUpDownPageState extends State<DetailPanduanPhUpDownPage> {
 
                             const SizedBox(height: 32),
 
-                            // Content header 
+                            // Content header
                             Row(
                               children: [
                                 Container(
@@ -633,7 +633,7 @@ class _DetailPanduanPhUpDownPageState extends State<DetailPanduanPhUpDownPage> {
 
                             const SizedBox(height: 28),
 
-                            // Main content 
+                            // Main content
                             Container(
                               padding: const EdgeInsets.symmetric(vertical: 8),
                               child: Text(
@@ -669,90 +669,95 @@ class _DetailPanduanPhUpDownPageState extends State<DetailPanduanPhUpDownPage> {
 
   Widget _buildBottomNavigation() {
     return Container(
-      decoration: BoxDecoration(
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 20,
-            offset: const Offset(0, -5),
-          ),
-        ],
-      ),
-      child: ClipRRect(
-        borderRadius: const BorderRadius.only(
-          topLeft: Radius.circular(24),
-          topRight: Radius.circular(24),
-        ),
-        child: BottomNavigationBar(
-          type: BottomNavigationBarType.fixed,
-          backgroundColor: Colors.white,
-          onTap: (index) {
-            setState(() {
-              _bottomNavCurrentIndex = index;
-            });
-
-            switch (index) {
-              case 0:
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(builder: (context) => const BerandaPage()),
-                );
-                break;
-              case 1:
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(
-                      builder: (context) => const NotifikasiPage()),
-                );
-                break;
-              case 2:
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(builder: (context) => const PanduanPage()),
-                );
-                break;
-              case 3:
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(builder: (context) => const ProfilPage()),
-                );
-                break;
-            }
-          },
-          currentIndex: _bottomNavCurrentIndex,
-          items: const [
-            BottomNavigationBarItem(
-              activeIcon: Icon(Icons.home_rounded),
-              icon: Icon(Icons.home_outlined),
-              label: 'Beranda',
-            ),
-            BottomNavigationBarItem(
-              activeIcon: Icon(Icons.notifications_rounded),
-              icon: Icon(Icons.notifications_outlined),
-              label: 'Notifikasi',
-            ),
-            BottomNavigationBarItem(
-              activeIcon: Icon(Icons.book_rounded),
-              icon: Icon(Icons.book_outlined),
-              label: 'Panduan',
-            ),
-            BottomNavigationBarItem(
-              activeIcon: Icon(Icons.person_rounded),
-              icon: Icon(Icons.person_outline_rounded),
-              label: 'Akun',
+      color: Colors.white, // tambahin ini biar latar belakangnya full putih
+      child: Container(
+        decoration: BoxDecoration(
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 20,
+              offset: const Offset(0, -5),
             ),
           ],
-          selectedItemColor: const Color(0xFF24D17E),
-          unselectedItemColor: Colors.grey[400],
-          selectedLabelStyle: GoogleFonts.poppins(
-            fontSize: 12,
-            fontWeight: FontWeight.w600,
+        ),
+        child: ClipRRect(
+          borderRadius: const BorderRadius.only(
+            topLeft: Radius.circular(24),
+            topRight: Radius.circular(24),
           ),
-          unselectedLabelStyle: GoogleFonts.poppins(
-            fontSize: 11,
-            fontWeight: FontWeight.w500,
+          child: BottomNavigationBar(
+            type: BottomNavigationBarType.fixed,
+            backgroundColor: Colors.white,
+            onTap: (index) {
+              setState(() {
+                _bottomNavCurrentIndex = index;
+              });
+
+              switch (index) {
+                case 0:
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => const BerandaPage()),
+                  );
+                  break;
+                case 1:
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => const GamifikasiPage()),
+                  );
+                  break;
+                case 2:
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => const PanduanPage()),
+                  );
+                  break;
+                case 3:
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(builder: (context) => const ProfilPage()),
+                  );
+                  break;
+              }
+            },
+            currentIndex: _bottomNavCurrentIndex,
+            items: const [
+              BottomNavigationBarItem(
+                activeIcon: Icon(Icons.home_rounded),
+                icon: Icon(Icons.home_outlined),
+                label: 'Beranda',
+              ),
+              BottomNavigationBarItem(
+                activeIcon: Icon(Icons.tune_rounded),
+                icon: Icon(Icons.tune_outlined),
+                label: 'Kontrol',
+              ),
+              BottomNavigationBarItem(
+                activeIcon: Icon(Icons.book_rounded),
+                icon: Icon(Icons.book_outlined),
+                label: 'Panduan',
+              ),
+              BottomNavigationBarItem(
+                activeIcon: Icon(Icons.person_rounded),
+                icon: Icon(Icons.person_outline_rounded),
+                label: 'Akun',
+              ),
+            ],
+            selectedItemColor: const Color(0xFF24D17E),
+            unselectedItemColor: Colors.grey[400],
+            selectedLabelStyle: GoogleFonts.poppins(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+            ),
+            unselectedLabelStyle: GoogleFonts.poppins(
+              fontSize: 11,
+              fontWeight: FontWeight.w500,
+            ),
+            elevation: 0,
           ),
-          elevation: 0,
         ),
       ),
     );

@@ -15,7 +15,7 @@ class Awal2Page extends StatelessWidget {
         children: [
           Container(
             height: 55,
-            color: const Color.fromARGB(255, 36, 209, 126),
+            color: const Color.fromARGB(255, 8, 143, 78),
           ),
           const SizedBox(height: 50),
 
@@ -31,7 +31,7 @@ class Awal2Page extends StatelessWidget {
                 'Solusi Cerdas Hidroponik di Era Modern.',
                 textAlign: TextAlign.center,
                 style: GoogleFonts.kurale(
-                  color: const Color.fromARGB(246, 11, 142, 59),
+                  color:  const Color.fromARGB(255, 8, 143, 78),
                   fontSize: 16,
                   fontWeight: FontWeight.normal,
                 ),
@@ -43,7 +43,7 @@ class Awal2Page extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
             decoration: const BoxDecoration(
-              color: Color(0xFF29CC74),
+              color:  const Color.fromARGB(255, 8, 143, 78),
               borderRadius: BorderRadius.only(
                 topLeft: Radius.circular(60),
                 topRight: Radius.circular(0),

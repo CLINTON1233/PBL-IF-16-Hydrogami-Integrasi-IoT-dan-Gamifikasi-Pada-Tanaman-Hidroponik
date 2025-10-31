@@ -13,7 +13,7 @@ import 'package:simple_animations/simple_animations.dart';
 import 'rain_effect.dart';
 import 'package:application_hydrogami/pages/gamifikasi/leaderboard_page.dart';
 import 'package:application_hydrogami/pages/beranda_page.dart';
-import 'package:application_hydrogami/pages/monitoring/notifikasi_page.dart';
+import 'package:application_hydrogami/pages/gamifikasi/gamifikasi_page.dart';
 import 'package:application_hydrogami/pages/panduan/panduan_page.dart';
 import 'package:application_hydrogami/pages/profil_page.dart';
 
@@ -48,7 +48,7 @@ class _GamifikasiProgresPageState extends State<GamifikasiProgresPage>
   int _totalCoins = 0;
   int _currentLevel = 1;
   final int _expPerLevel = 200;
-  final int _maxLevel = 15; // Maximum level
+  final int _maxLevel = 15;
 
   // User data
   String _userId = '';
@@ -160,7 +160,6 @@ class _GamifikasiProgresPageState extends State<GamifikasiProgresPage>
     String baseImage;
 
     if (_hasCompletedMissionToday) {
-      // Happy mascot variations
       if (_currentLevel >= 10) {
         baseImage = 'assets/maskot_happy_adult.png';
       } else if (_currentLevel >= 5) {
@@ -169,7 +168,6 @@ class _GamifikasiProgresPageState extends State<GamifikasiProgresPage>
         baseImage = 'assets/maskot_happy.png';
       }
     } else {
-      // Sad mascot variations
       if (_currentLevel >= 10) {
         baseImage = 'assets/maskot_sedih_adult.png';
       } else if (_currentLevel >= 5) {
@@ -186,11 +184,11 @@ class _GamifikasiProgresPageState extends State<GamifikasiProgresPage>
   void _resetMascot() async {
     showDialog(
       context: context,
-      barrierDismissible: false, // Konsisten dengan template
+      barrierDismissible: false,
       builder: (BuildContext context) {
         return AlertDialog(
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20), // Sesuai template
+            borderRadius: BorderRadius.circular(20),
           ),
           content: Column(
             mainAxisSize: MainAxisSize.min,
@@ -198,7 +196,7 @@ class _GamifikasiProgresPageState extends State<GamifikasiProgresPage>
               const Icon(
                 Icons.refresh,
                 size: 80,
-                color: Colors.amber, // Warna konsisten
+                color: Colors.amber,
               ),
               const SizedBox(height: 16),
               Text(
@@ -206,7 +204,7 @@ class _GamifikasiProgresPageState extends State<GamifikasiProgresPage>
                 style: GoogleFonts.poppins(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
-                  color: Colors.amber, // Warna konsisten
+                  color: Colors.amber,
                 ),
               ),
               const SizedBox(height: 8),
@@ -252,8 +250,7 @@ class _GamifikasiProgresPageState extends State<GamifikasiProgresPage>
                       await _performMascotReset();
                     },
                     style: ElevatedButton.styleFrom(
-                      backgroundColor:
-                          const Color(0xFF24D17E), // Warna hijau konsisten
+                      backgroundColor: const Color.fromARGB(255, 8, 143, 78),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(10),
                       ),
@@ -285,7 +282,6 @@ class _GamifikasiProgresPageState extends State<GamifikasiProgresPage>
       _controlBounceAnimation();
 
       _showCustomSnackBar(context, 'Maskot berhasil direset', Colors.green);
-
       _debugUserData();
     } catch (e) {
       _showCustomSnackBar(context, 'Gagal mereset maskot: $e', Colors.red);
@@ -335,8 +331,7 @@ class _GamifikasiProgresPageState extends State<GamifikasiProgresPage>
             saveToLocal: true,
           );
 
-          print(
-              'Gamification data loaded from API: EXP=${gamificationData.poin}, Coins=${gamificationData.coin}, Level=$level');
+          print('Gamification data loaded from API: EXP=${gamificationData.poin}, Coins=${gamificationData.coin}, Level=$level');
         } catch (e) {
           print('Failed to fetch gamification data from API: $e');
           await _loadProgressDataFromLocal(prefs, userId);
@@ -494,13 +489,11 @@ class _GamifikasiProgresPageState extends State<GamifikasiProgresPage>
         _isLoading = false;
       });
 
-      _showCustomSnackBar(
-          context, 'Data berhasil disinkronisasi', Colors.green);
+      _showCustomSnackBar(context, 'Data berhasil disinkronisasi', Colors.green);
     } catch (e) {
       setState(() {
         _isLoading = false;
       });
-
       _showCustomSnackBar(context, 'Gagal sinkronisasi: $e', Colors.red);
     }
   }
@@ -589,6 +582,7 @@ class _GamifikasiProgresPageState extends State<GamifikasiProgresPage>
     return _expPerLevel - (_currentExp % _expPerLevel);
   }
 
+  // ✅ UPDATE: Load misi data dengan filter expired missions
   Future<void> _loadMisiData() async {
     setState(() {
       _isLoading = true;
@@ -605,28 +599,27 @@ class _GamifikasiProgresPageState extends State<GamifikasiProgresPage>
       final misi = await _misiService.getAllMisi();
       final completedMissions = await _getCompletedMissions();
 
-      for (var mission in misi) {
+      // Filter out expired missions
+      final filteredMisi = misi.where((mission) {
+        return !mission.shouldHide;
+      }).toList();
+
+      for (var mission in filteredMisi) {
         if (completedMissions.contains(mission.namaMisi)) {
           mission.statusMisi = 'selesai';
         }
       }
 
       setState(() {
-        _misiList = _sortMissions(_filterMissionsByType(misi));
+        _misiList = _sortMissions(_filterMissionsByType(filteredMisi));
         _isLoading = false;
       });
 
-      if (_misiList.isEmpty) {
-        // ScaffoldMessenger.of(context).showSnackBar(
-        //  const SnackBar(
-        //     content: Text('Tidak ada misi tersedia saat ini'),
-        //      backgroundColor: Colors.orange,
-        //  ),
-        // );
-      }
+      // Auto cleanup expired missions in background
+      _autoCleanupExpiredMissions();
+
     } catch (e) {
       print('Error in _loadMisiData: $e');
-
       setState(() {
         _isLoading = false;
         _errorMessage = _getUserFriendlyError(e);
@@ -647,6 +640,16 @@ class _GamifikasiProgresPageState extends State<GamifikasiProgresPage>
     }
   }
 
+  // Auto cleanup expired missions
+  Future<void> _autoCleanupExpiredMissions() async {
+    try {
+      await _misiService.cleanupExpiredMissions();
+    } catch (e) {
+      print('Auto cleanup error: $e');
+      // Silent fail, tidak perlu ditampilkan ke user
+    }
+  }
+
   Future<void> _handleRefresh() async {
     try {
       setState(() {
@@ -654,6 +657,7 @@ class _GamifikasiProgresPageState extends State<GamifikasiProgresPage>
       });
 
       await _loadMisiData();
+      await _loadUserData();
 
       setState(() {
         _isLoading = false;
@@ -703,8 +707,18 @@ class _GamifikasiProgresPageState extends State<GamifikasiProgresPage>
     _loadMisiData();
   }
 
+  // ✅ UPDATE: Complete mission dengan API call untuk auto-generated missions
   Future<void> _completeMission(Misi misi) async {
     if (misi.statusMisi == 'selesai') return;
+
+    // Untuk misi auto-generated, panggil API complete
+    if (misi.isAutoGenerated) {
+      final success = await _misiService.completeMission(misi.idMisi);
+      if (!success) {
+        _showCustomSnackBar(context, 'Gagal menyelesaikan misi', Colors.red);
+        return;
+      }
+    }
 
     final prefs = await SharedPreferences.getInstance();
     final today = DateTime.now().toIso8601String().substring(0, 10);
@@ -789,15 +803,16 @@ class _GamifikasiProgresPageState extends State<GamifikasiProgresPage>
         ? 'Misi "${misi.namaMisi}" selesai! Level maksimal tercapai!'
         : 'Misi "${misi.namaMisi}" selesai! +${misi.poin} EXP';
 
-// Untuk color (terpisah)
     Color messageColor = newLevel >= _maxLevel
-        ? Color.fromARGB(255, 148, 115, 115)
-        : Colors.green;
-    _showCustomSnackBar(
-      context,
-      expMessage,
-      messageColor,
-    );
+        ? const Color.fromARGB(255, 8, 143, 78)
+        : const Color.fromARGB(255, 6, 93, 51);
+
+    _showCustomSnackBar(context, expMessage, messageColor);
+
+    // Refresh data untuk update expiry info
+    if (misi.isAutoGenerated) {
+      await _loadMisiData();
+    }
 
     _debugUserData();
   }
@@ -805,11 +820,11 @@ class _GamifikasiProgresPageState extends State<GamifikasiProgresPage>
   void _showMaxLevelDialog() {
     showDialog(
       context: context,
-      barrierDismissible: false, // Konsisten dengan template
+      barrierDismissible: false,
       builder: (BuildContext context) {
         return AlertDialog(
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20), // Sesuai template
+            borderRadius: BorderRadius.circular(20),
           ),
           content: Column(
             mainAxisSize: MainAxisSize.min,
@@ -817,7 +832,7 @@ class _GamifikasiProgresPageState extends State<GamifikasiProgresPage>
               const Icon(
                 Icons.emoji_events,
                 size: 80,
-                color: Colors.amber, // Warna konsisten
+                color: Colors.amber,
               ),
               const SizedBox(height: 16),
               Text(
@@ -825,7 +840,7 @@ class _GamifikasiProgresPageState extends State<GamifikasiProgresPage>
                 style: GoogleFonts.poppins(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
-                  color: Colors.amber, // Warna konsisten
+                  color: Colors.amber,
                 ),
               ),
               const SizedBox(height: 8),
@@ -871,8 +886,7 @@ class _GamifikasiProgresPageState extends State<GamifikasiProgresPage>
                       _resetMascot();
                     },
                     style: ElevatedButton.styleFrom(
-                      backgroundColor:
-                          const Color(0xFF24D17E), // Warna hijau konsisten
+                      backgroundColor: const Color.fromARGB(255, 8, 143, 78),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(10),
                       ),
@@ -973,7 +987,7 @@ class _GamifikasiProgresPageState extends State<GamifikasiProgresPage>
               ElevatedButton(
                 onPressed: () => Navigator.of(context).pop(),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF24D17E),
+                  backgroundColor: const Color.fromARGB(255, 8, 143, 78),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(10),
                   ),
@@ -1005,7 +1019,7 @@ class _GamifikasiProgresPageState extends State<GamifikasiProgresPage>
               const Icon(
                 Icons.person,
                 size: 80,
-                color: Colors.amber, // Using amber to match template
+                color: Colors.amber,
               ),
               const SizedBox(height: 16),
               Text(
@@ -1013,7 +1027,7 @@ class _GamifikasiProgresPageState extends State<GamifikasiProgresPage>
                 style: GoogleFonts.poppins(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
-                  color: Colors.amber, // Using amber to match template
+                  color: Colors.amber,
                 ),
               ),
               const SizedBox(height: 8),
@@ -1034,20 +1048,15 @@ class _GamifikasiProgresPageState extends State<GamifikasiProgresPage>
                 ),
                 child: Column(
                   children: [
-                    _buildUserInfoItem(
-                        'Nama Pengguna', _userName, Icons.person),
+                    _buildUserInfoItem('Nama Pengguna', _userName, Icons.person),
                     const Divider(height: 16),
                     _buildUserInfoItem('ID Pengguna', _userId, Icons.code),
                     const Divider(height: 16),
                     _buildUserInfoItem('Total EXP', '$_currentExp', Icons.star),
                     const Divider(height: 16),
-                    _buildUserInfoItem(
-                        'Total Koin', '$_totalCoins', Icons.monetization_on),
+                    _buildUserInfoItem('Total Koin', '$_totalCoins', Icons.monetization_on),
                     const Divider(height: 16),
-                    _buildUserInfoItem(
-                        'Progress Level',
-                        '${_getExpForCurrentLevel()}/$_expPerLevel EXP',
-                        Icons.trending_up),
+                    _buildUserInfoItem('Progress Level', '${_getExpForCurrentLevel()}/$_expPerLevel EXP', Icons.trending_up),
                   ],
                 ),
               ),
@@ -1055,7 +1064,7 @@ class _GamifikasiProgresPageState extends State<GamifikasiProgresPage>
               ElevatedButton(
                 onPressed: () => Navigator.of(context).pop(),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF24D17E),
+                  backgroundColor: const Color.fromARGB(255, 8, 143, 78),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(10),
                   ),
@@ -1077,76 +1086,18 @@ class _GamifikasiProgresPageState extends State<GamifikasiProgresPage>
   }
 
   void _showCustomSnackBar(BuildContext context, String message, Color color) {
-    final overlay = Overlay.of(context);
-    late OverlayEntry overlayEntry;
-
-    overlayEntry = OverlayEntry(
-      builder: (context) => Positioned(
-        // Hitung posisi di bawah AppBar
-        top: MediaQuery.of(context).padding.top +
-            kToolbarHeight +
-            10, // kToolbarHeight adalah tinggi default AppBar
-        left: 0,
-        right: 0,
-        child: Material(
-          color: Colors.transparent,
-          child: Center(
-            child: Container(
-              width: MediaQuery.of(context).size.width * 0.9,
-              margin: const EdgeInsets.only(bottom: 8),
-              decoration: BoxDecoration(
-                color: color,
-                borderRadius: BorderRadius.circular(8),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(12),
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.info_outline,
-                      color: Colors.white,
-                      size: 24,
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        message,
-                        style: GoogleFonts.poppins(
-                          color: Colors.white,
-                          fontSize: 14,
-                        ),
-                      ),
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.close,
-                          color: Colors.white, size: 20),
-                      onPressed: () {
-                        overlayEntry.remove();
-                      },
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          message,
+          style: GoogleFonts.poppins(fontWeight: FontWeight.w500),
         ),
+        backgroundColor: color,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        margin: const EdgeInsets.all(16),
       ),
     );
-
-    overlay.insert(overlayEntry);
-
-    Future.delayed(const Duration(seconds: 3), () {
-      if (overlayEntry.mounted) {
-        overlayEntry.remove();
-      }
-    });
   }
 
   Widget _buildUserInfoItem(String label, String value, IconData icon) {
@@ -1193,7 +1144,7 @@ class _GamifikasiProgresPageState extends State<GamifikasiProgresPage>
       body: _isLoading
           ? const Center(
               child: CircularProgressIndicator(
-                color: Color(0xFF24D17E),
+                color: Color.fromARGB(255, 8, 143, 78),
               ),
             )
           : _errorMessage.isNotEmpty
@@ -1219,7 +1170,7 @@ class _GamifikasiProgresPageState extends State<GamifikasiProgresPage>
                       ElevatedButton(
                         onPressed: _handleRefresh,
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF24D17E),
+                          backgroundColor: const Color.fromARGB(255, 8, 143, 78),
                         ),
                         child: const Text(
                           'Coba Lagi',
@@ -1231,7 +1182,7 @@ class _GamifikasiProgresPageState extends State<GamifikasiProgresPage>
                 )
               : RefreshIndicator(
                   onRefresh: _handleRefresh,
-                  color: const Color(0xFF24D17E),
+                  color: const Color.fromARGB(255, 8, 143, 78),
                   child: SingleChildScrollView(
                     physics: const AlwaysScrollableScrollPhysics(),
                     child: Column(
@@ -1241,8 +1192,7 @@ class _GamifikasiProgresPageState extends State<GamifikasiProgresPage>
                         _buildMissionSection(),
                         _misiList.isEmpty
                             ? Padding(
-                                padding:
-                                    const EdgeInsets.symmetric(vertical: 32.0),
+                                padding: const EdgeInsets.symmetric(vertical: 32.0),
                                 child: Center(
                                   child: Column(
                                     children: [
@@ -1281,39 +1231,39 @@ class _GamifikasiProgresPageState extends State<GamifikasiProgresPage>
   }
 
   Widget _buildAppBar() {
-  return AppBar(
-    backgroundColor: const Color(0xFF24D17E),
-    elevation: 2,
-    title: Text(
-      'Misi',
-      style: GoogleFonts.poppins(
-        fontSize: 20,
-        fontWeight: FontWeight.w600,
-        color: Colors.white,
+    return AppBar(
+      backgroundColor: const Color.fromARGB(255, 8, 143, 78),
+      elevation: 0,
+      centerTitle: true,
+      title: Text(
+        'Misi',
+        style: GoogleFonts.poppins(
+          fontSize: 20,
+          fontWeight: FontWeight.w600,
+          color: Colors.white,
+        ),
       ),
-    ),
-    leading: IconButton(
-      icon: const Icon(Icons.arrow_back, color: Colors.white),
-      onPressed: () {
-        Navigator.pop(context);
-      },
-    ),
-  );
-}
+      leading: IconButton(
+        icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white),
+        onPressed: () {
+          Navigator.pop(context);
+        },
+      ),
+    );
+  }
 
   Widget _buildHeaderSection() {
     return Column(
       children: [
         Container(
-          color: const Color(0xFF24D17E),
+          color: Colors.white,
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              // Reset button is now always visible
               IconButton(
                 onPressed: _resetMascot,
                 icon: const Icon(Icons.refresh),
-                color: Colors.white,
+                color: const Color.fromARGB(255, 8, 143, 78),
                 tooltip: 'Reset Maskot',
               ),
               Row(
@@ -1330,19 +1280,17 @@ class _GamifikasiProgresPageState extends State<GamifikasiProgresPage>
                             onTap: () {
                               Navigator.push(
                                 context,
-                                MaterialPageRoute(
-                                    builder: (context) => const RewardPage()),
+                                MaterialPageRoute(builder: (context) => const RewardPage()),
                               );
                             },
                             borderRadius: BorderRadius.circular(20),
                             splashColor: Colors.amber.withOpacity(0.2),
                             highlightColor: Colors.amber.withOpacity(0.1),
                             child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 12, vertical: 6),
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                               margin: const EdgeInsets.only(right: 10),
                               decoration: BoxDecoration(
-                                color: Colors.white,
+                                color: const Color.fromARGB(255, 8, 143, 78),
                                 borderRadius: BorderRadius.circular(20),
                                 boxShadow: [
                                   BoxShadow(
@@ -1354,14 +1302,14 @@ class _GamifikasiProgresPageState extends State<GamifikasiProgresPage>
                               ),
                               child: Row(
                                 children: [
-                                  const Icon(Icons.star,
-                                      color: Colors.amber, size: 20),
+                                  const Icon(Icons.star, color: Colors.white, size: 20),
                                   const SizedBox(width: 5),
                                   Text(
                                     '$_currentExp',
                                     style: const TextStyle(
                                       fontWeight: FontWeight.bold,
                                       fontSize: 14,
+                                      color: Colors.white,
                                     ),
                                   ),
                                 ],
@@ -1372,6 +1320,7 @@ class _GamifikasiProgresPageState extends State<GamifikasiProgresPage>
                       );
                     },
                   ),
+                  const SizedBox(width: 10),
                   AnimatedBuilder(
                     animation: _coinAnimation,
                     builder: (context, child) {
@@ -1384,16 +1333,17 @@ class _GamifikasiProgresPageState extends State<GamifikasiProgresPage>
                   IconButton(
                     onPressed: _showUserInfoDialog,
                     icon: const Icon(Icons.info),
-                    color: Colors.white,
+                    color: const Color.fromARGB(255, 8, 143, 78),
                   ),
                 ],
               ),
             ],
           ),
         ),
+
         Container(
           width: double.infinity,
-          color: const Color(0xFF24D17E),
+          color: Colors.white,
           child: Center(
             child: AnimatedBuilder(
               animation: _levelUpAnimation,
@@ -1413,8 +1363,9 @@ class _GamifikasiProgresPageState extends State<GamifikasiProgresPage>
             ),
           ),
         ),
+
         Container(
-          color: const Color(0xFF24D17E),
+          color: Colors.white,
           width: double.infinity,
           height: 200,
           child: Stack(
@@ -1456,8 +1407,9 @@ class _GamifikasiProgresPageState extends State<GamifikasiProgresPage>
             ],
           ),
         ),
+
         Container(
-          color: const Color(0xFF24D17E),
+          color: Colors.white,
           padding: const EdgeInsets.fromLTRB(0, 0, 0, 10),
           child: Center(
             child: Column(
@@ -1489,27 +1441,35 @@ class _GamifikasiProgresPageState extends State<GamifikasiProgresPage>
   Widget _buildProgressSection() {
     return Container(
       width: double.infinity,
-      decoration: const BoxDecoration(
-        color: Color(0xFF24D17E),
-        borderRadius: BorderRadius.only(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: const BorderRadius.only(
           bottomLeft: Radius.circular(20),
           bottomRight: Radius.circular(20),
         ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.15),
+            blurRadius: 8,
+            offset: const Offset(0, 4),
+            spreadRadius: 1,
+          ),
+        ],
       ),
-      padding: const EdgeInsets.fromLTRB(25, 0, 25, 10),
+      padding: const EdgeInsets.fromLTRB(25, 15, 25, 20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Container(
             height: 20,
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: Colors.grey[200],
               borderRadius: BorderRadius.circular(50),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.2),
-                  offset: const Offset(0, 2),
-                  blurRadius: 4,
+                  color: Colors.black.withOpacity(0.1),
+                  offset: const Offset(0, 1),
+                  blurRadius: 2,
                 ),
               ],
             ),
@@ -1537,19 +1497,25 @@ class _GamifikasiProgresPageState extends State<GamifikasiProgresPage>
               ],
             ),
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 8),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
                 'Level $_currentLevel',
-                style: const TextStyle(color: Colors.black, fontSize: 12),
+                style: TextStyle(
+                  color: Colors.grey[700],
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                ),
               ),
               Text(
-                _currentLevel >= _maxLevel
-                    ? 'MAX'
-                    : 'Level ${_currentLevel + 1}',
-                style: const TextStyle(color: Colors.black, fontSize: 12),
+                _currentLevel >= _maxLevel ? 'MAX' : 'Level ${_currentLevel + 1}',
+                style: TextStyle(
+                  color: Colors.grey[700],
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                ),
               ),
             ],
           ),
@@ -1587,15 +1553,14 @@ class _GamifikasiProgresPageState extends State<GamifikasiProgresPage>
                 child: InkWell(
                   onTap: () => _toggleMissionType(true),
                   borderRadius: BorderRadius.circular(30),
-                  splashColor: const Color(0xFF24D17E).withOpacity(0.3),
-                  highlightColor: const Color(0xFF24D17E).withOpacity(0.2),
+                  splashColor: const Color.fromARGB(255, 8, 143, 78).withOpacity(0.3),
+                  highlightColor: const Color.fromARGB(255, 8, 143, 78).withOpacity(0.2),
                   child: Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 15, vertical: 8),
+                    padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 8),
                     margin: const EdgeInsets.only(right: 10),
                     decoration: BoxDecoration(
                       color: _isDailySelected
-                          ? const Color(0xFF24D17E)
+                          ? const Color.fromARGB(255, 8, 143, 78)
                           : Colors.white,
                       borderRadius: BorderRadius.circular(30),
                       boxShadow: [
@@ -1621,14 +1586,13 @@ class _GamifikasiProgresPageState extends State<GamifikasiProgresPage>
                 child: InkWell(
                   onTap: () => _toggleMissionType(false),
                   borderRadius: BorderRadius.circular(30),
-                  splashColor: const Color(0xFF24D17E).withOpacity(0.3),
-                  highlightColor: const Color(0xFF24D17E).withOpacity(0.2),
+                  splashColor: const Color.fromARGB(255, 8, 143, 78).withOpacity(0.3),
+                  highlightColor: const Color.fromARGB(255, 8, 143, 78).withOpacity(0.2),
                   child: Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 15, vertical: 8),
+                    padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 8),
                     decoration: BoxDecoration(
                       color: !_isDailySelected
-                          ? const Color(0xFF24D17E)
+                          ? const Color.fromARGB(255, 8, 143, 78)
                           : Colors.white,
                       borderRadius: BorderRadius.circular(30),
                       boxShadow: [
@@ -1656,37 +1620,18 @@ class _GamifikasiProgresPageState extends State<GamifikasiProgresPage>
     );
   }
 
+  // ✅ UPDATE: Mission card dengan expiry info dan auto-generated support
   Widget _missionCard({required Misi misi}) {
-    bool isCompleted = misi.statusMisi == 'selesai';
+    bool isCompleted = misi.statusMisi == 'selesai' || (misi.isAutoGenerated && misi.autoCompleted);
+    bool isAutoGenerated = misi.isAutoGenerated;
 
-    IconData getIconForStatus(String status) {
-      switch (status.toLowerCase()) {
-        case 'selesai':
-          return Icons.check_circle;
-        case 'in progress':
-          return Icons.hourglass_empty;
-        case 'belum selesai':
-          return Icons.schedule;
-        default:
-          return Icons.assignment;
-      }
+    // Jangan tampilkan misi yang sudah expired
+    if (misi.shouldHide) {
+      return const SizedBox.shrink();
     }
 
-    Color getColorForStatus(String status) {
-      switch (status.toLowerCase()) {
-        case 'selesai':
-          return const Color(0xFF24D17E);
-        case 'in progress':
-          return Colors.blue;
-        case 'belum selesai':
-          return Colors.orange;
-        default:
-          return Colors.grey;
-      }
-    }
-
-    Color statusColor = getColorForStatus(misi.statusMisi);
-    IconData statusIcon = getIconForStatus(misi.statusMisi);
+    Color statusColor = _getColorForStatus(misi.statusMisi);
+    IconData statusIcon = _getIconForStatus(misi.statusMisi);
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
@@ -1701,246 +1646,329 @@ class _GamifikasiProgresPageState extends State<GamifikasiProgresPage>
               offset: const Offset(0, 2),
             ),
           ],
+          border: isAutoGenerated
+              ? Border.all(color: Colors.blue.withOpacity(0.3), width: 1)
+              : null,
         ),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Container(
-                width: 36,
-                height: 36,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: statusColor.withOpacity(0.1),
-                ),
-                child: Center(
-                  child: Icon(
-                    isCompleted ? Icons.check_circle : statusIcon,
-                    color: statusColor,
-                    size: 20,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      misi.namaMisi,
-                      style: GoogleFonts.poppins(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w500,
-                        color: isCompleted ? Colors.grey[600] : Colors.black,
-                        decoration:
-                            isCompleted ? TextDecoration.lineThrough : null,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      misi.deskripsiMisi,
-                      style: GoogleFonts.poppins(
-                        fontSize: 12,
-                        color: Colors.grey[600],
-                        decoration:
-                            isCompleted ? TextDecoration.lineThrough : null,
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 8),
-                    Row(
-                      children: [
-                        Row(
-                          children: [
-                            Icon(
-                              Icons.star,
-                              size: 16,
-                              color: isCompleted ? Colors.grey : Colors.amber,
-                            ),
-                            const SizedBox(width: 4),
-                            Text(
-                              '${misi.poin} EXP',
-                              style: GoogleFonts.poppins(
-                                fontSize: 12,
-                                color: isCompleted
-                                    ? Colors.grey[600]
-                                    : Colors.black,
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(width: 12),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 8, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: statusColor.withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Text(
-                            misi.statusMisi.toUpperCase(),
-                            style: GoogleFonts.poppins(
-                              fontSize: 10,
-                              color: statusColor,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 8, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: misi.tipeMisi == 'harian'
-                                ? Colors.blue.withOpacity(0.1)
-                                : Colors.purple.withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Text(
-                            misi.tipeMisi.toUpperCase(),
-                            style: GoogleFonts.poppins(
-                              fontSize: 10,
-                              color: misi.tipeMisi == 'harian'
-                                  ? Colors.blue
-                                  : Colors.purple,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 8),
-              Material(
-                color: Colors.transparent,
-                child: InkWell(
-                  onTap: () {
-                    if (!isCompleted) {
-                      _completeMission(misi);
-                    }
-                  },
-                  borderRadius: BorderRadius.circular(18),
-                  splashColor: statusColor.withOpacity(0.3),
-                  highlightColor: statusColor.withOpacity(0.2),
-                  child: Container(
+        child: Stack(
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Container(
                     width: 36,
                     height: 36,
                     decoration: BoxDecoration(
-                      color: isCompleted ? statusColor : Colors.grey[300],
                       shape: BoxShape.circle,
+                      color: statusColor.withOpacity(0.1),
                     ),
                     child: Center(
                       child: Icon(
-                        Icons.check,
-                        color: Colors.white,
+                        isCompleted ? Icons.check_circle : statusIcon,
+                        color: statusColor,
                         size: 20,
                       ),
                     ),
                   ),
-                ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                misi.namaMisi,
+                                style: GoogleFonts.poppins(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w500,
+                                  color: isCompleted ? Colors.grey[600] : Colors.black,
+                                  decoration: isCompleted ? TextDecoration.lineThrough : null,
+                                ),
+                              ),
+                            ),
+                            if (isAutoGenerated)
+                              Container(
+                                margin: const EdgeInsets.only(left: 8),
+                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: Colors.blue.withOpacity(0.1),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(Icons.auto_awesome, size: 12, color: Colors.blue),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      'Auto',
+                                      style: GoogleFonts.poppins(
+                                        fontSize: 8,
+                                        color: Colors.blue,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                          ],
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          misi.deskripsiMisi,
+                          style: GoogleFonts.poppins(
+                            fontSize: 12,
+                            color: Colors.grey[600],
+                            decoration: isCompleted ? TextDecoration.lineThrough : null,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 8),
+                        Row(
+                          children: [
+                            Row(
+                              children: [
+                                Icon(Icons.star, size: 16, color: isCompleted ? Colors.grey : Colors.amber),
+                                const SizedBox(width: 4),
+                                Text(
+                                  '${misi.poin} EXP',
+                                  style: GoogleFonts.poppins(
+                                    fontSize: 12,
+                                    color: isCompleted ? Colors.grey[600] : Colors.black,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(width: 12),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: statusColor.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Text(
+                                misi.statusMisi.toUpperCase(),
+                                style: GoogleFonts.poppins(
+                                  fontSize: 10,
+                                  color: statusColor,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: misi.tipeMisi == 'harian'
+                                    ? Colors.blue.withOpacity(0.1)
+                                    : Colors.purple.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Text(
+                                misi.tipeMisi.toUpperCase(),
+                                style: GoogleFonts.poppins(
+                                  fontSize: 10,
+                                  color: misi.tipeMisi == 'harian' ? Colors.blue : Colors.purple,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        // Tambahkan info expiry untuk misi yang sudah completed
+                        if (isCompleted && misi.expiresAt != null)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 8),
+                            child: Row(
+                              children: [
+                                Icon(
+                                  Icons.access_time,
+                                  size: 12,
+                                  color: misi.isExpired ? Colors.red : Colors.orange,
+                                ),
+                                const SizedBox(width: 4),
+                                Text(
+                                  misi.expiryInfo,
+                                  style: GoogleFonts.poppins(
+                                    fontSize: 10,
+                                    color: misi.isExpired ? Colors.red : Colors.orange,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Text(
+                                  '• ${misi.expiryTypeText}',
+                                  style: GoogleFonts.poppins(
+                                    fontSize: 10,
+                                    color: Colors.grey[600],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      onTap: () {
+                        if (!isCompleted) {
+                          _completeMission(misi);
+                        }
+                      },
+                      borderRadius: BorderRadius.circular(18),
+                      splashColor: statusColor.withOpacity(0.3),
+                      highlightColor: statusColor.withOpacity(0.2),
+                      child: Container(
+                        width: 36,
+                        height: 36,
+                        decoration: BoxDecoration(
+                          color: isCompleted ? statusColor : Colors.grey[300],
+                          shape: BoxShape.circle,
+                        ),
+                        child: Center(
+                          child: Icon(
+                            Icons.check,
+                            color: Colors.white,
+                            size: 20,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
+  }
+
+  Color _getColorForStatus(String status) {
+    switch (status.toLowerCase()) {
+      case 'selesai':
+        return const Color.fromARGB(255, 8, 143, 78);
+      case 'in progress':
+        return Colors.blue;
+      case 'belum selesai':
+        return Colors.orange;
+      default:
+        return Colors.grey;
+    }
+  }
+
+  IconData _getIconForStatus(String status) {
+    switch (status.toLowerCase()) {
+      case 'selesai':
+        return Icons.check_circle;
+      case 'in progress':
+        return Icons.hourglass_empty;
+      case 'belum selesai':
+        return Icons.schedule;
+      default:
+        return Icons.assignment;
+    }
   }
 
   Widget _buildBottomNavigation() {
     return Container(
-      decoration: BoxDecoration(
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 20,
-            offset: const Offset(0, -5),
-          ),
-        ],
-      ),
-      child: ClipRRect(
-        borderRadius: const BorderRadius.only(
-          topLeft: Radius.circular(24),
-          topRight: Radius.circular(24),
-        ),
-        child: BottomNavigationBar(
-          type: BottomNavigationBarType.fixed,
-          backgroundColor: Colors.white,
-          onTap: (index) {
-            setState(() {
-              _bottomNavCurrentIndex = index;
-            });
-
-            switch (index) {
-              case 0:
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(builder: (context) => const BerandaPage()),
-                );
-                break;
-              case 1:
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(
-                      builder: (context) => const NotifikasiPage()),
-                );
-                break;
-              case 2:
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(builder: (context) => const PanduanPage()),
-                );
-                break;
-              case 3:
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(builder: (context) => const ProfilPage()),
-                );
-                break;
-            }
-          },
-          currentIndex: _bottomNavCurrentIndex,
-          items: const [
-            BottomNavigationBarItem(
-              activeIcon: Icon(Icons.home_rounded),
-              icon: Icon(Icons.home_outlined),
-              label: 'Beranda',
-            ),
-            BottomNavigationBarItem(
-              activeIcon: Icon(Icons.notifications_rounded),
-              icon: Icon(Icons.notifications_outlined),
-              label: 'Notifikasi',
-            ),
-            BottomNavigationBarItem(
-              activeIcon: Icon(Icons.book_rounded),
-              icon: Icon(Icons.book_outlined),
-              label: 'Panduan',
-            ),
-            BottomNavigationBarItem(
-              activeIcon: Icon(Icons.person_rounded),
-              icon: Icon(Icons.person_outline_rounded),
-              label: 'Akun',
+      color: Colors.white,
+      child: Container(
+        decoration: BoxDecoration(
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 20,
+              offset: const Offset(0, -5),
             ),
           ],
-          selectedItemColor: const Color(0xFF24D17E),
-          unselectedItemColor: Colors.grey[400],
-          selectedLabelStyle: GoogleFonts.poppins(
-            fontSize: 12,
-            fontWeight: FontWeight.w600,
+        ),
+        child: ClipRRect(
+          borderRadius: const BorderRadius.only(
+            topLeft: Radius.circular(24),
+            topRight: Radius.circular(24),
           ),
-          unselectedLabelStyle: GoogleFonts.poppins(
-            fontSize: 11,
-            fontWeight: FontWeight.w500,
+          child: BottomNavigationBar(
+            type: BottomNavigationBarType.fixed,
+            backgroundColor: Colors.white,
+            onTap: (index) {
+              setState(() {
+                _bottomNavCurrentIndex = index;
+              });
+
+              switch (index) {
+                case 0:
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(builder: (context) => const BerandaPage()),
+                  );
+                  break;
+                case 1:
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(builder: (context) => const GamifikasiPage()),
+                  );
+                  break;
+                case 2:
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(builder: (context) => const PanduanPage()),
+                  );
+                  break;
+                case 3:
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(builder: (context) => const ProfilPage()),
+                  );
+                  break;
+              }
+            },
+            currentIndex: _bottomNavCurrentIndex,
+            items: const [
+              BottomNavigationBarItem(
+                activeIcon: Icon(Icons.home_rounded),
+                icon: Icon(Icons.home_outlined),
+                label: 'Beranda',
+              ),
+              BottomNavigationBarItem(
+                activeIcon: Icon(Icons.tune_rounded),
+                icon: Icon(Icons.tune_outlined),
+                label: 'Kontrol',
+              ),
+              BottomNavigationBarItem(
+                activeIcon: Icon(Icons.book_rounded),
+                icon: Icon(Icons.book_outlined),
+                label: 'Panduan',
+              ),
+              BottomNavigationBarItem(
+                activeIcon: Icon(Icons.person_rounded),
+                icon: Icon(Icons.person_outline_rounded),
+                label: 'Akun',
+              ),
+            ],
+            selectedItemColor: const Color.fromARGB(255, 8, 143, 78),
+            unselectedItemColor: Colors.grey[400],
+            selectedLabelStyle: GoogleFonts.poppins(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+            ),
+            unselectedLabelStyle: GoogleFonts.poppins(
+              fontSize: 11,
+              fontWeight: FontWeight.w500,
+            ),
+            elevation: 0,
           ),
-          elevation: 0,
         ),
       ),
     );
   }
-
 
   Widget _buildRewardWidget({required int coins}) {
     return Material(
@@ -1959,7 +1987,7 @@ class _GamifikasiProgresPageState extends State<GamifikasiProgresPage>
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           margin: const EdgeInsets.only(right: 10),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: const Color.fromARGB(255, 8, 143, 78),
             borderRadius: BorderRadius.circular(20),
             boxShadow: [
               BoxShadow(
@@ -1971,13 +1999,14 @@ class _GamifikasiProgresPageState extends State<GamifikasiProgresPage>
           ),
           child: Row(
             children: [
-              const Icon(Icons.monetization_on, color: Colors.amber, size: 20),
+              const Icon(Icons.monetization_on, color: Colors.white, size: 20),
               const SizedBox(width: 5),
               Text(
                 coins.toString(),
                 style: const TextStyle(
                   fontWeight: FontWeight.bold,
                   fontSize: 14,
+                  color: Colors.white,
                 ),
               ),
             ],
@@ -1998,27 +2027,23 @@ class _GamifikasiProgresPageState extends State<GamifikasiProgresPage>
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            colors: [Colors.blue, Colors.green],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
+          color: Colors.blue,
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.1),
-              blurRadius: 5,
+              color: Colors.black.withOpacity(0.15),
+              blurRadius: 8,
               offset: const Offset(0, 3),
             ),
           ],
         ),
-        child: const Row(
+        child: Row(
           children: [
-            Icon(Icons.leaderboard, color: Colors.white, size: 20),
-            SizedBox(width: 6),
+            const Icon(Icons.leaderboard, color: Colors.white, size: 20),
+            const SizedBox(width: 6),
             Text(
               'Leaderboard',
-              style: TextStyle(
+              style: GoogleFonts.poppins(
                 fontSize: 13,
                 fontWeight: FontWeight.bold,
                 color: Colors.white,

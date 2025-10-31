@@ -27,7 +27,7 @@ class RoundedButton extends StatelessWidget {
         style: GoogleFonts.poppins(
           fontSize: 16,
           fontWeight: FontWeight.bold,
-          color: const Color(0xFF29CC74),
+          color: const Color.fromARGB(255, 8, 143, 78),
         ),
       ),
     );

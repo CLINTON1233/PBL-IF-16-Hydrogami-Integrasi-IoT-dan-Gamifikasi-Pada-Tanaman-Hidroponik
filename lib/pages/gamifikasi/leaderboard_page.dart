@@ -7,6 +7,7 @@ import 'package:application_hydrogami/pages/beranda_page.dart';
 import 'package:application_hydrogami/pages/profil_page.dart';
 import 'package:application_hydrogami/pages/monitoring/notifikasi_page.dart';
 import 'package:application_hydrogami/pages/panduan/panduan_page.dart';
+import 'package:application_hydrogami/pages/gamifikasi/gamifikasi_page.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 
@@ -183,74 +184,20 @@ class _LeaderboardPageState extends State<LeaderboardPage>
     }
   }
 
+  // Custom SnackBar function like in profil_page.dart
   void _showCustomSnackBar(BuildContext context, String message, Color color) {
-    final overlay = Overlay.of(context);
-    late OverlayEntry overlayEntry;
-
-    overlayEntry = OverlayEntry(
-      builder: (context) => Positioned(
-        top: MediaQuery.of(context).padding.top + kToolbarHeight + 10,
-        left: 0,
-        right: 0,
-        child: Material(
-          color: Colors.transparent,
-          child: Center(
-            child: Container(
-              width: MediaQuery.of(context).size.width * 0.9,
-              margin: const EdgeInsets.only(bottom: 8),
-              decoration: BoxDecoration(
-                color: color,
-                borderRadius: BorderRadius.circular(8),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(12),
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.info_outline,
-                      color: Colors.white,
-                      size: 24,
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        message,
-                        style: GoogleFonts.poppins(
-                          color: Colors.white,
-                          fontSize: 14,
-                        ),
-                      ),
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.close,
-                          color: Colors.white, size: 20),
-                      onPressed: () {
-                        overlayEntry.remove();
-                      },
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          message,
+          style: GoogleFonts.poppins(fontWeight: FontWeight.w500),
         ),
+        backgroundColor: color,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        margin: const EdgeInsets.all(16),
       ),
     );
-
-    overlay.insert(overlayEntry);
-
-    Future.delayed(const Duration(seconds: 3), () {
-      if (overlayEntry.mounted) {
-        overlayEntry.remove();
-      }
-    });
   }
 
   int _findCurrentUserRank() {
@@ -336,8 +283,18 @@ class _LeaderboardPageState extends State<LeaderboardPage>
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        backgroundColor: const Color(0xFF24D17E),
-        elevation: 2,
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        centerTitle: true,
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [ const Color.fromARGB(255, 8, 143, 78), const Color.fromARGB(255, 8, 143, 78)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+        ),
         title: Text(
           'Leaderboard',
           style: GoogleFonts.poppins(
@@ -347,7 +304,7 @@ class _LeaderboardPageState extends State<LeaderboardPage>
           ),
         ),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white),
           onPressed: () {
             Navigator.pop(context);
           },
@@ -355,7 +312,7 @@ class _LeaderboardPageState extends State<LeaderboardPage>
       ),
       body: _isLoading
           ? const Center(
-              child: CircularProgressIndicator(color: Color(0xFF24D17E)))
+              child: CircularProgressIndicator(color: const Color.fromARGB(255, 8, 143, 78)))
           : _errorMessage.isNotEmpty
               ? Center(
                   child: Column(
@@ -382,13 +339,13 @@ class _LeaderboardPageState extends State<LeaderboardPage>
                       ElevatedButton(
                         onPressed: _loadLeaderboardData,
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF24D17E),
+                          backgroundColor: const Color.fromARGB(255, 8, 143, 78),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(10),
                           ),
                         ),
                         child: Text(
-                          'Coba Lagi',
+                          'Muat Ulang',
                           style: GoogleFonts.poppins(
                             color: Colors.white,
                             fontWeight: FontWeight.w600,
@@ -400,7 +357,7 @@ class _LeaderboardPageState extends State<LeaderboardPage>
                 )
               : RefreshIndicator(
                   onRefresh: _refreshData,
-                  color: const Color(0xFF24D17E),
+                  color: const Color.fromARGB(255, 8, 143, 78),
                   child: CustomScrollView(
                     physics: const AlwaysScrollableScrollPhysics(),
                     slivers: [
@@ -409,7 +366,7 @@ class _LeaderboardPageState extends State<LeaderboardPage>
                         child: Container(
                           padding: const EdgeInsets.all(16),
                           decoration: const BoxDecoration(
-                            color: Color(0xFF24D17E),
+                            color:  const Color.fromARGB(255, 8, 143, 78),
                             borderRadius: BorderRadius.only(
                               bottomLeft: Radius.circular(20),
                               bottomRight: Radius.circular(20),
@@ -647,7 +604,7 @@ class _LeaderboardPageState extends State<LeaderboardPage>
                                                   fontSize: 14,
                                                   fontWeight: FontWeight.bold,
                                                   color:
-                                                      const Color(0xFF24D17E),
+                                                      const Color.fromARGB(255, 8, 143, 78),
                                                 ),
                                               ),
                                             ),
@@ -668,92 +625,98 @@ class _LeaderboardPageState extends State<LeaderboardPage>
     );
   }
 
+ // Bottom Navigation Widget
   Widget _buildBottomNavigation() {
     return Container(
-      decoration: BoxDecoration(
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 20,
-            offset: const Offset(0, -5),
-          ),
-        ],
-      ),
-      child: ClipRRect(
-        borderRadius: const BorderRadius.only(
-          topLeft: Radius.circular(24),
-          topRight: Radius.circular(24),
-        ),
-        child: BottomNavigationBar(
-          type: BottomNavigationBarType.fixed,
-          backgroundColor: Colors.white,
-          onTap: (index) {
-            setState(() {
-              _bottomNavCurrentIndex = index;
-            });
-
-            switch (index) {
-              case 0:
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(builder: (context) => const BerandaPage()),
-                );
-                break;
-              case 1:
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(
-                      builder: (context) => const NotifikasiPage()),
-                );
-                break;
-              case 2:
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(builder: (context) => const PanduanPage()),
-                );
-                break;
-              case 3:
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(builder: (context) => const ProfilPage()),
-                );
-                break;
-            }
-          },
-          currentIndex: _bottomNavCurrentIndex,
-          items: const [
-            BottomNavigationBarItem(
-              activeIcon: Icon(Icons.home_rounded),
-              icon: Icon(Icons.home_outlined),
-              label: 'Beranda',
-            ),
-            BottomNavigationBarItem(
-              activeIcon: Icon(Icons.notifications_rounded),
-              icon: Icon(Icons.notifications_outlined),
-              label: 'Notifikasi',
-            ),
-            BottomNavigationBarItem(
-              activeIcon: Icon(Icons.book_rounded),
-              icon: Icon(Icons.book_outlined),
-              label: 'Panduan',
-            ),
-            BottomNavigationBarItem(
-              activeIcon: Icon(Icons.person_rounded),
-              icon: Icon(Icons.person_outline_rounded),
-              label: 'Akun',
+      color: Colors.white, // tambahin ini biar latar belakangnya full putih
+      child: Container(
+        decoration: BoxDecoration(
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 20,
+              offset: const Offset(0, -5),
             ),
           ],
-          selectedItemColor: const Color(0xFF24D17E),
-          unselectedItemColor: Colors.grey[400],
-          selectedLabelStyle: GoogleFonts.poppins(
-            fontSize: 12,
-            fontWeight: FontWeight.w600,
+        ),
+        child: ClipRRect(
+          borderRadius: const BorderRadius.only(
+            topLeft: Radius.circular(24),
+            topRight: Radius.circular(24),
           ),
-          unselectedLabelStyle: GoogleFonts.poppins(
-            fontSize: 11,
-            fontWeight: FontWeight.w500,
+          child: BottomNavigationBar(
+            type: BottomNavigationBarType.fixed,
+            backgroundColor: Colors.white,
+            onTap: (index) {
+              setState(() {
+                _bottomNavCurrentIndex = index;
+              });
+
+              switch (index) {
+                case 0:
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => const BerandaPage()),
+                  );
+                  break;
+                case 1:
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => const GamifikasiPage()),
+                  );
+                  break;
+                case 2:
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => const PanduanPage()),
+                  );
+                  break;
+                case 3:
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(builder: (context) => const ProfilPage()),
+                  );
+                  break;
+              }
+            },
+            currentIndex: _bottomNavCurrentIndex,
+            items: const [
+              BottomNavigationBarItem(
+                activeIcon: Icon(Icons.home_rounded),
+                icon: Icon(Icons.home_outlined),
+                label: 'Beranda',
+              ),
+              BottomNavigationBarItem(
+                activeIcon: Icon(Icons.tune_rounded),
+                icon: Icon(Icons.tune_outlined),
+                label: 'Kontrol',
+              ),
+              BottomNavigationBarItem(
+                activeIcon: Icon(Icons.book_rounded),
+                icon: Icon(Icons.book_outlined),
+                label: 'Panduan',
+              ),
+              BottomNavigationBarItem(
+                activeIcon: Icon(Icons.person_rounded),
+                icon: Icon(Icons.person_outline_rounded),
+                label: 'Akun',
+              ),
+            ],
+            selectedItemColor:const Color.fromARGB(255, 8, 143, 78),
+            unselectedItemColor: Colors.grey[400],
+            selectedLabelStyle: GoogleFonts.poppins(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+            ),
+            unselectedLabelStyle: GoogleFonts.poppins(
+              fontSize: 11,
+              fontWeight: FontWeight.w500,
+            ),
+            elevation: 0,
           ),
-          elevation: 0,
         ),
       ),
     );

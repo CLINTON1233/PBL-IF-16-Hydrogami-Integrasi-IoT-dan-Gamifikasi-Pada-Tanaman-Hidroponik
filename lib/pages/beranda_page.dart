@@ -10,6 +10,7 @@ import 'package:application_hydrogami/pages/panduan/detail_panduan_tanaman_page.
 import 'package:application_hydrogami/pages/profil_page.dart';
 import 'package:application_hydrogami/pages/about_us_page.dart';
 import 'package:application_hydrogami/pages/gamifikasi/reward_page.dart';
+import 'package:application_hydrogami/pages/gamifikasi/gamifikasi_progres_page.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:application_hydrogami/pages/auth/login_page.dart';
@@ -33,7 +34,6 @@ class BerandaPage extends StatefulWidget {
 
 class _BerandaPageState extends State<BerandaPage> {
   int _notificationCount = 0;
-  bool _showLogoutText = false;
   int _bottomNavCurrentIndex = 0;
   String _username = "User";
   int _plantAge = 0;
@@ -80,9 +80,9 @@ class _BerandaPageState extends State<BerandaPage> {
   final String topic = 'hydrogami/sensor/data';
 
   // Location and weather
-  String _currentLocation = "Memuat...";
+  String _currentLocation = "...";
   bool _isLoadingLocation = true;
-  String _currentWeather = "Memuat...";
+  String _currentWeather = "...";
   IconData _weatherIcon = Icons.cloud_queue;
   Color _weatherColor = Colors.grey;
   bool _isLoadingWeather = true;
@@ -1039,7 +1039,7 @@ class _BerandaPageState extends State<BerandaPage> {
                     style: GoogleFonts.poppins(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
-                      color: Color(0xFF24D17E),
+                      color: const Color.fromARGB(255, 8, 143, 78),
                     ),
                   ),
                   const SizedBox(height: 20),
@@ -1049,7 +1049,7 @@ class _BerandaPageState extends State<BerandaPage> {
                       Navigator.of(context).pop();
                     },
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF24D17E),
+                      backgroundColor: const Color.fromARGB(255, 8, 143, 78),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(10),
                       ),
@@ -1128,109 +1128,6 @@ class _BerandaPageState extends State<BerandaPage> {
     _savePlantData();
   }
 
-  // Show logout confirmation dialog
-  void _showLogoutConfirmationDialog() {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-          ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(
-                Icons.logout,
-                size: 80,
-                color: Colors.amber,
-              ),
-              const SizedBox(height: 16),
-              Text(
-                'LOGOUT',
-                style: GoogleFonts.poppins(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.amber,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Konfirmasi Logout',
-                style: GoogleFonts.poppins(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const SizedBox(height: 16),
-              Text(
-                'Anda akan keluar dari akun ini dan perlu login kembali untuk mengaksesnya',
-                textAlign: TextAlign.center,
-                style: GoogleFonts.poppins(
-                  fontSize: 14,
-                  color: Colors.grey[600],
-                ),
-              ),
-              const SizedBox(height: 20),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  TextButton(
-                    onPressed: () => Navigator.of(context).pop(),
-                    child: Text(
-                      'Batal',
-                      style: GoogleFonts.poppins(
-                        color: Colors.grey[600],
-                      ),
-                    ),
-                  ),
-                  ElevatedButton(
-                    onPressed: () async {
-                      try {
-                        final prefs = await SharedPreferences.getInstance();
-                        await prefs.remove('token');
-                        await prefs.remove('username');
-                        await prefs.remove('current_user_id');
-                        await prefs.remove('id');
-                        await prefs.remove('email');
-
-                        Navigator.of(context).pop();
-                        Navigator.pushReplacement(
-                          context,
-                          MaterialPageRoute(
-                              builder: (context) => const LoginPage()),
-                        );
-
-                        _showCustomSnackBar(
-                            context, 'Logout berhasil', Colors.green);
-                      } catch (e) {
-                        Navigator.of(context).pop();
-                        _showCustomSnackBar(
-                            context, 'Gagal logout', Colors.red);
-                      }
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF24D17E),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                    ),
-                    child: Text(
-                      'Logout',
-                      style: GoogleFonts.poppins(
-                        color: Colors.white,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
 
   // Show reset plant dialog
   void _showResetPlantDialog() {
@@ -1301,7 +1198,7 @@ class _BerandaPageState extends State<BerandaPage> {
                       );
                     },
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF24D17E),
+                      backgroundColor: const Color.fromARGB(255, 8, 143, 78),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(10),
                       ),
@@ -1395,7 +1292,7 @@ class _BerandaPageState extends State<BerandaPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF24D17E),
+      backgroundColor: const Color.fromARGB(255, 8, 143, 78),
       body: SingleChildScrollView(
         child: Column(
           children: [
@@ -1440,11 +1337,17 @@ class _BerandaPageState extends State<BerandaPage> {
                         ),
                         child: IconButton(
                           icon: const Icon(
-                            Icons.logout,
-                            color: Colors.black,
+                            Icons.notifications_on_rounded,
+                            color: const Color.fromARGB(255, 8, 143, 78),
                             size: 20,
                           ),
-                          onPressed: _showLogoutConfirmationDialog,
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) => const NotifikasiPage()),
+                            );
+                          },
                           padding: EdgeInsets.zero,
                           constraints: const BoxConstraints(),
                         ),
@@ -1489,8 +1392,6 @@ class _BerandaPageState extends State<BerandaPage> {
                           valueText:
                               '${(_growthPercentage * 100).toStringAsFixed(1)}%',
                         ),
-                        const SizedBox(height: 15),
-                        _buildRelayStatusCard(),
                       ],
                     ),
                   ),
@@ -1505,8 +1406,8 @@ class _BerandaPageState extends State<BerandaPage> {
               decoration: const BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.only(
-                  topLeft: Radius.circular(50),
-                  topRight: Radius.circular(50),
+                  topLeft: Radius.circular(28),
+                  topRight: Radius.circular(28),
                 ),
               ),
               child: Column(
@@ -1517,7 +1418,7 @@ class _BerandaPageState extends State<BerandaPage> {
                     child: Container(
                       padding: const EdgeInsets.all(15),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF24D17E).withOpacity(0.1),
+                        color:const Color.fromARGB(255, 8, 143, 78).withOpacity(0.1),
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: SingleChildScrollView(
@@ -1542,11 +1443,11 @@ class _BerandaPageState extends State<BerandaPage> {
                                 Navigator.push(
                                   context,
                                   MaterialPageRoute(
-                                      builder: (context) => GamifikasiPage()),
+                                      builder: (context) => GamifikasiProgresPage()),
                                 );
                               },
                               child: _buildCircleMenuWithLabel(
-                                  Icons.sports_esports, 'Gamifikasi'),
+                                  Icons.sports_esports, 'Misi'),
                             ),
                             const SizedBox(width: 20),
                             GestureDetector(
@@ -1583,7 +1484,7 @@ class _BerandaPageState extends State<BerandaPage> {
                     child: Container(
                       padding: const EdgeInsets.all(15),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF24D17E).withOpacity(0.1),
+                        color: const Color.fromARGB(255, 8, 143, 78).withOpacity(0.1),
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: IntrinsicHeight(
@@ -1591,7 +1492,7 @@ class _BerandaPageState extends State<BerandaPage> {
                           children: [
                             _buildSavingGoalWidget(),
                             const VerticalDivider(
-                              color: Color(0xFF24D17E),
+                              color: const Color.fromARGB(255, 8, 143, 78),
                               thickness: 1,
                               width: 30,
                             ),
@@ -1773,113 +1674,7 @@ class _BerandaPageState extends State<BerandaPage> {
     );
   }
 
-  Widget _buildRelayStatusCard() {
-    final Map<String, Color> relayColors = {
-      "A MIX": const Color.fromARGB(255, 20, 94, 136),
-      "B MIX": const Color.fromARGB(255, 23, 168, 142),
-      "PH UP": const Color.fromARGB(255, 167, 130, 20),
-      "PH DOWN": const Color.fromARGB(255, 184, 37, 27),
-    };
-
-    final Map<String, IconData> relayIcons = {
-      "A MIX": Icons.invert_colors,
-      "B MIX": Icons.water_drop,
-      "PH UP": Icons.arrow_upward,
-      "PH DOWN": Icons.arrow_downward,
-    };
-
-    final activeRelays = _relayStatuses.entries.where((e) => e.value).toList();
-    final inactiveRelays =
-        _relayStatuses.entries.where((e) => !e.value).toList();
-
-    return Padding(
-      padding: EdgeInsets.zero,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(Icons.power, size: 20, color: Colors.white),
-              const SizedBox(width: 8),
-              Text(
-                'Status Pompa',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.white,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          if (activeRelays.isNotEmpty)
-            _buildStatusRow('ON', activeRelays, relayColors, relayIcons, true),
-          if (activeRelays.isNotEmpty && inactiveRelays.isNotEmpty)
-            const SizedBox(height: 8),
-          if (inactiveRelays.isNotEmpty)
-            _buildStatusRow(
-                'OFF', inactiveRelays, relayColors, relayIcons, false),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildStatusRow(String title, List<MapEntry<String, bool>> relays,
-      Map<String, Color> colors, Map<String, IconData> icons, bool isActive) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        // Status label
-        SizedBox(
-          width: 40,
-          child: Row(
-            children: [
-              const SizedBox(width: 4),
-              Text(
-                title,
-                style: TextStyle(
-                  color: isActive
-                      ? const Color.fromARGB(255, 255, 255, 255)
-                      : const Color.fromARGB(255, 255, 255, 255),
-                  fontWeight: FontWeight.bold,
-                  fontSize: 12,
-                ),
-              ),
-            ],
-          ),
-        ),
-        // Relay chips dalam satu baris
-        Expanded(
-          child: Row(
-            children: relays.map((relay) {
-              return Padding(
-                padding: const EdgeInsets.only(right: 12),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      icons[relay.key],
-                      size: 14,
-                      color: colors[relay.key]!.withOpacity(isActive ? 1 : 0.6),
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      relay.key,
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ],
-                ),
-              );
-            }).toList(),
-          ),
-        ),
-      ],
-    );
-  }
+ 
 
   // Location and Weather Widget
   Widget _buildLocationWeatherWidget() {
@@ -1928,7 +1723,7 @@ class _BerandaPageState extends State<BerandaPage> {
                                 ),
                                 const SizedBox(width: 8),
                                 Text(
-                                  'Memuat...',
+                                  '...',
                                   style: TextStyle(
                                     color: Colors.white.withOpacity(0.9),
                                     fontWeight: FontWeight.bold,
@@ -1993,7 +1788,7 @@ class _BerandaPageState extends State<BerandaPage> {
                                 ),
                                 const SizedBox(width: 8),
                                 Text(
-                                  'Memuat...',
+                                  '...',
                                   style: TextStyle(
                                     color: Colors.white.withOpacity(0.9),
                                     fontWeight: FontWeight.bold,
@@ -2037,7 +1832,7 @@ class _BerandaPageState extends State<BerandaPage> {
       children: [
         CircleAvatar(
           radius: 30,
-          backgroundColor: const Color(0xFF24D17E),
+          backgroundColor: const Color.fromARGB(255, 8, 143, 78),
           child: Icon(
             icon,
             size: 30,
@@ -2369,7 +2164,7 @@ class _BerandaPageState extends State<BerandaPage> {
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
         decoration: BoxDecoration(
           color: isSelected
-              ? const Color(0xFF24D17E)
+              ? const Color.fromARGB(255, 8, 143, 78)
               : Colors.grey.withOpacity(0.1),
           borderRadius: BorderRadius.circular(20),
         ),
@@ -2494,7 +2289,7 @@ class _BerandaPageState extends State<BerandaPage> {
                 height: 8,
                 decoration: BoxDecoration(
                   color: _currentSlide == index
-                      ? const Color(0xFF24D17E)
+                      ?const Color.fromARGB(255, 8, 143, 78)
                       : Colors.grey.withOpacity(0.4),
                   borderRadius: BorderRadius.circular(4),
                 ),
@@ -2580,90 +2375,95 @@ class _BerandaPageState extends State<BerandaPage> {
   // Bottom Navigation Widget
   Widget _buildBottomNavigation() {
     return Container(
-      decoration: BoxDecoration(
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 20,
-            offset: const Offset(0, -5),
-          ),
-        ],
-      ),
-      child: ClipRRect(
-        borderRadius: const BorderRadius.only(
-          topLeft: Radius.circular(24),
-          topRight: Radius.circular(24),
-        ),
-        child: BottomNavigationBar(
-          type: BottomNavigationBarType.fixed,
-          backgroundColor: Colors.white,
-          onTap: (index) {
-            setState(() {
-              _bottomNavCurrentIndex = index;
-            });
-
-            switch (index) {
-              case 0:
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(builder: (context) => const BerandaPage()),
-                );
-                break;
-              case 1:
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(
-                      builder: (context) => const NotifikasiPage()),
-                );
-                break;
-              case 2:
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(builder: (context) => const PanduanPage()),
-                );
-                break;
-              case 3:
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(builder: (context) => const ProfilPage()),
-                );
-                break;
-            }
-          },
-          currentIndex: _bottomNavCurrentIndex,
-          items: const [
-            BottomNavigationBarItem(
-              activeIcon: Icon(Icons.home_rounded),
-              icon: Icon(Icons.home_outlined),
-              label: 'Beranda',
-            ),
-            BottomNavigationBarItem(
-              activeIcon: Icon(Icons.notifications_rounded),
-              icon: Icon(Icons.notifications_outlined),
-              label: 'Notifikasi',
-            ),
-            BottomNavigationBarItem(
-              activeIcon: Icon(Icons.book_rounded),
-              icon: Icon(Icons.book_outlined),
-              label: 'Panduan',
-            ),
-            BottomNavigationBarItem(
-              activeIcon: Icon(Icons.person_rounded),
-              icon: Icon(Icons.person_outline_rounded),
-              label: 'Akun',
+      color: Colors.white, // tambahin ini biar latar belakangnya full putih
+      child: Container(
+        decoration: BoxDecoration(
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 20,
+              offset: const Offset(0, -5),
             ),
           ],
-          selectedItemColor: const Color(0xFF24D17E),
-          unselectedItemColor: Colors.grey[400],
-          selectedLabelStyle: GoogleFonts.poppins(
-            fontSize: 12,
-            fontWeight: FontWeight.w600,
+        ),
+        child: ClipRRect(
+          borderRadius: const BorderRadius.only(
+            topLeft: Radius.circular(24),
+            topRight: Radius.circular(24),
           ),
-          unselectedLabelStyle: GoogleFonts.poppins(
-            fontSize: 11,
-            fontWeight: FontWeight.w500,
+          child: BottomNavigationBar(
+            type: BottomNavigationBarType.fixed,
+            backgroundColor: Colors.white,
+            onTap: (index) {
+              setState(() {
+                _bottomNavCurrentIndex = index;
+              });
+
+              switch (index) {
+                case 0:
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => const BerandaPage()),
+                  );
+                  break;
+                case 1:
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => const GamifikasiPage()),
+                  );
+                  break;
+                case 2:
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => const PanduanPage()),
+                  );
+                  break;
+                case 3:
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(builder: (context) => const ProfilPage()),
+                  );
+                  break;
+              }
+            },
+            currentIndex: _bottomNavCurrentIndex,
+            items: const [
+              BottomNavigationBarItem(
+                activeIcon: Icon(Icons.home_rounded),
+                icon: Icon(Icons.home_outlined),
+                label: 'Beranda',
+              ),
+              BottomNavigationBarItem(
+                activeIcon: Icon(Icons.tune_rounded),
+                icon: Icon(Icons.tune_outlined),
+                label: 'Kontrol',
+              ),
+              BottomNavigationBarItem(
+                activeIcon: Icon(Icons.book_rounded),
+                icon: Icon(Icons.book_outlined),
+                label: 'Panduan',
+              ),
+              BottomNavigationBarItem(
+                activeIcon: Icon(Icons.person_rounded),
+                icon: Icon(Icons.person_outline_rounded),
+                label: 'Akun',
+              ),
+            ],
+            selectedItemColor:const Color.fromARGB(255, 8, 143, 78),
+            unselectedItemColor: Colors.grey[400],
+            selectedLabelStyle: GoogleFonts.poppins(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+            ),
+            unselectedLabelStyle: GoogleFonts.poppins(
+              fontSize: 11,
+              fontWeight: FontWeight.w500,
+            ),
+            elevation: 0,
           ),
-          elevation: 0,
         ),
       ),
     );

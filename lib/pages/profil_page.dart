@@ -1,5 +1,4 @@
 import 'package:application_hydrogami/pages/beranda_page.dart';
-import 'package:application_hydrogami/pages/monitoring/notifikasi_page.dart';
 import 'package:application_hydrogami/pages/panduan/panduan_page.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -7,6 +6,7 @@ import 'package:application_hydrogami/pages/auth/login_page.dart';
 import 'package:application_hydrogami/services/auth_services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:application_hydrogami/pages/gamifikasi/gamifikasi_page.dart';
 import 'dart:io';
 import 'dart:convert';
 
@@ -26,22 +26,28 @@ class _ProfilPageState extends State<ProfilPage> {
     return Scaffold(
       backgroundColor: const Color(0xFFF5F7FA),
       appBar: AppBar(
-        backgroundColor: const Color(0xFF24D17E),
-        elevation: 2,
-        title: Row(
-          children: [
-            Text(
-              'Profil Saya',
-              style: GoogleFonts.poppins(
-                fontSize: 20,
-                fontWeight: FontWeight.w600,
-                color: Colors.white,
-              ),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        centerTitle: true,
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Color(0xFF088F4E), Color(0xFF088F4E)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
             ),
-          ],
+          ),
+        ),
+        title: Text(
+          'Profil Saya',
+          style: GoogleFonts.poppins(
+            fontSize: 20,
+            fontWeight: FontWeight.w600,
+            color: Colors.white,
+          ),
         ),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white),
           onPressed: () {
             Navigator.push(
               context,
@@ -96,8 +102,7 @@ class _ProfilPageState extends State<ProfilPage> {
               case 1:
                 Navigator.pushReplacement(
                   context,
-                  MaterialPageRoute(
-                      builder: (context) => const NotifikasiPage()),
+                  MaterialPageRoute(builder: (context) => const GamifikasiPage()),
                 );
                 break;
               case 2:
@@ -107,10 +112,7 @@ class _ProfilPageState extends State<ProfilPage> {
                 );
                 break;
               case 3:
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(builder: (context) => const ProfilPage()),
-                );
+                // Already on profile page
                 break;
             }
           },
@@ -122,9 +124,9 @@ class _ProfilPageState extends State<ProfilPage> {
               label: 'Beranda',
             ),
             BottomNavigationBarItem(
-              activeIcon: Icon(Icons.notifications_rounded),
-              icon: Icon(Icons.notifications_outlined),
-              label: 'Notifikasi',
+              activeIcon: Icon(Icons.tune_rounded),
+              icon: Icon(Icons.tune_outlined),
+              label: 'Kontrol',
             ),
             BottomNavigationBarItem(
               activeIcon: Icon(Icons.book_rounded),
@@ -137,7 +139,7 @@ class _ProfilPageState extends State<ProfilPage> {
               label: 'Akun',
             ),
           ],
-          selectedItemColor: const Color(0xFF24D17E),
+          selectedItemColor: const Color(0xFF088F4E),
           unselectedItemColor: Colors.grey[400],
           selectedLabelStyle: GoogleFonts.poppins(
             fontSize: 12,
@@ -217,6 +219,75 @@ class _ProfileViewPageState extends State<ProfileViewPage> {
     });
   }
 
+  Future<void> _logout() async {
+    final shouldLogout = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
+        title: Text(
+          'Konfirmasi Logout',
+          style: GoogleFonts.poppins(
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        content: Text(
+          'Apakah Anda yakin ingin keluar dari akun?',
+          style: GoogleFonts.poppins(),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text(
+              'Batal',
+              style: GoogleFonts.poppins(
+                color: Colors.grey[600],
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: TextButton.styleFrom(
+              backgroundColor: Colors.red[600],
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              child: Text(
+                'Ya, Logout',
+                style: GoogleFonts.poppins(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (shouldLogout == true) {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove('token');
+      await prefs.remove('username');
+      await prefs.remove('email');
+      await prefs.remove('join_date');
+      await prefs.remove('current_user_id');
+
+      if (mounted) {
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (context) => const LoginPage()),
+          (route) => false,
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
@@ -227,14 +298,14 @@ class _ProfileViewPageState extends State<ProfileViewPage> {
           Container(
             decoration: BoxDecoration(
               gradient: const LinearGradient(
-                colors: [Color(0xFF24D17E), Color(0xFF1FB56D)],
+                colors: [Color(0xFF088F4E), Color(0xFF06743E)],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
               borderRadius: BorderRadius.circular(20),
               boxShadow: [
                 BoxShadow(
-                  color: const Color(0xFF24D17E).withOpacity(0.3),
+                  color: const Color(0xFF088F4E).withOpacity(0.3),
                   blurRadius: 15,
                   offset: const Offset(0, 8),
                 ),
@@ -288,8 +359,7 @@ class _ProfileViewPageState extends State<ProfileViewPage> {
                   Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(Icons.email_outlined,
-                          color: Colors.white, size: 14),
+                      const Icon(Icons.email_outlined, color: Colors.white, size: 14),
                       const SizedBox(width: 6),
                       Text(
                         _email.isNotEmpty ? _email : 'email@example.com',
@@ -308,7 +378,7 @@ class _ProfileViewPageState extends State<ProfileViewPage> {
                       onPressed: _navigateToEditProfile,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.white,
-                        foregroundColor: const Color(0xFF24D17E),
+                        foregroundColor: const Color(0xFF088F4E),
                         elevation: 0,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
@@ -394,7 +464,7 @@ class _ProfileViewPageState extends State<ProfileViewPage> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      'Level ${_userLevel}',
+                      'Level $_userLevel',
                       style: GoogleFonts.poppins(
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
@@ -406,7 +476,7 @@ class _ProfileViewPageState extends State<ProfileViewPage> {
                       style: GoogleFonts.poppins(
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
-                        color: const Color(0xFF24D17E),
+                        color: const Color(0xFF088F4E),
                       ),
                     ),
                   ],
@@ -417,9 +487,7 @@ class _ProfileViewPageState extends State<ProfileViewPage> {
                   child: LinearProgressIndicator(
                     value: (_userExp % 200) / 200,
                     backgroundColor: Colors.grey[200],
-                    valueColor: const AlwaysStoppedAnimation<Color>(
-                      Color(0xFF24D17E),
-                    ),
+                    valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF088F4E)),
                     minHeight: 8,
                   ),
                 ),
@@ -459,7 +527,7 @@ class _ProfileViewPageState extends State<ProfileViewPage> {
                   children: [
                     Icon(
                       Icons.calendar_today_rounded,
-                      color: const Color(0xFF24D17E),
+                      color: const Color(0xFF088F4E),
                       size: 18,
                     ),
                     const SizedBox(width: 10),
@@ -487,6 +555,50 @@ class _ProfileViewPageState extends State<ProfileViewPage> {
                   ],
                 ),
               ],
+            ),
+          ),
+
+          const SizedBox(height: 16),
+
+          // Logout Button
+          Container(
+            width: double.infinity,
+            height: 42,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.04),
+                  blurRadius: 10,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: ElevatedButton(
+              onPressed: _logout,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.white,
+                foregroundColor: Colors.red,
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.logout_rounded, size: 18),
+                  const SizedBox(width: 6),
+                  Text(
+                    'Logout',
+                    style: GoogleFonts.poppins(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
 
@@ -551,7 +663,6 @@ class _ProfileViewPageState extends State<ProfileViewPage> {
   }
 }
 
-// Edit Profile Page
 class EditProfilePage extends StatefulWidget {
   final File? profileImage;
   final Function(File?)? onImageChanged;
@@ -579,6 +690,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
   File? _tempProfileImage;
   bool _obscureCurrentPassword = true;
   bool _obscureNewPassword = true;
+  int _bottomNavCurrentIndex = 3;
 
   @override
   void initState() {
@@ -795,6 +907,96 @@ class _EditProfilePageState extends State<EditProfilePage> {
     );
   }
 
+  Widget _buildBottomNavigation() {
+    return Container(
+      decoration: BoxDecoration(
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 20,
+            offset: const Offset(0, -5),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: const BorderRadius.only(
+          topLeft: Radius.circular(24),
+          topRight: Radius.circular(24),
+        ),
+        child: BottomNavigationBar(
+          type: BottomNavigationBarType.fixed,
+          backgroundColor: Colors.white,
+          onTap: (index) {
+            setState(() {
+              _bottomNavCurrentIndex = index;
+            });
+
+            switch (index) {
+              case 0:
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(builder: (context) => const BerandaPage()),
+                );
+                break;
+              case 1:
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(builder: (context) => const GamifikasiPage()),
+                );
+                break;
+              case 2:
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(builder: (context) => const PanduanPage()),
+                );
+                break;
+              case 3:
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(builder: (context) => const ProfilPage()),
+                );
+                break;
+            }
+          },
+          currentIndex: _bottomNavCurrentIndex,
+          items: const [
+            BottomNavigationBarItem(
+              activeIcon: Icon(Icons.home_rounded),
+              icon: Icon(Icons.home_outlined),
+              label: 'Beranda',
+            ),
+            BottomNavigationBarItem(
+              activeIcon: Icon(Icons.tune_rounded),
+              icon: Icon(Icons.tune_outlined),
+              label: 'Kontrol',
+            ),
+            BottomNavigationBarItem(
+              activeIcon: Icon(Icons.book_rounded),
+              icon: Icon(Icons.book_outlined),
+              label: 'Panduan',
+            ),
+            BottomNavigationBarItem(
+              activeIcon: Icon(Icons.person_rounded),
+              icon: Icon(Icons.person_outline_rounded),
+              label: 'Akun',
+            ),
+          ],
+          selectedItemColor: const Color(0xFF088F4E),
+          unselectedItemColor: Colors.grey[400],
+          selectedLabelStyle: GoogleFonts.poppins(
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+          ),
+          unselectedLabelStyle: GoogleFonts.poppins(
+            fontSize: 11,
+            fontWeight: FontWeight.w500,
+          ),
+          elevation: 0,
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return PopScope(
@@ -818,13 +1020,13 @@ class _EditProfilePageState extends State<EditProfilePage> {
       child: Scaffold(
         backgroundColor: const Color(0xFFF5F7FA),
         appBar: AppBar(
-          backgroundColor: const Color(0xFF24D17E),
+          backgroundColor: const Color(0xFF088F4E),
           elevation: 0,
           centerTitle: true,
           flexibleSpace: Container(
             decoration: const BoxDecoration(
               gradient: LinearGradient(
-                colors: [Color(0xFF24D17E), Color(0xFF1FB56D)],
+                colors: [Color(0xFF088F4E), Color(0xFF088F4E)],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
@@ -880,7 +1082,6 @@ class _EditProfilePageState extends State<EditProfilePage> {
                         Row(
                           children: [
                             Container(
-                              
                               child: const Icon(
                                 Icons.photo_camera_rounded,
                                 color: Colors.black87,
@@ -907,8 +1108,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                                 shape: BoxShape.circle,
                                 boxShadow: [
                                   BoxShadow(
-                                    color: const Color(0xFF24D17E)
-                                        .withOpacity(0.3),
+                                    color: const Color(0xFF088F4E).withOpacity(0.3),
                                     blurRadius: 20,
                                     offset: const Offset(0, 8),
                                   ),
@@ -920,7 +1120,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                                 decoration: BoxDecoration(
                                   shape: BoxShape.circle,
                                   border: Border.all(
-                                    color: const Color(0xFF24D17E),
+                                    color: const Color(0xFF088F4E),
                                     width: 4,
                                   ),
                                 ),
@@ -951,15 +1151,11 @@ class _EditProfilePageState extends State<EditProfilePage> {
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
                                 gradient: const LinearGradient(
-                                  colors: [
-                                    Color(0xFF24D17E),
-                                    Color(0xFF1FB56D)
-                                  ],
+                                  colors: [Color(0xFF088F4E), Color(0xFF06743E)],
                                 ),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: const Color(0xFF24D17E)
-                                        .withOpacity(0.4),
+                                    color: const Color(0xFF088F4E).withOpacity(0.4),
                                     blurRadius: 12,
                                     offset: const Offset(0, 4),
                                   ),
@@ -1021,7 +1217,6 @@ class _EditProfilePageState extends State<EditProfilePage> {
                         Row(
                           children: [
                             Container(
-                              
                               child: const Icon(
                                 Icons.person_rounded,
                                 color: Colors.black87,
@@ -1087,7 +1282,6 @@ class _EditProfilePageState extends State<EditProfilePage> {
                         Row(
                           children: [
                             Container(
-                              
                               child: const Icon(
                                 Icons.lock_rounded,
                                 color: Colors.black87,
@@ -1161,13 +1355,13 @@ class _EditProfilePageState extends State<EditProfilePage> {
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(16),
                     gradient: const LinearGradient(
-                      colors: [Color(0xFF24D17E), Color(0xFF1FB56D)],
+                      colors: [Color(0xFF088F4E), Color(0xFF06743E)],
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                     ),
                     boxShadow: [
                       BoxShadow(
-                        color: const Color(0xFF24D17E).withOpacity(0.4),
+                        color: const Color(0xFF088F4E).withOpacity(0.4),
                         blurRadius: 16,
                         offset: const Offset(0, 8),
                       ),
@@ -1213,6 +1407,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
             ),
           ),
         ),
+        bottomNavigationBar: _buildBottomNavigation(),
       ),
     );
   }
@@ -1285,7 +1480,6 @@ class _EditProfilePageState extends State<EditProfilePage> {
                   fontSize: 14,
                   fontWeight: FontWeight.w400,
                 ),
-                
                 border: InputBorder.none,
                 contentPadding: const EdgeInsets.symmetric(vertical: 18),
               ),
@@ -1331,27 +1525,40 @@ class _EditProfilePageState extends State<EditProfilePage> {
           ),
           child: Padding(
             padding: const EdgeInsets.only(left: 16, right: 8),
-            child: TextFormField(
-              controller: controller,
-              obscureText: obscureText,
-              validator: validator,
-              onChanged: onChanged,
-              style: GoogleFonts.poppins(
-                fontSize: 14,
-                color: Colors.black87,
-                fontWeight: FontWeight.w500,
-              ),
-              decoration: InputDecoration(
-                hintText: hint,
-                hintStyle: GoogleFonts.poppins(
-                  color: Colors.grey[400],
-                  fontSize: 14,
-                  fontWeight: FontWeight.w400,
+            child: Row(
+              children: [
+                Expanded(
+                  child: TextFormField(
+                    controller: controller,
+                    obscureText: obscureText,
+                    validator: validator,
+                    onChanged: onChanged,
+                    style: GoogleFonts.poppins(
+                      fontSize: 14,
+                      color: Colors.black87,
+                      fontWeight: FontWeight.w500,
+                    ),
+                    decoration: InputDecoration(
+                      hintText: hint,
+                      hintStyle: GoogleFonts.poppins(
+                        color: Colors.grey[400],
+                        fontSize: 14,
+                        fontWeight: FontWeight.w400,
+                      ),
+                      border: InputBorder.none,
+                      contentPadding: const EdgeInsets.symmetric(vertical: 18),
+                    ),
+                  ),
                 ),
-                
-                border: InputBorder.none,
-                contentPadding: const EdgeInsets.symmetric(vertical: 18),
-              ),
+                IconButton(
+                  onPressed: onToggle,
+                  icon: Icon(
+                    obscureText ? Icons.visibility_rounded : Icons.visibility_off_rounded,
+                    color: Colors.grey[500],
+                    size: 20,
+                  ),
+                ),
+              ],
             ),
           ),
         ),
@@ -1391,7 +1598,6 @@ class _EditProfilePageState extends State<EditProfilePage> {
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
             child: Row(
               children: [
-                
                 Expanded(
                   child: Text(
                     value,
@@ -1402,7 +1608,6 @@ class _EditProfilePageState extends State<EditProfilePage> {
                     ),
                   ),
                 ),
-                
               ],
             ),
           ),

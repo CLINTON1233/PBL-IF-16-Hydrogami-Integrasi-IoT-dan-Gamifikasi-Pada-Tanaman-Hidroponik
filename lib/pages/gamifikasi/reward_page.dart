@@ -9,7 +9,7 @@ import 'package:application_hydrogami/models/reward_model.dart';
 import 'package:application_hydrogami/services/reward_services.dart';
 import 'package:application_hydrogami/services/gamifikasi_services.dart';
 import 'package:application_hydrogami/pages/beranda_page.dart';
-import 'package:application_hydrogami/pages/monitoring/notifikasi_page.dart';
+import 'package:application_hydrogami/pages/gamifikasi/gamifikasi_page.dart';
 import 'package:application_hydrogami/pages/panduan/panduan_page.dart';
 import 'package:application_hydrogami/pages/profil_page.dart';
 import 'dart:ui' as ui;
@@ -249,7 +249,7 @@ class _RewardPageState extends State<RewardPage>
               ElevatedButton(
                 onPressed: () => Navigator.of(context).pop(),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF24D17E),
+                  backgroundColor: const Color.fromARGB(255, 8, 143, 78),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(10),
                   ),
@@ -467,7 +467,7 @@ class _RewardPageState extends State<RewardPage>
             ElevatedButton(
               onPressed: () => Navigator.pop(context),
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF24D17E),
+                backgroundColor: const Color.fromARGB(255, 8, 143, 78),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(10),
                 ),
@@ -500,7 +500,7 @@ class _RewardPageState extends State<RewardPage>
       width: double.infinity,
       padding: const EdgeInsets.all(20),
       decoration: const BoxDecoration(
-        color: Color(0xFF24D17E),
+        color: const Color.fromARGB(255, 8, 143, 78),
         borderRadius: BorderRadius.only(
           bottomLeft: Radius.circular(20),
           bottomRight: Radius.circular(20),
@@ -657,12 +657,12 @@ class _RewardPageState extends State<RewardPage>
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF24D17E).withOpacity(0.1),
+                  color: const Color.fromARGB(255, 8, 143, 78).withOpacity(0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: const Icon(
                   Icons.casino,
-                  color: Color(0xFF24D17E),
+                  color: const Color.fromARGB(255, 8, 143, 78),
                   size: 24,
                 ),
               ),
@@ -700,10 +700,10 @@ class _RewardPageState extends State<RewardPage>
             width: double.infinity,
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: const Color(0xFF24D17E).withOpacity(0.05),
+              color:  const Color.fromARGB(255, 8, 143, 78).withOpacity(0.05),
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
-                color: const Color(0xFF24D17E).withOpacity(0.2),
+                color:  const Color.fromARGB(255, 8, 143, 78).withOpacity(0.2),
                 width: 1,
               ),
             ),
@@ -711,7 +711,7 @@ class _RewardPageState extends State<RewardPage>
               children: [
                 Icon(
                   Icons.info_outline,
-                  color: const Color(0xFF24D17E),
+                  color: const Color.fromARGB(255, 8, 143, 78),
                   size: 20,
                 ),
                 const SizedBox(width: 12),
@@ -720,7 +720,7 @@ class _RewardPageState extends State<RewardPage>
                     '${_gachaRewards.length} reward tersedia untuk dimenangkan',
                     style: GoogleFonts.poppins(
                       fontSize: 13,
-                      color: const Color(0xFF24D17E),
+                      color: const Color.fromARGB(255, 8, 143, 78),
                       fontWeight: FontWeight.w500,
                     ),
                   ),
@@ -772,10 +772,10 @@ class _RewardPageState extends State<RewardPage>
               onPressed: _isSpinning ? null : _spinWheel,
               style: ElevatedButton.styleFrom(
                 backgroundColor:
-                    _isSpinning ? Colors.grey[400] : const Color(0xFF24D17E),
+                    _isSpinning ? Colors.grey[400] :  const Color.fromARGB(255, 8, 143, 78),
                 foregroundColor: Colors.white,
                 elevation: _isSpinning ? 0 : 2,
-                shadowColor: const Color(0xFF24D17E).withOpacity(0.3),
+                shadowColor:  const Color.fromARGB(255, 8, 143, 78).withOpacity(0.3),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
@@ -919,12 +919,12 @@ class _RewardPageState extends State<RewardPage>
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF24D17E).withOpacity(0.1),
+                    color: const Color.fromARGB(255, 8, 143, 78).withOpacity(0.1),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: const Icon(
                     Icons.monetization_on,
-                    color: Color(0xFF24D17E),
+                    color:  const Color.fromARGB(255, 8, 143, 78),
                     size: 24,
                   ),
                 ),
@@ -994,12 +994,12 @@ class _RewardPageState extends State<RewardPage>
                         margin: const EdgeInsets.only(bottom: 12),
                         decoration: BoxDecoration(
                           color: isSelected
-                              ? const Color(0xFF24D17E).withOpacity(0.1)
+                              ?  const Color.fromARGB(255, 8, 143, 78).withOpacity(0.1)
                               : Colors.white,
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(
                             color: isSelected
-                                ? const Color(0xFF24D17E)
+                                ?  const Color.fromARGB(255, 8, 143, 78)
                                 : Colors.grey[300]!,
                             width: isSelected ? 2 : 1,
                           ),
@@ -1009,7 +1009,7 @@ class _RewardPageState extends State<RewardPage>
                             horizontal: 16,
                             vertical: 8,
                           ),
-                          activeColor: const Color(0xFF24D17E),
+                          activeColor: const Color.fromARGB(255, 8, 143, 78),
                           title: Row(
                             children: [
                               Container(
@@ -1019,7 +1019,7 @@ class _RewardPageState extends State<RewardPage>
                                 ),
                                 decoration: BoxDecoration(
                                   color:
-                                      const Color(0xFF24D17E).withOpacity(0.1),
+                                       const Color.fromARGB(255, 8, 143, 78).withOpacity(0.1),
                                   borderRadius: BorderRadius.circular(8),
                                 ),
                                 child: Text(
@@ -1027,7 +1027,7 @@ class _RewardPageState extends State<RewardPage>
                                   style: GoogleFonts.poppins(
                                     fontSize: 14,
                                     fontWeight: FontWeight.bold,
-                                    color: const Color(0xFF24D17E),
+                                    color: const Color.fromARGB(255, 8, 143, 78),
                                   ),
                                 ),
                               ),
@@ -1084,10 +1084,10 @@ class _RewardPageState extends State<RewardPage>
                     ? _performRedeem
                     : null,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF24D17E),
+                  backgroundColor:  const Color.fromARGB(255, 8, 143, 78),
                   foregroundColor: Colors.white,
                   elevation: 2,
-                  shadowColor: const Color(0xFF24D17E).withOpacity(0.3),
+                  shadowColor: const Color.fromARGB(255, 8, 143, 78).withOpacity(0.3),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
@@ -1176,92 +1176,98 @@ class _RewardPageState extends State<RewardPage>
         ));
   }
 
+  // Bottom Navigation Widget
   Widget _buildBottomNavigation() {
     return Container(
-      decoration: BoxDecoration(
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 20,
-            offset: const Offset(0, -5),
-          ),
-        ],
-      ),
-      child: ClipRRect(
-        borderRadius: const BorderRadius.only(
-          topLeft: Radius.circular(24),
-          topRight: Radius.circular(24),
-        ),
-        child: BottomNavigationBar(
-          type: BottomNavigationBarType.fixed,
-          backgroundColor: Colors.white,
-          onTap: (index) {
-            setState(() {
-              _bottomNavCurrentIndex = index;
-            });
-
-            switch (index) {
-              case 0:
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(builder: (context) => const BerandaPage()),
-                );
-                break;
-              case 1:
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(
-                      builder: (context) => const NotifikasiPage()),
-                );
-                break;
-              case 2:
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(builder: (context) => const PanduanPage()),
-                );
-                break;
-              case 3:
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(builder: (context) => const ProfilPage()),
-                );
-                break;
-            }
-          },
-          currentIndex: _bottomNavCurrentIndex,
-          items: const [
-            BottomNavigationBarItem(
-              activeIcon: Icon(Icons.home_rounded),
-              icon: Icon(Icons.home_outlined),
-              label: 'Beranda',
-            ),
-            BottomNavigationBarItem(
-              activeIcon: Icon(Icons.notifications_rounded),
-              icon: Icon(Icons.notifications_outlined),
-              label: 'Notifikasi',
-            ),
-            BottomNavigationBarItem(
-              activeIcon: Icon(Icons.book_rounded),
-              icon: Icon(Icons.book_outlined),
-              label: 'Panduan',
-            ),
-            BottomNavigationBarItem(
-              activeIcon: Icon(Icons.person_rounded),
-              icon: Icon(Icons.person_outline_rounded),
-              label: 'Akun',
+      color: Colors.white, // tambahin ini biar latar belakangnya full putih
+      child: Container(
+        decoration: BoxDecoration(
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 20,
+              offset: const Offset(0, -5),
             ),
           ],
-          selectedItemColor: const Color(0xFF24D17E),
-          unselectedItemColor: Colors.grey[400],
-          selectedLabelStyle: GoogleFonts.poppins(
-            fontSize: 12,
-            fontWeight: FontWeight.w600,
+        ),
+        child: ClipRRect(
+          borderRadius: const BorderRadius.only(
+            topLeft: Radius.circular(24),
+            topRight: Radius.circular(24),
           ),
-          unselectedLabelStyle: GoogleFonts.poppins(
-            fontSize: 11,
-            fontWeight: FontWeight.w500,
+          child: BottomNavigationBar(
+            type: BottomNavigationBarType.fixed,
+            backgroundColor: Colors.white,
+            onTap: (index) {
+              setState(() {
+                _bottomNavCurrentIndex = index;
+              });
+
+              switch (index) {
+                case 0:
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => const BerandaPage()),
+                  );
+                  break;
+                case 1:
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => const GamifikasiPage()),
+                  );
+                  break;
+                case 2:
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => const PanduanPage()),
+                  );
+                  break;
+                case 3:
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(builder: (context) => const ProfilPage()),
+                  );
+                  break;
+              }
+            },
+            currentIndex: _bottomNavCurrentIndex,
+            items: const [
+              BottomNavigationBarItem(
+                activeIcon: Icon(Icons.home_rounded),
+                icon: Icon(Icons.home_outlined),
+                label: 'Beranda',
+              ),
+              BottomNavigationBarItem(
+                activeIcon: Icon(Icons.tune_rounded),
+                icon: Icon(Icons.tune_outlined),
+                label: 'Kontrol',
+              ),
+              BottomNavigationBarItem(
+                activeIcon: Icon(Icons.book_rounded),
+                icon: Icon(Icons.book_outlined),
+                label: 'Panduan',
+              ),
+              BottomNavigationBarItem(
+                activeIcon: Icon(Icons.person_rounded),
+                icon: Icon(Icons.person_outline_rounded),
+                label: 'Akun',
+              ),
+            ],
+            selectedItemColor: const Color.fromARGB(255, 8, 143, 78),
+            unselectedItemColor: Colors.grey[400],
+            selectedLabelStyle: GoogleFonts.poppins(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+            ),
+            unselectedLabelStyle: GoogleFonts.poppins(
+              fontSize: 11,
+              fontWeight: FontWeight.w500,
+            ),
+            elevation: 0,
           ),
-          elevation: 0,
         ),
       ),
     );
@@ -1271,8 +1277,9 @@ class _RewardPageState extends State<RewardPage>
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: const Color(0xFF24D17E),
-        elevation: 2,
+        backgroundColor: const Color.fromARGB(255, 8, 143, 78),
+        elevation: 0,
+        centerTitle: true,
         title: Text(
           'Reward',
           style: GoogleFonts.poppins(
@@ -1282,16 +1289,20 @@ class _RewardPageState extends State<RewardPage>
           ),
         ),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white),
           onPressed: () {
-            Navigator.pop(context);
+            // Navigate to BerandaPage instead of popping
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => const BerandaPage()),
+            );
           },
         ),
       ),
       body: _isLoading
           ? const Center(
               child: CircularProgressIndicator(
-                color: Color(0xFF24D17E),
+                color: const Color.fromARGB(255, 8, 143, 78),
               ),
             )
           : _errorMessage != null
@@ -1317,7 +1328,7 @@ class _RewardPageState extends State<RewardPage>
                       ElevatedButton(
                         onPressed: _loadRewards,
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF24D17E),
+                          backgroundColor:  const Color.fromARGB(255, 8, 143, 78),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(10),
                           ),
@@ -1332,7 +1343,7 @@ class _RewardPageState extends State<RewardPage>
                 )
               : RefreshIndicator(
                   onRefresh: _refreshData,
-                  color: const Color(0xFF24D17E),
+                  color: const Color.fromARGB(255, 8, 143, 78),
                   child: SingleChildScrollView(
                     physics: const AlwaysScrollableScrollPhysics(),
                     child: Column(

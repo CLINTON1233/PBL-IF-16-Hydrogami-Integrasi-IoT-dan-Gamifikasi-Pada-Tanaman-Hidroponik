@@ -130,74 +130,20 @@ class _LoginPageState extends State<LoginPage>
     }
   }
 
+  // SnackBar function
   void _showCustomSnackBar(BuildContext context, String message, Color color) {
-    final overlay = Overlay.of(context);
-    late OverlayEntry overlayEntry;
-
-    overlayEntry = OverlayEntry(
-      builder: (context) => Positioned(
-        top: MediaQuery.of(context).padding.top + 10, 
-        left: 0,
-        right: 0,
-        child: Material(
-          color: Colors.transparent,
-          child: Center(
-            child: Container(
-              width: MediaQuery.of(context).size.width * 0.9,
-              margin: const EdgeInsets.only(bottom: 8),
-              decoration: BoxDecoration(
-                color: color,
-                borderRadius: BorderRadius.circular(8),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(12),
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.info_outline,
-                      color: Colors.white,
-                      size: 24,
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        message,
-                        style: GoogleFonts.poppins(
-                          color: Colors.white,
-                          fontSize: 14,
-                        ),
-                      ),
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.close,
-                          color: Colors.white, size: 20),
-                      onPressed: () {
-                        overlayEntry.remove();
-                      },
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          message,
+          style: GoogleFonts.poppins(fontWeight: FontWeight.w500),
         ),
+        backgroundColor: color,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        margin: const EdgeInsets.all(16),
       ),
     );
-
-    overlay.insert(overlayEntry);
-
-    Future.delayed(const Duration(seconds: 3), () {
-      if (overlayEntry.mounted) {
-        overlayEntry.remove();
-      }
-    });
   }
 
   @override
@@ -227,7 +173,7 @@ class _LoginPageState extends State<LoginPage>
                 child: IntrinsicHeight(
                   child: Column(
                     children: [
-                      Container(height: 55, color: const Color(0xFF2ABD77)),
+                      Container(height: 55, color: const Color.fromARGB(255, 8, 143, 78)),
                       const SizedBox(height: 15),
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 12.0),
@@ -238,7 +184,7 @@ class _LoginPageState extends State<LoginPage>
                               children: [
                                 ElevatedButton(
                                   style: ElevatedButton.styleFrom(
-                                    backgroundColor: const Color(0xFF29CC74),
+                                    backgroundColor:const Color.fromARGB(255, 8, 143, 78),
                                     padding: const EdgeInsets.symmetric(
                                         horizontal: 8, vertical: 4),
                                     shape: RoundedRectangleBorder(
@@ -297,7 +243,7 @@ class _LoginPageState extends State<LoginPage>
                         child: Container(
                           padding: const EdgeInsets.all(30),
                           decoration: const BoxDecoration(
-                            color: Color(0xFF29CC74),
+                            color:const Color.fromARGB(255, 8, 143, 78),
                             borderRadius:
                                 BorderRadius.only(topLeft: Radius.circular(60)),
                           ),
